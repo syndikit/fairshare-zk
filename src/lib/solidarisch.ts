@@ -28,9 +28,11 @@ export interface GebotErgebnis {
   slotLabel: string;
   gewichtung: number;
   gebot: number;
-  anteil: number;
-  solidarischerBeitrag: number;
-  differenz: number;
+  richtwertAnteil: number;      // gewichtung × richtwert (fairer Anteil laut Richtwert)
+  ueberRichtwert: number;       // max(0, gebot − richtwertAnteil)
+  geldZurueck: number;          // proportionaler Anteil am Überschuss
+  solidarischerBeitrag: number; // gebot − geldZurueck
+  differenz: number;            // gebot − solidarischerBeitrag (= geldZurueck)
 }
 
 export interface Auswertung {
@@ -38,8 +40,8 @@ export interface Auswertung {
   gesamtkosten: number;
   summeGebote: number;
   summeBeitraege: number;
-  fehlbetrag: number;
-  ueberschuss: number;
+  fehlbetrag: number;  // > 0 wenn Gebote die Kosten nicht decken
+  ueberschuss: number; // summeGebote − gesamtkosten vor Verteilung (>= 0)
   ergebnisse: GebotErgebnis[];
 }
 
@@ -70,52 +72,100 @@ export function generiereEmojiId(): string {
 // Berechnungslogik
 // ---------------------------------------------------------------------------
 
-/**
- * Berechnet den Richtwert pro Gewichtseinheit.
- * Nenner = Summe der Gewichtungen aller eingegangenen Gebote.
- */
-export function berechneRichtwert(gesamtkosten: number, gebote: Gebot[]): number {
-  if (gebote.length === 0) throw new Error('Keine Gebote vorhanden');
-  const summeGewichtungen = gebote.reduce((sum, g) => sum + g.gewichtung, 0);
-  return gesamtkosten / summeGewichtungen;
+function runden(x: number): number {
+  return Math.round(x * 100) / 100;
 }
 
 /**
- * Berechnet den solidarischen Beitrag für ein einzelnes Gebot.
- * - Wer weniger als seinen Anteil bietet, zahlt nur das Gebot.
- * - Wer mehr bietet, wird auf den Anteil reduziert.
+ * Vollständige Auswertung einer Runde nach dem solidarischen Modell.
+ *
+ * @param gesamtkosten - Gesamtkosten der Runde
+ * @param gebote       - Eingegangene Gebote
+ * @param alleSlots    - ALLE definierten Slot-Typen inkl. unbelegter
+ *
+ * Der Richtwert wird aus ALLEN definierten Slots berechnet (gewichtung × anzahl),
+ * nicht nur aus den eingegangenen Geboten. Das stellt sicher, dass unbelegte Slots
+ * die Kosten mitverantworten und der Richtwert stabil bleibt.
+ *
+ * Überschuss (summeGebote > gesamtkosten) wird proportional an die zurückgegeben,
+ * die mehr als ihren Richtwert-Anteil geboten haben — sodass summeBeitraege ≈ gesamtkosten.
  */
-export function berechneBeitrag(gebot: Gebot, richtwert: number): GebotErgebnis {
-  const anteil = gebot.gewichtung * richtwert;
-  const solidarischerBeitrag = gebot.betrag <= anteil ? gebot.betrag : anteil;
-  const differenz = gebot.betrag - solidarischerBeitrag;
-  return {
-    emojiId: gebot.emojiId,
-    slotLabel: gebot.slotLabel,
-    gewichtung: gebot.gewichtung,
-    gebot: gebot.betrag,
-    anteil,
-    solidarischerBeitrag,
-    differenz,
-  };
-}
-
-/**
- * Vollständige Auswertung einer Runde.
- * Wirft bei leerer Gebote-Liste oder ungültigen Gesamtkosten.
- */
-export function berechneAuswertung(gesamtkosten: number, gebote: Gebot[]): Auswertung {
+export function berechneAuswertung(
+  gesamtkosten: number,
+  gebote: Gebot[],
+  alleSlots: Slot[],
+): Auswertung {
   if (gesamtkosten <= 0) throw new Error('Gesamtkosten müssen größer als 0 sein');
   if (gebote.length === 0) throw new Error('Keine Gebote vorhanden');
+  if (alleSlots.length === 0) throw new Error('Keine Slots definiert');
 
-  const richtwert = berechneRichtwert(gesamtkosten, gebote);
-  const ergebnisse = gebote.map((g) => berechneBeitrag(g, richtwert));
+  // 1. Richtwert aus ALLEN definierten Slots (gewichtung × anzahl)
+  const summeAlleGewichtungen = alleSlots.reduce(
+    (s, slot) => s + slot.gewichtung * slot.anzahl,
+    0,
+  );
+  const richtwert = runden(gesamtkosten / summeAlleGewichtungen);
 
-  const summeGebote = gebote.reduce((sum, g) => sum + g.betrag, 0);
-  const summeBeitraege = ergebnisse.reduce((sum, e) => sum + e.solidarischerBeitrag, 0);
+  // 2. Summe Gebote + Überschuss (negativ = Fehlbetrag)
+  const summeGebote = runden(gebote.reduce((s, g) => s + g.betrag, 0));
+  const rohUeberschuss = runden(summeGebote - gesamtkosten);
+  const istFehlbetrag = rohUeberschuss < 0;
 
-  const fehlbetrag = Math.max(0, gesamtkosten - summeBeitraege);
-  const ueberschuss = Math.max(0, summeBeitraege - gesamtkosten);
+  // 3. Erster Pass: richtwertAnteil + ueberRichtwert pro Gebot
+  const mitUeberRichtwert = gebote.map((g) => {
+    const richtwertAnteil = runden(g.gewichtung * richtwert);
+    const ueberRichtwert = runden(Math.max(0, g.betrag - richtwertAnteil));
+    return { ...g, richtwertAnteil, ueberRichtwert };
+  });
+
+  const summeUeberRichtwert = runden(
+    mitUeberRichtwert.reduce((s, g) => s + g.ueberRichtwert, 0),
+  );
+
+  // 4. Zweiter Pass: geldZurueck + solidarischerBeitrag
+  const ergebnisse: GebotErgebnis[] = mitUeberRichtwert.map((g) => {
+    let geldZurueck = 0;
+    if (!istFehlbetrag && g.ueberRichtwert > 0 && summeUeberRichtwert > 0) {
+      geldZurueck = runden((g.ueberRichtwert / summeUeberRichtwert) * rohUeberschuss);
+    }
+    const solidarischerBeitrag = runden(g.betrag - geldZurueck);
+    return {
+      emojiId: g.emojiId,
+      slotLabel: g.slotLabel,
+      gewichtung: g.gewichtung,
+      gebot: g.betrag,
+      richtwertAnteil: g.richtwertAnteil,
+      ueberRichtwert: g.ueberRichtwert,
+      geldZurueck,
+      solidarischerBeitrag,
+      differenz: runden(g.betrag - solidarischerBeitrag),
+    };
+  });
+
+  // 5. Rundungskorrektur: Differenz auf letzten Slot mit ueberRichtwert > 0 anwenden
+  if (!istFehlbetrag && ergebnisse.length > 0) {
+    const summeBerechnete = runden(
+      ergebnisse.reduce((s, e) => s + e.solidarischerBeitrag, 0),
+    );
+    const delta = runden(summeBerechnete - gesamtkosten);
+    if (delta !== 0) {
+      const rueckwaerts = [...ergebnisse].reverse().findIndex((e) => e.ueberRichtwert > 0);
+      const idx =
+        rueckwaerts >= 0 ? ergebnisse.length - 1 - rueckwaerts : ergebnisse.length - 1;
+      ergebnisse[idx].geldZurueck = runden(ergebnisse[idx].geldZurueck + delta);
+      ergebnisse[idx].solidarischerBeitrag = runden(
+        ergebnisse[idx].solidarischerBeitrag - delta,
+      );
+      ergebnisse[idx].differenz = runden(
+        ergebnisse[idx].gebot - ergebnisse[idx].solidarischerBeitrag,
+      );
+    }
+  }
+
+  const summeBeitraege = runden(
+    ergebnisse.reduce((s, e) => s + e.solidarischerBeitrag, 0),
+  );
+  const fehlbetrag = Math.max(0, runden(gesamtkosten - summeBeitraege));
 
   return {
     richtwert,
@@ -123,7 +173,7 @@ export function berechneAuswertung(gesamtkosten: number, gebote: Gebot[]): Auswe
     summeGebote,
     summeBeitraege,
     fehlbetrag,
-    ueberschuss,
+    ueberschuss: Math.max(0, rohUeberschuss),
     ergebnisse,
   };
 }

@@ -1,13 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
-  berechneRichtwert,
-  berechneBeitrag,
   berechneAuswertung,
   type Gebot,
+  type Slot,
 } from './solidarisch';
 
 // ---------------------------------------------------------------------------
-// Hilfsfunktion: Gebot-Objekt mit Defaults
+// Hilfsfunktionen
 // ---------------------------------------------------------------------------
 
 function gebot(
@@ -24,152 +23,246 @@ function gebot(
   };
 }
 
+function slot(label: string, gewichtung: number, anzahl = 1): Slot {
+  return { label, gewichtung, anzahl };
+}
+
 // ---------------------------------------------------------------------------
-// berechneRichtwert
+// Richtwert aus ALLEN Slots (inkl. unbelegte)
 // ---------------------------------------------------------------------------
 
-describe('berechneRichtwert', () => {
-  it('einfacher Fall: zwei gleiche Gewichtungen', () => {
-    const gebote = [gebot(1, 100), gebot(1, 100)];
-    // richtwert = 200 / (1 + 1) = 100
-    expect(berechneRichtwert(200, gebote)).toBe(100);
+describe('Richtwert-Berechnung aus allen Slots', () => {
+  it('verwendet alle Slots, auch wenn nicht alle belegt sind', () => {
+    // 3 Slots definiert: je Gewichtung 1, anzahl 1 → summe = 3
+    // richtwert = 300 / 3 = 100
+    // Aber nur 2 Gebote eingegangen
+    const slots = [slot('A', 1), slot('B', 1), slot('C', 1)];
+    const gebote = [
+      gebot(1, 120, { slotLabel: 'A' }),
+      gebot(1, 100, { slotLabel: 'B' }),
+    ];
+    const result = berechneAuswertung(300, gebote, slots);
+    expect(result.richtwert).toBe(100);
   });
 
-  it('unterschiedliche Gewichtungen', () => {
-    const gebote = [gebot(2, 80), gebot(1, 15)];
-    // richtwert = 150 / (2 + 1) = 50
-    expect(berechneRichtwert(150, gebote)).toBeCloseTo(50);
-  });
-
-  it('einzelnes Gebot', () => {
-    const gebote = [gebot(1.5, 200)];
-    // richtwert = 300 / 1.5 = 200
-    expect(berechneRichtwert(300, gebote)).toBeCloseTo(200);
-  });
-
-  it('wirft bei leerer Gebote-Liste', () => {
-    expect(() => berechneRichtwert(100, [])).toThrow('Keine Gebote vorhanden');
+  it('berücksichtigt anzahl bei Slots', () => {
+    // Slot "Familie" gewichtung=2, anzahl=3 → trägt 6 bei
+    // Slot "Single" gewichtung=1, anzahl=2 → trägt 2 bei
+    // summe = 8, richtwert = 800 / 8 = 100
+    const slots = [slot('Familie', 2, 3), slot('Single', 1, 2)];
+    const gebote = [gebot(2, 150, { slotLabel: 'Familie' })];
+    const result = berechneAuswertung(800, gebote, slots);
+    expect(result.richtwert).toBe(100);
   });
 });
 
 // ---------------------------------------------------------------------------
-// berechneBeitrag
+// Fehlbetrag-Fall: alle bieten weniger als Richtwert-Anteil
 // ---------------------------------------------------------------------------
 
-describe('berechneBeitrag', () => {
-  it('Gebot unter Anteil → zahlt nur Gebot', () => {
-    const g = gebot(1, 70);
-    const ergebnis = berechneBeitrag(g, 100);
-    expect(ergebnis.anteil).toBe(100);
-    expect(ergebnis.solidarischerBeitrag).toBe(70);
-    expect(ergebnis.differenz).toBe(0);
-  });
-
-  it('Gebot über Anteil → wird auf Anteil reduziert', () => {
-    const g = gebot(1, 150);
-    const ergebnis = berechneBeitrag(g, 100);
-    expect(ergebnis.anteil).toBe(100);
-    expect(ergebnis.solidarischerBeitrag).toBe(100);
-    expect(ergebnis.differenz).toBe(50);
-  });
-
-  it('Gebot exakt gleich Anteil → zahlt Anteil', () => {
-    const g = gebot(1, 100);
-    const ergebnis = berechneBeitrag(g, 100);
-    expect(ergebnis.solidarischerBeitrag).toBe(100);
-    expect(ergebnis.differenz).toBe(0);
-  });
-
-  it('Faktor 0.5: Anteil ist halb so groß', () => {
-    const g = gebot(0.5, 30);
-    const ergebnis = berechneBeitrag(g, 100);
-    // anteil = 0.5 × 100 = 50, Gebot 30 < 50 → beitrag = 30
-    expect(ergebnis.anteil).toBe(50);
-    expect(ergebnis.solidarischerBeitrag).toBe(30);
-  });
-
-  it('gibt korrekte Metadaten zurück', () => {
-    const g = gebot(2, 80, { emojiId: '🦊🌙⭐', slotLabel: 'Familie' });
-    const ergebnis = berechneBeitrag(g, 100);
-    expect(ergebnis.emojiId).toBe('🦊🌙⭐');
-    expect(ergebnis.slotLabel).toBe('Familie');
-    expect(ergebnis.gewichtung).toBe(2);
-    expect(ergebnis.gebot).toBe(80);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// berechneAuswertung
-// ---------------------------------------------------------------------------
-
-describe('berechneAuswertung', () => {
-  it('alle zahlen weniger als Richtwert → Fehlbetrag entsteht', () => {
+describe('Fehlbetrag-Fall', () => {
+  it('kein geldZurueck, summeBeitraege < gesamtkosten', () => {
     // richtwert = 1000 / 2 = 500
-    // beide zahlen je 200 → beitrag 200 + 200 = 400 < 1000 → fehlbetrag = 600
+    // beide bieten 200 < richtwertAnteil 500 → kein ueberRichtwert
+    const slots = [slot('A', 1), slot('B', 1)];
     const gebote = [gebot(1, 200), gebot(1, 200)];
-    const result = berechneAuswertung(1000, gebote);
+    const result = berechneAuswertung(1000, gebote, slots);
+
     expect(result.fehlbetrag).toBeCloseTo(600);
     expect(result.ueberschuss).toBe(0);
+    for (const e of result.ergebnisse) {
+      expect(e.geldZurueck).toBe(0);
+      expect(e.solidarischerBeitrag).toBe(e.gebot);
+    }
   });
 
-  it('alle bieten mehr als Richtwert → Überschuss möglich, alle reduziert', () => {
-    // richtwert = 100 / 2 = 50
-    // beide bieten 200, anteil je 50 → beitrag 50 + 50 = 100 = gesamtkosten
-    const gebote = [gebot(1, 200), gebot(1, 200)];
-    const result = berechneAuswertung(100, gebote);
-    expect(result.summeBeitraege).toBeCloseTo(100);
+  it('fehlbetrag = gesamtkosten − summeBeitraege', () => {
+    const slots = [slot('A', 1)];
+    const gebote = [gebot(1, 50)];
+    const result = berechneAuswertung(200, gebote, slots);
+    expect(result.fehlbetrag).toBeCloseTo(result.gesamtkosten - result.summeBeitraege);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Überschuss-Fall: alle bieten mehr als Richtwert-Anteil
+// ---------------------------------------------------------------------------
+
+describe('Überschuss-Fall', () => {
+  it('geldZurueck verteilt, summeBeitraege ≈ gesamtkosten', () => {
+    // richtwert = 100 / 2 = 50, beide bieten 80 → ueberRichtwert je 30
+    // überschuss = 160 − 100 = 60, geldZurueck je 30
+    // solidarischerBeitrag je 80 − 30 = 50
+    const slots = [slot('A', 1), slot('B', 1)];
+    const gebote = [gebot(1, 80), gebot(1, 80)];
+    const result = berechneAuswertung(100, gebote, slots);
+
+    expect(result.ueberschuss).toBeCloseTo(60);
     expect(result.fehlbetrag).toBe(0);
-    // kein Überschuss, exakt gedeckt
-    expect(result.ueberschuss).toBeCloseTo(0);
+    expect(result.summeBeitraege).toBeCloseTo(100);
+    for (const e of result.ergebnisse) {
+      expect(e.geldZurueck).toBeCloseTo(30);
+      expect(e.solidarischerBeitrag).toBeCloseTo(50);
+    }
   });
 
-  it('Beispiel aus ANFORDERUNGEN.md: gemischte Gebote', () => {
-    // Slot "Familie" Faktor 2.0: Gebot 80
-    // Slot "Student" Faktor 0.5: Gebot 15
-    // richtwert = 1000 / (2.0 + 0.5) = 400
-    // anteil Familie = 800, Gebot 80 < 800 → beitrag = 80
-    // anteil Student = 200, Gebot 15 < 200 → beitrag = 15
-    // summeBeitraege = 95, fehlbetrag = 905
+  it('nur Personen mit ueberRichtwert bekommen geldZurueck', () => {
+    // richtwert = 100 / 2 = 50
+    // A bietet 80 → ueberRichtwert 30
+    // B bietet 30 → kein ueberRichtwert (30 < 50)
+    // überschuss = 110 − 100 = 10
+    // A: geldZurueck = (30/30) × 10 = 10, beitrag = 70
+    // B: geldZurueck = 0, beitrag = 30
+    const slots = [slot('A', 1), slot('B', 1)];
     const gebote = [
-      gebot(2.0, 80, { emojiId: '🐼🚀🌈', slotLabel: 'Familie' }),
-      gebot(0.5, 15, { emojiId: '🦊🌙⭐', slotLabel: 'Student' }),
+      gebot(1, 80, { slotLabel: 'A' }),
+      gebot(1, 30, { slotLabel: 'B' }),
     ];
-    const result = berechneAuswertung(1000, gebote);
-    expect(result.richtwert).toBeCloseTo(400);
-    expect(result.ergebnisse[0].solidarischerBeitrag).toBe(80);
-    expect(result.ergebnisse[1].solidarischerBeitrag).toBe(15);
-    expect(result.summeBeitraege).toBeCloseTo(95);
-    expect(result.fehlbetrag).toBeCloseTo(905);
+    const result = berechneAuswertung(100, gebote, slots);
+
+    const a = result.ergebnisse.find((e) => e.slotLabel === 'A')!;
+    const b = result.ergebnisse.find((e) => e.slotLabel === 'B')!;
+
+    expect(a.geldZurueck).toBeCloseTo(10);
+    expect(a.solidarischerBeitrag).toBeCloseTo(70);
+    expect(b.geldZurueck).toBe(0);
+    expect(b.solidarischerBeitrag).toBe(30);
+    expect(result.summeBeitraege).toBeCloseTo(100);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Gemischter Fall: Überschuss proportional auf Overbidder verteilt
+// ---------------------------------------------------------------------------
+
+describe('Gemischter Fall', () => {
+  it('proportionale Verteilung bei unterschiedlichen ueberRichtwert-Beträgen', () => {
+    // richtwert = 300 / 3 = 100
+    // A: gewichtung=1, Gebot=180 → ueberRichtwert=80
+    // B: gewichtung=1, Gebot=130 → ueberRichtwert=30
+    // C: gewichtung=1, Gebot=60  → kein ueberRichtwert
+    // summeGebote = 370, überschuss = 70
+    // summeUeberRichtwert = 110
+    // A geldZurueck = (80/110) × 70 ≈ 50.91
+    // B geldZurueck = (30/110) × 70 ≈ 19.09
+    const slots = [slot('A', 1), slot('B', 1), slot('C', 1)];
+    const gebote = [
+      gebot(1, 180, { slotLabel: 'A' }),
+      gebot(1, 130, { slotLabel: 'B' }),
+      gebot(1, 60, { slotLabel: 'C' }),
+    ];
+    const result = berechneAuswertung(300, gebote, slots);
+
+    const a = result.ergebnisse.find((e) => e.slotLabel === 'A')!;
+    const b = result.ergebnisse.find((e) => e.slotLabel === 'B')!;
+    const c = result.ergebnisse.find((e) => e.slotLabel === 'C')!;
+
+    expect(a.geldZurueck).toBeGreaterThan(0);
+    expect(b.geldZurueck).toBeGreaterThan(0);
+    expect(c.geldZurueck).toBe(0);
+    expect(a.geldZurueck).toBeGreaterThan(b.geldZurueck);
+    expect(result.summeBeitraege).toBeCloseTo(300);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Normalfall: summeGebote = gesamtkosten → kein geldZurueck
+// ---------------------------------------------------------------------------
+
+describe('Normalfall (exakt gedeckt)', () => {
+  it('keine Überschuss-Verteilung wenn summeGebote = gesamtkosten', () => {
+    // richtwert = 200 / 2 = 100, beide bieten exakt 100
+    const slots = [slot('A', 1), slot('B', 1)];
+    const gebote = [gebot(1, 100), gebot(1, 100)];
+    const result = berechneAuswertung(200, gebote, slots);
+
+    expect(result.ueberschuss).toBe(0);
+    expect(result.fehlbetrag).toBe(0);
+    for (const e of result.ergebnisse) {
+      expect(e.geldZurueck).toBe(0);
+      expect(e.solidarischerBeitrag).toBeCloseTo(e.gebot);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Korrekte Felder in GebotErgebnis
+// ---------------------------------------------------------------------------
+
+describe('GebotErgebnis Felder', () => {
+  it('richtwertAnteil = gewichtung × richtwert', () => {
+    // richtwert = 300 / (1+2) = 100
+    const slots = [slot('A', 1), slot('B', 2)];
+    const gebote = [
+      gebot(1, 80, { slotLabel: 'A' }),
+      gebot(2, 250, { slotLabel: 'B' }),
+    ];
+    const result = berechneAuswertung(300, gebote, slots);
+
+    const a = result.ergebnisse.find((e) => e.slotLabel === 'A')!;
+    const b = result.ergebnisse.find((e) => e.slotLabel === 'B')!;
+
+    expect(a.richtwertAnteil).toBeCloseTo(1 * result.richtwert);
+    expect(b.richtwertAnteil).toBeCloseTo(2 * result.richtwert);
   });
 
-  it('enthält korrekte Anzahl Ergebnisse', () => {
-    const gebote = [gebot(1, 50), gebot(1, 60), gebot(2, 100)];
-    const result = berechneAuswertung(300, gebote);
-    expect(result.ergebnisse).toHaveLength(3);
+  it('differenz = gebot − solidarischerBeitrag', () => {
+    const slots = [slot('A', 1), slot('B', 1)];
+    const gebote = [gebot(1, 120), gebot(1, 80)];
+    const result = berechneAuswertung(200, gebote, slots);
+
+    for (const e of result.ergebnisse) {
+      expect(e.differenz).toBeCloseTo(e.gebot - e.solidarischerBeitrag);
+    }
   });
 
-  it('fehlbetrag und ueberschuss sind nie beide > 0', () => {
-    const gebote = [gebot(1, 50), gebot(1, 200)];
-    const result = berechneAuswertung(100, gebote);
-    expect(result.fehlbetrag === 0 || result.ueberschuss === 0).toBe(true);
-  });
-
-  it('summeGebote ist die Summe aller rohen Gebote', () => {
+  it('summeGebote enthält rohe Gebots-Summe', () => {
+    const slots = [slot('A', 1), slot('B', 1)];
     const gebote = [gebot(1, 50), gebot(1, 70)];
-    const result = berechneAuswertung(200, gebote);
+    const result = berechneAuswertung(200, gebote, slots);
     expect(result.summeGebote).toBe(120);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Rundungskorrektur: summeBeitraege ≈ gesamtkosten (nie größer)
+// ---------------------------------------------------------------------------
+
+describe('Rundungskorrektur', () => {
+  it('summeBeitraege weicht höchstens 1 Cent von gesamtkosten ab', () => {
+    // Schiefer Fall mit vielen Dezimalstellen
+    const slots = [slot('A', 1), slot('B', 1), slot('C', 1)];
+    const gebote = [gebot(1, 100), gebot(1, 100), gebot(1, 100)];
+    const result = berechneAuswertung(299.99, gebote, slots);
+
+    expect(Math.abs(result.summeBeitraege - result.gesamtkosten)).toBeLessThanOrEqual(0.01);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Fehlerfälle
+// ---------------------------------------------------------------------------
+
+describe('Fehlerfälle', () => {
+  const einSlot = [slot('A', 1)];
+
+  it('wirft bei Gesamtkosten = 0', () => {
+    expect(() => berechneAuswertung(0, [gebot(1, 50)], einSlot)).toThrow(
+      'Gesamtkosten müssen größer als 0 sein',
+    );
+  });
+
+  it('wirft bei negativen Gesamtkosten', () => {
+    expect(() => berechneAuswertung(-100, [gebot(1, 50)], einSlot)).toThrow(
+      'Gesamtkosten müssen größer als 0 sein',
+    );
   });
 
   it('wirft bei leerer Gebote-Liste', () => {
-    expect(() => berechneAuswertung(100, [])).toThrow('Keine Gebote vorhanden');
+    expect(() => berechneAuswertung(100, [], einSlot)).toThrow('Keine Gebote vorhanden');
   });
 
-  it('wirft bei Gesamtkosten <= 0', () => {
-    expect(() => berechneAuswertung(0, [gebot(1, 50)])).toThrow(
-      'Gesamtkosten müssen größer als 0 sein',
-    );
-    expect(() => berechneAuswertung(-100, [gebot(1, 50)])).toThrow(
-      'Gesamtkosten müssen größer als 0 sein',
-    );
+  it('wirft bei leerer Slots-Liste', () => {
+    expect(() => berechneAuswertung(100, [gebot(1, 50)], [])).toThrow('Keine Slots definiert');
   });
 });

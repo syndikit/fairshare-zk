@@ -243,7 +243,7 @@ import Layout from '../layouts/Layout.astro';
 
     try {
       const buffer = await file.arrayBuffer();
-      const { rundenname, gesamtkosten, personen } = parseSplid(buffer);
+      const { rundenname, gesamtkosten, personen } = await parseSplid(buffer);
 
       // Rundenname befüllen
       (form.querySelector('#rundeName') as HTMLInputElement).value = rundenname;

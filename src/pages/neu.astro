@@ -8,6 +8,22 @@ import Layout from '../layouts/Layout.astro';
     <h1 class="text-2xl font-semibold mb-1">Neue Runde erstellen</h1>
     <p class="text-slate-500 text-sm mb-6">Alle Daten werden im Browser verschlüsselt — der Server sieht nie Klartext.</p>
 
+    <!-- Splid-Import -->
+    <div class="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+      <p class="text-sm font-medium text-slate-700 mb-2">Aus Splid importieren</p>
+      <p class="text-xs text-slate-500 mb-3">Exportiere deine Runde in Splid als XLSX und lade sie hier hoch. Die Datei verlässt deinen Browser nicht.</p>
+      <input type="file" id="splid-file" accept=".xlsx,.xls" class="hidden" />
+      <button
+        type="button"
+        id="splid-import-btn"
+        class="border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 transition-colors"
+      >
+        XLSX-Datei auswählen…
+      </button>
+      <div id="splid-erfolg" class="hidden mt-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2"></div>
+      <div id="splid-fehler" class="hidden mt-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></div>
+    </div>
+
     <form id="runde-form" class="space-y-6">
       <!-- Runden-Name -->
       <div>
@@ -181,6 +197,7 @@ import Layout from '../layouts/Layout.astro';
     encrypt,
     exportKey,
   } from '../lib/crypto';
+  import { parseSplid } from '../lib/splid';
 
   const form = document.getElementById('runde-form') as HTMLFormElement;
   const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
@@ -204,6 +221,78 @@ import Layout from '../layouts/Layout.astro';
       btn.classList.toggle('hidden', btns.length <= 1);
     });
   }
+
+  // ---------------------------------------------------------------------------
+  // Splid-Import
+  // ---------------------------------------------------------------------------
+
+  const splidFileInput = document.getElementById('splid-file') as HTMLInputElement;
+  const splidErfolgEl = document.getElementById('splid-erfolg') as HTMLDivElement;
+  const splidFehlerEl = document.getElementById('splid-fehler') as HTMLDivElement;
+
+  document.getElementById('splid-import-btn')!.addEventListener('click', () => {
+    splidFileInput.click();
+  });
+
+  splidFileInput.addEventListener('change', async () => {
+    const file = splidFileInput.files?.[0];
+    if (!file) return;
+
+    splidErfolgEl.classList.add('hidden');
+    splidFehlerEl.classList.add('hidden');
+
+    try {
+      const buffer = await file.arrayBuffer();
+      const { rundenname, gesamtkosten, personen } = parseSplid(buffer);
+
+      // Rundenname befüllen
+      (form.querySelector('#rundeName') as HTMLInputElement).value = rundenname;
+
+      // Gesamtkosten befüllen
+      (form.querySelector('#gesamtkosten') as HTMLInputElement).value =
+        gesamtkosten.toFixed(2);
+
+      // Slots ersetzen: alle außer dem ersten entfernen, dann Felder befüllen
+      const alleSlots = slotsContainer.querySelectorAll<HTMLDivElement>('.slot-eintrag');
+      alleSlots.forEach((s, i) => { if (i > 0) s.remove(); });
+
+      const ersterSlot = slotsContainer.querySelector('.slot-eintrag') as HTMLDivElement;
+
+      function befuelleSlot(slotEl: HTMLDivElement, label: string, ausgaben: number) {
+        (slotEl.querySelector('[name="label[]"]') as HTMLInputElement).value = label;
+        (slotEl.querySelector('[name="gewichtung[]"]') as HTMLInputElement).value = '1';
+        (slotEl.querySelector('[name="anzahl[]"]') as HTMLInputElement).value = '1';
+        // Ausgaben als data-Attribut speichern für die spätere Blob-Erstellung
+        slotEl.dataset.ausgaben = String(ausgaben);
+      }
+
+      befuelleSlot(ersterSlot, personen[0].name, personen[0].ausgaben);
+
+      for (let i = 1; i < personen.length; i++) {
+        const vorlage = slotsContainer.querySelector('.slot-eintrag') as HTMLDivElement;
+        const klon = vorlage.cloneNode(true) as HTMLDivElement;
+        befuelleSlot(klon, personen[i].name, personen[i].ausgaben);
+        slotsContainer.appendChild(klon);
+      }
+
+      aktualisiereEntfernenButtons();
+
+      const namen = personen.map((p) => p.name).join(', ');
+      splidErfolgEl.textContent = `${personen.length} Personen importiert: ${namen}`;
+      splidErfolgEl.classList.remove('hidden');
+    } catch (err) {
+      splidFehlerEl.textContent =
+        err instanceof Error ? err.message : 'Unbekannter Fehler beim Importieren.';
+      splidFehlerEl.classList.remove('hidden');
+    }
+
+    // Input zurücksetzen damit dieselbe Datei nochmals gewählt werden kann
+    splidFileInput.value = '';
+  });
+
+  // ---------------------------------------------------------------------------
+  // Slot hinzufügen
+  // ---------------------------------------------------------------------------
 
   // Slot hinzufügen
   document.getElementById('slot-hinzufuegen')!.addEventListener('click', () => {
@@ -259,11 +348,17 @@ import Layout from '../layouts/Layout.astro';
         (el) => parseInt(el.value, 10),
       );
 
-      const slots = labels.map((label, i) => ({
-        label,
-        gewichtung: gewichtungen[i],
-        anzahl: anzahlen[i],
-      }));
+      const slotEintraege = [...slotsContainer.querySelectorAll<HTMLDivElement>('.slot-eintrag')];
+      const slots = labels.map((label, i) => {
+        const ausgabenRaw = slotEintraege[i]?.dataset.ausgaben;
+        const ausgaben = ausgabenRaw !== undefined ? parseFloat(ausgabenRaw) : undefined;
+        return {
+          label,
+          gewichtung: gewichtungen[i],
+          anzahl: anzahlen[i],
+          ...(ausgaben !== undefined && isFinite(ausgaben) ? { ausgaben } : {}),
+        };
+      });
 
       // Schlüssel generieren
       const partKey = await generatePartKey();

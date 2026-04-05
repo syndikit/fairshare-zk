@@ -64,6 +64,8 @@ import Layout from '../../../../layouts/Layout.astro';
             <th class="pb-2 pr-4 font-medium text-right">Faktor</th>
             <th class="pb-2 pr-4 font-medium text-right">Gebot</th>
             <th class="pb-2 pr-4 font-medium text-right">Beitrag</th>
+            <th class="pb-2 pr-4 font-medium text-right splid-spalte hidden">Ausgaben (Splid)</th>
+            <th class="pb-2 pr-4 font-medium text-right splid-spalte hidden">Noch zu zahlen</th>
             <th class="pb-2 font-medium text-right">Differenz</th>
           </tr>
         </thead>
@@ -99,7 +101,7 @@ import Layout from '../../../../layouts/Layout.astro';
     gesamtkosten: number;
     adminPubKey: string;
     hmacKey: string;
-    slots: { label: string; gewichtung: number; anzahl: number }[];
+    slots: { label: string; gewichtung: number; anzahl: number; ausgaben?: number }[];
   }
 
   function eur(value: number): string {
@@ -207,18 +209,44 @@ import Layout from '../../../../layouts/Layout.astro';
       document.getElementById('ueberschuss-text')!.textContent = eur(auswertung.ueberschuss);
     }
 
+    // Splid-Ausgaben-Map aufbauen (slotLabel → ausgaben)
+    const ausgabenMap = new Map<string, number>();
+    for (const slot of blob.slots) {
+      if (slot.ausgaben !== undefined) {
+        ausgabenMap.set(slot.label, slot.ausgaben);
+      }
+    }
+    const hatSplidDaten = ausgabenMap.size > 0;
+
+    // Splid-Spalten einblenden wenn Daten vorhanden
+    if (hatSplidDaten) {
+      document.querySelectorAll('.splid-spalte').forEach((el) => el.classList.remove('hidden'));
+    }
+
     // Tabelle befüllen
     const tbody = document.getElementById('tabelle-body')!;
     for (const e of auswertung.ergebnisse) {
       const tr = document.createElement('tr');
       const diffSign = e.differenz > 0.005 ? '+' : '';
       const diffClass = e.differenz > 0.005 ? 'text-green-700' : 'text-slate-600';
+
+      const ausgaben = ausgabenMap.get(e.slotLabel) ?? 0;
+      const nochZuZahlen = e.solidarischerBeitrag - ausgaben;
+      const nochSign = nochZuZahlen > 0.005 ? '+' : '';
+      const nochClass = nochZuZahlen > 0.005 ? 'text-red-600' : 'text-green-700';
+
+      const splidZellen = hatSplidDaten
+        ? `<td class="py-2 pr-4 text-right text-slate-600">${eur(ausgaben)}</td>
+           <td class="py-2 pr-4 text-right font-medium ${nochClass}">${nochSign}${eur(nochZuZahlen)}</td>`
+        : '';
+
       tr.innerHTML = `
         <td class="py-2 pr-4 text-lg">${e.emojiId}</td>
         <td class="py-2 pr-4 text-slate-800">${e.slotLabel}</td>
         <td class="py-2 pr-4 text-right text-slate-600">${e.gewichtung}</td>
         <td class="py-2 pr-4 text-right text-slate-600">${eur(e.gebot)}</td>
         <td class="py-2 pr-4 text-right font-medium">${eur(e.solidarischerBeitrag)}</td>
+        ${splidZellen}
         <td class="py-2 text-right ${diffClass}">${diffSign}${eur(e.differenz)}</td>
       `;
       tbody.appendChild(tr);

@@ -1,0 +1,10 @@
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <rect width="120" height="120" rx="26" fill="#e8dfa0"/>
+
+  <!-- Blatt 1 dunkel, links geneigt -->
+  <ellipse cx="52" cy="50" rx="18" ry="30" fill="#27500A" transform="rotate(-25 52 50)"/>
+  <!-- Blatt 2 mittelgrün, rechts geneigt -->
+  <ellipse cx="68" cy="54" rx="14" ry="24" fill="#639922" transform="rotate(20 68 54)"/>
+  <!-- Stiel -->
+  <rect x="58" y="76" width="4" height="18" rx="2" fill="#27500A"/>
+</svg>

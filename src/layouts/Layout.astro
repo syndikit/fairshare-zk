@@ -1,0 +1,43 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title} – FairShare</title>
+  </head>
+  <body class="min-h-screen bg-slate-50 text-slate-900">
+    <div class="mx-auto max-w-2xl px-4 pt-8 pb-3">
+      <div class="flex items-center justify-between">
+        <a href="/" aria-label="Zurück zur Startseite" class="inline-flex items-center gap-3">
+          <img src="/syndikit-c-icon.svg" alt="" aria-hidden="true" class="h-12 w-auto" />
+          <span class="flex flex-col leading-tight">
+            <span style="font-family: Georgia, serif; font-size: 1.5rem; font-weight: 700; color: #1a1a1a; letter-spacing: -0.02em;">Syndi<span style="font-weight: 300; color: #3B6D11;">Kit</span></span>
+            <span style="font-family: Georgia, serif; font-size: 1rem; font-weight: 400; color: #1a1a1a; letter-spacing: -0.01em;">FairShare</span>
+          </span>
+        </a>
+        <nav class="flex items-center gap-1">
+          <a href="/neu" class="px-3 py-1.5 rounded-lg text-sm text-slate-600 hover:bg-slate-200 transition-colors">Neue Runde</a>
+          <a id="nav-meine-runden" href="/meine-runden" class="hidden px-3 py-1.5 rounded-lg text-sm text-slate-600 hover:bg-slate-200 transition-colors">Meine Runden</a>
+        </nav>
+      </div>
+    </div>
+    <script>
+      if (localStorage.getItem('fairshare_sync_id')) {
+        document.getElementById('nav-meine-runden')?.classList.remove('hidden');
+      }
+    </script>
+    <main class="mx-auto max-w-2xl px-4 py-6">
+      <slot />
+    </main>
+  </body>
+</html>

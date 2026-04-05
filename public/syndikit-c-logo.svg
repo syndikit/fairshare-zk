@@ -1,0 +1,23 @@
+<svg width="480" height="160" viewBox="0 0 480 160" xmlns="http://www.w3.org/2000/svg">
+  <rect width="480" height="160" fill="#ffffff"/>
+
+  <!-- Blatt 1 dunkel, links geneigt -->
+  <ellipse cx="68" cy="68" rx="22" ry="36" fill="#27500A" transform="rotate(-25 68 68)"/>
+  <!-- Blatt 2 hell, rechts geneigt -->
+  <ellipse cx="86" cy="72" rx="16" ry="28" fill="#639922" transform="rotate(20 86 72)"/>
+  <!-- Stiel -->
+  <rect x="75" y="98" width="4" height="20" rx="2" fill="#27500A"/>
+
+  <!-- Wordmark -->
+  <text x="130" y="76" font-family="Georgia, serif" font-size="42" font-weight="700" fill="#1a1a1a" letter-spacing="-1">Syndi</text>
+  <text x="254" y="76" font-family="Georgia, serif" font-size="42" font-weight="300" fill="#3B6D11" letter-spacing="-1">Kit</text>
+
+  <!-- Tagline -->
+  <text x="130" y="103" font-family="Georgia, serif" font-size="13" font-weight="400" fill="#999" letter-spacing="1.5">tools for solidarity economics</text>
+
+  <line x1="130" y1="118" x2="344" y2="118" stroke="#e0e0e0" stroke-width="0.5"/>
+
+  <!-- App badge -->
+  <rect x="130" y="126" width="120" height="22" rx="11" fill="#3B6D11" opacity="0.12"/>
+  <text x="190" y="141" font-family="Georgia, serif" font-size="11" font-weight="600" fill="#27500A" text-anchor="middle" letter-spacing="0.8">· Fairshare</text>
+</svg>

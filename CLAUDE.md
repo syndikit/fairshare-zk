@@ -16,7 +16,7 @@ aussehen. Im Ordner `input/` liegen alle relevanten Dateien aus dem alten Projek
 
 | Quelldatei (`input/`) | Ziel im neuen Projekt |
 |---|---|
-| `tailwind.config.mjs` | `tailwind.config.mjs` |
+| `astro.config.mjs` | `astro.config.mjs` |
 | `src/styles/global.css` | `src/styles/global.css` |
 | `src/layouts/Layout.astro` | `src/layouts/Layout.astro` |
 | `public/syndikit-c-icon.svg` | `public/syndikit-c-icon.svg` |

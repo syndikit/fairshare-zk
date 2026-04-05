@@ -13,6 +13,7 @@ export interface Slot {
   label: string;
   gewichtung: number;
   anzahl: number;
+  ausgaben?: number; // aus Splid importierte Ausgaben der Person (optional)
 }
 
 export interface Gebot {

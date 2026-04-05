@@ -1,0 +1,320 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Neue Runde">
+  <!-- Formular-Bereich -->
+  <div id="form-bereich">
+    <h1 class="text-2xl font-semibold mb-1">Neue Runde erstellen</h1>
+    <p class="text-slate-500 text-sm mb-6">Alle Daten werden im Browser verschlüsselt — der Server sieht nie Klartext.</p>
+
+    <form id="runde-form" class="space-y-6">
+      <!-- Runden-Name -->
+      <div>
+        <label for="rundeName" class="block text-sm font-medium text-slate-700 mb-1">
+          Name der Runde
+        </label>
+        <input
+          type="text"
+          id="rundeName"
+          name="rundeName"
+          required
+          placeholder="z.B. Haushaltskasse Oktober"
+          class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+        />
+      </div>
+
+      <!-- Gesamtkosten -->
+      <div>
+        <label for="gesamtkosten" class="block text-sm font-medium text-slate-700 mb-1">
+          Gesamtkosten (€)
+        </label>
+        <input
+          type="number"
+          id="gesamtkosten"
+          name="gesamtkosten"
+          required
+          min="1"
+          step="0.01"
+          placeholder="z.B. 1200"
+          class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+        />
+      </div>
+
+      <!-- Slot-Typen -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <label class="block text-sm font-medium text-slate-700">Slot-Typen</label>
+          <button
+            type="button"
+            id="slot-hinzufuegen"
+            class="text-sm text-green-700 hover:text-green-900 font-medium"
+          >
+            + Typ hinzufügen
+          </button>
+        </div>
+        <div id="slots-container" class="space-y-2">
+          <!-- Initial ein Slot -->
+          <div class="slot-eintrag flex gap-2 items-center bg-white border border-slate-200 rounded-lg p-3">
+            <input
+              type="text"
+              name="label[]"
+              placeholder="Label (optional)"
+              class="flex-1 border border-slate-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+            />
+            <div class="flex items-center gap-1">
+              <span class="text-xs text-slate-500">Faktor</span>
+              <input
+                type="number"
+                name="gewichtung[]"
+                value="1"
+                min="0.1"
+                step="0.1"
+                required
+                class="w-16 border border-slate-300 rounded-md px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-green-600"
+              />
+            </div>
+            <div class="flex items-center gap-1">
+              <span class="text-xs text-slate-500">Plätze</span>
+              <input
+                type="number"
+                name="anzahl[]"
+                value="1"
+                min="1"
+                step="1"
+                required
+                class="w-16 border border-slate-300 rounded-md px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-green-600"
+              />
+            </div>
+            <button
+              type="button"
+              class="slot-entfernen text-slate-400 hover:text-red-500 text-lg leading-none hidden"
+              aria-label="Slot entfernen"
+            >×</button>
+          </div>
+        </div>
+        <p class="text-xs text-slate-400 mt-1">Label ist optional. Ohne Label heißt der Slot „Slot".</p>
+      </div>
+
+      <!-- Fehler -->
+      <div id="fehler" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm"></div>
+
+      <!-- Submit -->
+      <button
+        type="submit"
+        id="submit-btn"
+        class="w-full bg-green-700 text-white rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        Runde erstellen
+      </button>
+    </form>
+  </div>
+
+  <!-- Ergebnis-Bereich -->
+  <div id="ergebnis-bereich" class="hidden space-y-6">
+    <div>
+      <h1 class="text-2xl font-semibold mb-1">Runde erstellt</h1>
+      <p class="text-slate-500 text-sm">Speichere beide Links — sie werden hier nicht gespeichert.</p>
+    </div>
+
+    <!-- Teilnehmer-Link -->
+    <div class="bg-white border border-slate-200 rounded-xl p-4 space-y-2">
+      <div class="flex items-center justify-between">
+        <p class="text-sm font-medium text-slate-700">Teilnehmer-Link</p>
+        <span class="text-xs text-slate-400">zum Teilen mit der Gruppe</span>
+      </div>
+      <div class="flex gap-2">
+        <input
+          id="teilnehmer-link"
+          type="text"
+          readonly
+          class="flex-1 border border-slate-300 rounded-md px-2 py-1.5 text-xs text-slate-600 bg-slate-50 font-mono"
+        />
+        <button
+          id="copy-teilnehmer"
+          class="border border-slate-300 rounded-md px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap"
+        >
+          Kopieren
+        </button>
+      </div>
+    </div>
+
+    <!-- Admin-Link -->
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
+      <div class="flex items-center justify-between">
+        <p class="text-sm font-medium text-amber-800">Admin-Link</p>
+        <span class="text-xs text-amber-600">nur für dich — sicher aufbewahren</span>
+      </div>
+      <div class="flex gap-2">
+        <input
+          id="admin-link"
+          type="text"
+          readonly
+          class="flex-1 border border-amber-300 rounded-md px-2 py-1.5 text-xs text-amber-900 bg-amber-100 font-mono"
+        />
+        <button
+          id="copy-admin"
+          class="border border-amber-300 rounded-md px-3 py-1.5 text-xs text-amber-800 hover:bg-amber-200 transition-colors whitespace-nowrap"
+        >
+          Kopieren
+        </button>
+      </div>
+      <p class="text-xs text-amber-700">
+        ⚠️ Dieser Link enthält deinen privaten Schlüssel. Wer ihn hat, kann alle Gebote einsehen.
+      </p>
+    </div>
+
+    <a
+      href="/neu"
+      class="block text-center text-sm text-slate-500 hover:text-slate-700 transition-colors"
+    >
+      Weitere Runde erstellen
+    </a>
+  </div>
+</Layout>
+
+<script>
+  import {
+    generatePartKey,
+    generateAdminKeyPair,
+    generateHmacKey,
+    encrypt,
+    exportKey,
+  } from '../lib/crypto';
+
+  const form = document.getElementById('runde-form') as HTMLFormElement;
+  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+  const fehlerEl = document.getElementById('fehler') as HTMLDivElement;
+  const formBereich = document.getElementById('form-bereich') as HTMLDivElement;
+  const ergebnisBereich = document.getElementById('ergebnis-bereich') as HTMLDivElement;
+  const slotsContainer = document.getElementById('slots-container') as HTMLDivElement;
+
+  function zeigeFehler(msg: string) {
+    fehlerEl.textContent = msg;
+    fehlerEl.classList.remove('hidden');
+  }
+
+  function versteckeFehler() {
+    fehlerEl.classList.add('hidden');
+  }
+
+  function aktualisiereEntfernenButtons() {
+    const btns = slotsContainer.querySelectorAll<HTMLButtonElement>('.slot-entfernen');
+    btns.forEach((btn) => {
+      btn.classList.toggle('hidden', btns.length <= 1);
+    });
+  }
+
+  // Slot hinzufügen
+  document.getElementById('slot-hinzufuegen')!.addEventListener('click', () => {
+    const vorlage = slotsContainer.querySelector('.slot-eintrag') as HTMLDivElement;
+    const klon = vorlage.cloneNode(true) as HTMLDivElement;
+    // Felder zurücksetzen
+    klon.querySelectorAll('input').forEach((inp) => {
+      if (inp.name === 'gewichtung[]') inp.value = '1';
+      else if (inp.name === 'anzahl[]') inp.value = '1';
+      else inp.value = '';
+    });
+    slotsContainer.appendChild(klon);
+    aktualisiereEntfernenButtons();
+  });
+
+  // Slot entfernen (delegiert)
+  slotsContainer.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (!target.classList.contains('slot-entfernen')) return;
+    const eintrag = target.closest('.slot-eintrag') as HTMLDivElement;
+    eintrag.remove();
+    aktualisiereEntfernenButtons();
+  });
+
+  // Kopieren
+  function kopieren(inputId: string) {
+    const el = document.getElementById(inputId) as HTMLInputElement;
+    navigator.clipboard.writeText(el.value);
+  }
+  document.getElementById('copy-teilnehmer')!.addEventListener('click', () => kopieren('teilnehmer-link'));
+  document.getElementById('copy-admin')!.addEventListener('click', () => kopieren('admin-link'));
+
+  // Formular absenden
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    versteckeFehler();
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Verschlüssele…';
+
+    try {
+      const rundeName = (form.querySelector('#rundeName') as HTMLInputElement).value.trim();
+      const gesamtkosten = parseFloat(
+        (form.querySelector('#gesamtkosten') as HTMLInputElement).value,
+      );
+
+      const labels = [...form.querySelectorAll<HTMLInputElement>('[name="label[]"]')].map(
+        (el) => el.value.trim() || 'Slot',
+      );
+      const gewichtungen = [...form.querySelectorAll<HTMLInputElement>('[name="gewichtung[]"]')].map(
+        (el) => parseFloat(el.value),
+      );
+      const anzahlen = [...form.querySelectorAll<HTMLInputElement>('[name="anzahl[]"]')].map(
+        (el) => parseInt(el.value, 10),
+      );
+
+      const slots = labels.map((label, i) => ({
+        label,
+        gewichtung: gewichtungen[i],
+        anzahl: anzahlen[i],
+      }));
+
+      // Schlüssel generieren
+      const partKey = await generatePartKey();
+      const { publicKey: adminPubKey, privateKey: adminPrivKey } = await generateAdminKeyPair();
+      const hmacKey = await generateHmacKey();
+
+      // Blob zusammenstellen + verschlüsseln
+      const blob = {
+        rundeName,
+        gesamtkosten,
+        adminPubKey: await exportKey(adminPubKey),
+        hmacKey: await exportKey(hmacKey),
+        slots,
+      };
+      const encTeilnehmerBlob = await encrypt(partKey, JSON.stringify(blob));
+
+      // API-Aufruf
+      const res = await fetch('/api/runde/erstellen', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ encTeilnehmerBlob }),
+      });
+
+      if (!res.ok) {
+        const { error } = (await res.json()) as { error: string };
+        zeigeFehler(error ?? 'Unbekannter Fehler');
+        return;
+      }
+
+      const { id, adminToken } = (await res.json()) as { id: string; adminToken: string };
+
+      // Schlüssel exportieren
+      const partKeyB64 = await exportKey(partKey);
+      const adminPrivKeyB64 = await exportKey(adminPrivKey);
+
+      // Links zusammensetzen
+      const origin = window.location.origin;
+      const teilnehmerLink = `${origin}/runde/${id}#pk=${partKeyB64}`;
+      const adminLink = `${origin}/runde/${id}/admin/${adminToken}#pk=${partKeyB64}&bk=${adminPrivKeyB64}`;
+
+      // Anzeigen
+      (document.getElementById('teilnehmer-link') as HTMLInputElement).value = teilnehmerLink;
+      (document.getElementById('admin-link') as HTMLInputElement).value = adminLink;
+      formBereich.classList.add('hidden');
+      ergebnisBereich.classList.remove('hidden');
+    } catch (err) {
+      zeigeFehler('Fehler beim Erstellen der Runde. Bitte versuche es erneut.');
+      console.error(err);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Runde erstellen';
+    }
+  });
+</script>

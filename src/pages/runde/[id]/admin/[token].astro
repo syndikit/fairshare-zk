@@ -1,0 +1,234 @@
+---
+import Layout from '../../../../layouts/Layout.astro';
+---
+
+<Layout title="Auswertung">
+  <!-- Laden -->
+  <div id="zustand-laden" class="text-center py-12 text-slate-500 text-sm">
+    Lade und entschlüssele…
+  </div>
+
+  <!-- Fehler -->
+  <div id="zustand-fehler" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-xl p-5">
+    <p class="font-medium mb-1">Fehler</p>
+    <p id="fehler-text" class="text-sm"></p>
+  </div>
+
+  <!-- Auswertung -->
+  <div id="zustand-auswertung" class="hidden space-y-6 print:space-y-4">
+    <div class="print:mb-2">
+      <h1 id="runde-name" class="text-2xl font-semibold mb-1 print:text-xl"></h1>
+      <p class="text-slate-500 text-sm print:text-xs">
+        Admin-Auswertung · alle Daten wurden lokal entschlüsselt
+      </p>
+    </div>
+
+    <!-- Kennzahlen -->
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 print:grid-cols-4 print:gap-2">
+      <div class="bg-white border border-slate-200 rounded-xl p-3 print:rounded-md print:p-2">
+        <p class="text-xs text-slate-500 mb-0.5">Gesamtkosten</p>
+        <p id="kz-gesamtkosten" class="text-lg font-semibold print:text-base"></p>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-3 print:rounded-md print:p-2">
+        <p class="text-xs text-slate-500 mb-0.5">Richtwert / Einheit</p>
+        <p id="kz-richtwert" class="text-lg font-semibold print:text-base"></p>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-3 print:rounded-md print:p-2">
+        <p class="text-xs text-slate-500 mb-0.5">Summe Gebote</p>
+        <p id="kz-summe-gebote" class="text-lg font-semibold print:text-base"></p>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-3 print:rounded-md print:p-2">
+        <p class="text-xs text-slate-500 mb-0.5">Summe Beiträge</p>
+        <p id="kz-summe-beitraege" class="text-lg font-semibold print:text-base"></p>
+      </div>
+    </div>
+
+    <!-- Fehlbetrag / Überschuss -->
+    <div id="fehlbetrag-box" class="hidden bg-red-50 border border-red-200 rounded-xl p-4 print:rounded-md print:p-3">
+      <p class="text-sm font-medium text-red-800">Fehlbetrag</p>
+      <p id="fehlbetrag-text" class="text-2xl font-bold text-red-700 print:text-xl"></p>
+      <p class="text-xs text-red-600 mt-1">Die solidarischen Beiträge decken die Gesamtkosten nicht.</p>
+    </div>
+    <div id="ueberschuss-box" class="hidden bg-green-50 border border-green-200 rounded-xl p-4 print:rounded-md print:p-3">
+      <p class="text-sm font-medium text-green-800">Überschuss</p>
+      <p id="ueberschuss-text" class="text-2xl font-bold text-green-700 print:text-xl"></p>
+    </div>
+
+    <!-- Tabelle -->
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm border-collapse">
+        <thead>
+          <tr class="border-b border-slate-200 text-left text-xs text-slate-500">
+            <th class="pb-2 pr-4 font-medium">Emoji-ID</th>
+            <th class="pb-2 pr-4 font-medium">Slot</th>
+            <th class="pb-2 pr-4 font-medium text-right">Faktor</th>
+            <th class="pb-2 pr-4 font-medium text-right">Gebot</th>
+            <th class="pb-2 pr-4 font-medium text-right">Beitrag</th>
+            <th class="pb-2 font-medium text-right">Differenz</th>
+          </tr>
+        </thead>
+        <tbody id="tabelle-body" class="divide-y divide-slate-100"></tbody>
+      </table>
+    </div>
+
+    <!-- Gebote-Anzahl -->
+    <p id="gebote-anzahl" class="text-xs text-slate-400 print:hidden"></p>
+
+    <!-- Drucken -->
+    <button
+      id="drucken-btn"
+      onclick="window.print()"
+      class="border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 transition-colors print:hidden"
+    >
+      Als PDF drucken
+    </button>
+  </div>
+</Layout>
+
+<script>
+  import {
+    importPartKey,
+    importAdminPrivKey,
+    decrypt,
+    decryptGebot,
+  } from '../../../../lib/crypto';
+  import { berechneAuswertung, type Gebot } from '../../../../lib/solidarisch';
+
+  interface TeilnehmerBlob {
+    rundeName: string;
+    gesamtkosten: number;
+    adminPubKey: string;
+    hmacKey: string;
+    slots: { label: string; gewichtung: number; anzahl: number }[];
+  }
+
+  function eur(value: number): string {
+    return value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+  }
+
+  function zeigeFehler(msg: string) {
+    document.getElementById('zustand-laden')!.classList.add('hidden');
+    document.getElementById('zustand-fehler')!.classList.remove('hidden');
+    document.getElementById('fehler-text')!.textContent = msg;
+  }
+
+  async function init() {
+    // Fragment auslesen
+    const hash = window.location.hash.slice(1);
+    const params = new URLSearchParams(hash);
+    const partKeyB64 = params.get('pk');
+    const adminPrivKeyB64 = params.get('bk');
+
+    if (!partKeyB64 || !adminPrivKeyB64) {
+      zeigeFehler('Admin-Link unvollständig (pk oder bk fehlt). Bitte verwende den vollständigen Admin-Link.');
+      return;
+    }
+
+    // Fragment aus History entfernen
+    history.replaceState(null, '', window.location.pathname);
+
+    // Runden-ID aus URL: /runde/{id}/admin/{token}
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    const rundenId = pathParts[1];
+
+    // Blob + Gebote laden
+    let blobData: { encTeilnehmerBlob: string; gebote: Array<{ emojiHmac: string; encGebot: string }> };
+    try {
+      const res = await fetch(`/api/runde/${rundenId}/blob`);
+      if (!res.ok) {
+        zeigeFehler('Runde nicht gefunden.');
+        return;
+      }
+      blobData = await res.json();
+    } catch {
+      zeigeFehler('Fehler beim Laden der Runde.');
+      return;
+    }
+
+    // Schlüssel importieren
+    let partKey: CryptoKey, adminPrivKey: CryptoKey;
+    try {
+      [partKey, adminPrivKey] = await Promise.all([
+        importPartKey(partKeyB64),
+        importAdminPrivKey(adminPrivKeyB64),
+      ]);
+    } catch {
+      zeigeFehler('Schlüssel im Admin-Link sind ungültig.');
+      return;
+    }
+
+    // Blob entschlüsseln
+    let blob: TeilnehmerBlob;
+    try {
+      blob = JSON.parse(await decrypt(partKey, blobData.encTeilnehmerBlob)) as TeilnehmerBlob;
+    } catch {
+      zeigeFehler('Blob-Entschlüsselung fehlgeschlagen. Falscher Schlüssel?');
+      return;
+    }
+
+    // Gebote entschlüsseln
+    const gebote: Gebot[] = [];
+    for (const { encGebot } of blobData.gebote) {
+      try {
+        const g = JSON.parse(await decryptGebot(adminPrivKey, encGebot)) as Gebot;
+        gebote.push(g);
+      } catch {
+        // Einzelnes korruptes Gebot überspringen
+      }
+    }
+
+    if (gebote.length === 0) {
+      document.getElementById('zustand-laden')!.classList.add('hidden');
+      document.getElementById('runde-name')!.textContent = blob.rundeName;
+      document.getElementById('kz-gesamtkosten')!.textContent = eur(blob.gesamtkosten);
+      document.getElementById('kz-richtwert')!.textContent = '–';
+      document.getElementById('kz-summe-gebote')!.textContent = '0,00 €';
+      document.getElementById('kz-summe-beitraege')!.textContent = '0,00 €';
+      document.getElementById('gebote-anzahl')!.textContent = 'Noch keine Gebote eingegangen.';
+      document.getElementById('zustand-auswertung')!.classList.remove('hidden');
+      return;
+    }
+
+    // Auswertung berechnen
+    const auswertung = berechneAuswertung(blob.gesamtkosten, gebote);
+
+    // Kennzahlen befüllen
+    document.getElementById('runde-name')!.textContent = blob.rundeName;
+    document.getElementById('kz-gesamtkosten')!.textContent = eur(auswertung.gesamtkosten);
+    document.getElementById('kz-richtwert')!.textContent = eur(auswertung.richtwert);
+    document.getElementById('kz-summe-gebote')!.textContent = eur(auswertung.summeGebote);
+    document.getElementById('kz-summe-beitraege')!.textContent = eur(auswertung.summeBeitraege);
+
+    if (auswertung.fehlbetrag > 0.005) {
+      document.getElementById('fehlbetrag-box')!.classList.remove('hidden');
+      document.getElementById('fehlbetrag-text')!.textContent = eur(auswertung.fehlbetrag);
+    } else if (auswertung.ueberschuss > 0.005) {
+      document.getElementById('ueberschuss-box')!.classList.remove('hidden');
+      document.getElementById('ueberschuss-text')!.textContent = eur(auswertung.ueberschuss);
+    }
+
+    // Tabelle befüllen
+    const tbody = document.getElementById('tabelle-body')!;
+    for (const e of auswertung.ergebnisse) {
+      const tr = document.createElement('tr');
+      const diffSign = e.differenz > 0.005 ? '+' : '';
+      const diffClass = e.differenz > 0.005 ? 'text-green-700' : 'text-slate-600';
+      tr.innerHTML = `
+        <td class="py-2 pr-4 text-lg">${e.emojiId}</td>
+        <td class="py-2 pr-4 text-slate-800">${e.slotLabel}</td>
+        <td class="py-2 pr-4 text-right text-slate-600">${e.gewichtung}</td>
+        <td class="py-2 pr-4 text-right text-slate-600">${eur(e.gebot)}</td>
+        <td class="py-2 pr-4 text-right font-medium">${eur(e.solidarischerBeitrag)}</td>
+        <td class="py-2 text-right ${diffClass}">${diffSign}${eur(e.differenz)}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    document.getElementById('gebote-anzahl')!.textContent = `${gebote.length} Gebot${gebote.length === 1 ? '' : 'e'}`;
+
+    document.getElementById('zustand-laden')!.classList.add('hidden');
+    document.getElementById('zustand-auswertung')!.classList.remove('hidden');
+  }
+
+  init();
+</script>

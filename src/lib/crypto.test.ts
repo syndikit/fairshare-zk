@@ -47,8 +47,9 @@ describe('AES-GCM', () => {
     const key = await generatePartKey();
     const cipher = await encrypt(key, 'geheim');
     const [iv, ct] = cipher.split('.');
-    // Letztes Zeichen ändern
-    const tampered = `${iv}.${ct.slice(0, -1)}X`;
+    // Erstes Zeichen ändern — hat immer 6 signifikante Bits, unabhängig vom Padding
+    const differentChar = ct[0] === 'A' ? 'B' : 'A';
+    const tampered = `${iv}.${differentChar}${ct.slice(1)}`;
     await expect(decrypt(key, tampered)).rejects.toThrow();
   });
 

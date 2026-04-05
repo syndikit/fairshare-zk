@@ -1,0 +1,245 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="Runde">
+  <!-- Laden -->
+  <div id="zustand-laden" class="text-center py-12 text-slate-500 text-sm">
+    Lade Runde…
+  </div>
+
+  <!-- Fehler -->
+  <div id="zustand-fehler" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-xl p-5">
+    <p class="font-medium mb-1">Fehler</p>
+    <p id="fehler-text" class="text-sm"></p>
+  </div>
+
+  <!-- Formular -->
+  <div id="zustand-formular" class="hidden space-y-6">
+    <div>
+      <h1 id="runde-name" class="text-2xl font-semibold mb-1"></h1>
+      <p class="text-slate-500 text-sm">
+        Gesamtkosten: <span id="gesamtkosten" class="font-medium text-slate-700"></span>
+      </p>
+    </div>
+
+    <form id="gebot-form" class="space-y-5">
+      <!-- Slot-Auswahl -->
+      <div>
+        <p class="text-sm font-medium text-slate-700 mb-2">Wähle deinen Slot-Typ</p>
+        <div id="slot-auswahl" class="space-y-2"></div>
+      </div>
+
+      <!-- Betrag -->
+      <div>
+        <label for="betrag" class="block text-sm font-medium text-slate-700 mb-1">
+          Dein Gebot (€)
+        </label>
+        <input
+          type="number"
+          id="betrag"
+          name="betrag"
+          required
+          min="0.01"
+          step="0.01"
+          placeholder="z.B. 80"
+          class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+        />
+        <p class="text-xs text-slate-400 mt-1">
+          Gib den Betrag, den du beitragen kannst oder möchtest.
+        </p>
+      </div>
+
+      <!-- Fehler -->
+      <div id="gebot-fehler" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm"></div>
+
+      <button
+        type="submit"
+        id="gebot-btn"
+        class="w-full bg-green-700 text-white rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        Gebot abgeben
+      </button>
+    </form>
+  </div>
+
+  <!-- Bestätigung -->
+  <div id="zustand-bestaetigung" class="hidden text-center space-y-4 py-8">
+    <div class="text-6xl mb-2" id="emoji-anzeige"></div>
+    <h2 class="text-xl font-semibold">Gebot abgegeben</h2>
+    <p class="text-slate-500 text-sm max-w-sm mx-auto">
+      Das ist dein persönlicher Beleg. Merke dir diese Emoji-Kombination —
+      sie beweist, dass dein Gebot registriert wurde.
+    </p>
+    <div class="bg-slate-100 rounded-xl px-6 py-4 inline-block">
+      <p class="text-xs text-slate-500 mb-1">Deine Emoji-ID</p>
+      <p id="emoji-id-text" class="text-3xl tracking-widest"></p>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import {
+    importPartKey,
+    importAdminPubKey,
+    importHmacKey,
+    decrypt,
+    encryptGebot,
+    hmac,
+  } from '../../lib/crypto';
+  import { EMOJIS, generiereEmojiId } from '../../lib/solidarisch';
+
+  interface TeilnehmerBlob {
+    rundeName: string;
+    gesamtkosten: number;
+    adminPubKey: string;
+    hmacKey: string;
+    slots: { label: string; gewichtung: number; anzahl: number }[];
+  }
+
+  function zeigeFehler(msg: string) {
+    document.getElementById('zustand-laden')!.classList.add('hidden');
+    document.getElementById('zustand-formular')!.classList.add('hidden');
+    document.getElementById('zustand-fehler')!.classList.remove('hidden');
+    document.getElementById('fehler-text')!.textContent = msg;
+  }
+
+  async function init() {
+    // Fragment auslesen
+    const hash = window.location.hash.slice(1);
+    const params = new URLSearchParams(hash);
+    const partKeyB64 = params.get('pk');
+
+    if (!partKeyB64) {
+      zeigeFehler(
+        'Kein Schlüssel im Link gefunden. Bitte verwende den vollständigen Teilnehmer-Link.',
+      );
+      return;
+    }
+
+    // Fragment aus History entfernen
+    history.replaceState(null, '', window.location.pathname);
+
+    // Runden-ID aus URL
+    const rundenId = window.location.pathname.split('/').filter(Boolean).pop()!;
+
+    // Blob laden
+    let blobData: { encTeilnehmerBlob: string; gebote: unknown[] };
+    try {
+      const res = await fetch(`/api/runde/${rundenId}/blob`);
+      if (!res.ok) {
+        zeigeFehler('Runde nicht gefunden.');
+        return;
+      }
+      blobData = await res.json();
+    } catch {
+      zeigeFehler('Fehler beim Laden der Runde.');
+      return;
+    }
+
+    // Schlüssel importieren + entschlüsseln
+    let blob: TeilnehmerBlob;
+    try {
+      const partKey = await importPartKey(partKeyB64);
+      blob = JSON.parse(await decrypt(partKey, blobData.encTeilnehmerBlob)) as TeilnehmerBlob;
+    } catch {
+      zeigeFehler('Entschlüsselung fehlgeschlagen. Ist der Link vollständig?');
+      return;
+    }
+
+    const adminPubKey = await importAdminPubKey(blob.adminPubKey);
+    const hmacKey = await importHmacKey(blob.hmacKey);
+
+    // Seite befüllen
+    document.getElementById('runde-name')!.textContent = blob.rundeName;
+    document.getElementById('gesamtkosten')!.textContent = `${blob.gesamtkosten.toLocaleString('de-DE')} €`;
+
+    // Slot-Auswahl rendern
+    const slotAuswahl = document.getElementById('slot-auswahl')!;
+    blob.slots.forEach((slot, idx) => {
+      const label = document.createElement('label');
+      label.className =
+        'flex items-center gap-3 bg-white border border-slate-200 rounded-lg p-3 cursor-pointer hover:border-green-500 has-[:checked]:border-green-600 has-[:checked]:bg-green-50 transition-colors';
+      label.innerHTML = `
+        <input type="radio" name="slot" value="${idx}" class="accent-green-700" ${idx === 0 ? 'checked' : ''} />
+        <span class="flex-1">
+          <span class="text-sm font-medium text-slate-800">${slot.label}</span>
+          <span class="text-xs text-slate-500 ml-2">Faktor ${slot.gewichtung} · ${slot.anzahl} Platz/Plätze</span>
+        </span>
+      `;
+      slotAuswahl.appendChild(label);
+    });
+
+    // Formular anzeigen
+    document.getElementById('zustand-laden')!.classList.add('hidden');
+    document.getElementById('zustand-formular')!.classList.remove('hidden');
+
+    // Gebot abgeben
+    const gebotForm = document.getElementById('gebot-form') as HTMLFormElement;
+    const gebotBtn = document.getElementById('gebot-btn') as HTMLButtonElement;
+    const gebotFehler = document.getElementById('gebot-fehler') as HTMLDivElement;
+
+    gebotForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      gebotFehler.classList.add('hidden');
+      gebotBtn.disabled = true;
+      gebotBtn.textContent = 'Verschlüssele…';
+
+      try {
+        const selectedIdx = parseInt(
+          (gebotForm.querySelector('input[name="slot"]:checked') as HTMLInputElement).value,
+          10,
+        );
+        const selectedSlot = blob.slots[selectedIdx];
+        const betrag = parseFloat(
+          (gebotForm.querySelector('#betrag') as HTMLInputElement).value,
+        );
+
+        // Emoji-ID generieren + HMAC
+        const emojiId = generiereEmojiId();
+        const emojiHmac = await hmac(hmacKey, emojiId);
+
+        // Gebot verschlüsseln
+        const gebotObjekt = {
+          emojiId,
+          slotLabel: selectedSlot.label,
+          gewichtung: selectedSlot.gewichtung,
+          betrag,
+        };
+        const encGebot = await encryptGebot(adminPubKey, JSON.stringify(gebotObjekt));
+
+        // API-Aufruf
+        const res = await fetch(`/api/runde/${rundenId}/gebot`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ emojiHmac, encGebot }),
+        });
+
+        if (!res.ok) {
+          const { error } = (await res.json()) as { error: string };
+          gebotFehler.textContent = error ?? 'Fehler beim Speichern';
+          gebotFehler.classList.remove('hidden');
+          return;
+        }
+
+        // Bestätigung anzeigen
+        document.getElementById('emoji-anzeige')!.textContent = emojiId;
+        document.getElementById('emoji-id-text')!.textContent = emojiId;
+        document.getElementById('zustand-formular')!.classList.add('hidden');
+        document.getElementById('zustand-bestaetigung')!.classList.remove('hidden');
+      } catch (err) {
+        gebotFehler.textContent = 'Unerwarteter Fehler. Bitte versuche es erneut.';
+        gebotFehler.classList.remove('hidden');
+        console.error(err);
+      } finally {
+        gebotBtn.disabled = false;
+        gebotBtn.textContent = 'Gebot abgeben';
+      }
+    });
+  }
+
+  init();
+
+  // Suppress unused import warning — EMOJIS is imported for side-effect-free tree-shaking check
+  void EMOJIS;
+</script>

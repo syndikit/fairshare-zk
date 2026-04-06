@@ -24,7 +24,7 @@ import Layout from '../../../../layouts/Layout.astro';
     </div>
 
     <!-- Kennzahlen -->
-    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 print:grid-cols-4 print:gap-2">
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 print:grid-cols-3 print:gap-2">
       <div class="bg-white border border-slate-200 rounded-xl p-3 print:rounded-md print:p-2">
         <p class="text-xs text-slate-500 mb-0.5">Gesamtkosten</p>
         <p id="kz-gesamtkosten" class="text-lg font-semibold print:text-base"></p>
@@ -33,23 +33,19 @@ import Layout from '../../../../layouts/Layout.astro';
         <p class="text-xs text-slate-500 mb-0.5">Richtwert / Einheit</p>
         <p id="kz-richtwert" class="text-lg font-semibold print:text-base"></p>
       </div>
-      <div class="bg-white border border-slate-200 rounded-xl p-3 print:rounded-md print:p-2">
-        <p class="text-xs text-slate-500 mb-0.5">Summe Gebote</p>
-        <p id="kz-summe-gebote" class="text-lg font-semibold print:text-base"></p>
-      </div>
-      <div class="bg-white border border-slate-200 rounded-xl p-3 print:rounded-md print:p-2">
+      <div class="vollstaendig-spalte hidden bg-white border border-slate-200 rounded-xl p-3 print:rounded-md print:p-2">
         <p class="text-xs text-slate-500 mb-0.5">Summe Beiträge</p>
         <p id="kz-summe-beitraege" class="text-lg font-semibold print:text-base"></p>
       </div>
     </div>
 
     <!-- Fehlbetrag / Überschuss -->
-    <div id="fehlbetrag-box" class="hidden bg-red-50 border border-red-200 rounded-xl p-4 print:rounded-md print:p-3">
+    <div id="fehlbetrag-box" class="vollstaendig-spalte hidden bg-red-50 border border-red-200 rounded-xl p-4 print:rounded-md print:p-3">
       <p class="text-sm font-medium text-red-800">Fehlbetrag</p>
       <p id="fehlbetrag-text" class="text-2xl font-bold text-red-700 print:text-xl"></p>
       <p class="text-xs text-red-600 mt-1">Die solidarischen Beiträge decken die Gesamtkosten nicht.</p>
     </div>
-    <div id="ueberschuss-box" class="hidden bg-green-50 border border-green-200 rounded-xl p-4 print:rounded-md print:p-3">
+    <div id="ueberschuss-box" class="vollstaendig-spalte hidden bg-green-50 border border-green-200 rounded-xl p-4 print:rounded-md print:p-3">
       <p class="text-sm font-medium text-green-800">Überschuss</p>
       <p id="ueberschuss-text" class="text-2xl font-bold text-green-700 print:text-xl"></p>
     </div>
@@ -63,19 +59,17 @@ import Layout from '../../../../layouts/Layout.astro';
             <th class="pb-2 pr-4 font-medium">Slot</th>
             <th class="pb-2 pr-4 font-medium text-right">Faktor</th>
             <th class="pb-2 pr-4 font-medium text-right">Richtwert-Anteil</th>
-            <th class="pb-2 pr-4 font-medium text-right">Gebot</th>
-            <th class="pb-2 pr-4 font-medium text-right">Geld zurück</th>
-            <th class="pb-2 pr-4 font-medium text-right">Beitrag</th>
-            <th class="pb-2 pr-4 font-medium text-right splid-spalte hidden">Ausgaben (Splid)</th>
-            <th class="pb-2 pr-4 font-medium text-right splid-spalte hidden">Noch zu zahlen</th>
-            <th class="pb-2 font-medium text-right">Differenz</th>
+            <th class="pb-2 pr-4 font-medium text-right vollstaendig-spalte hidden">Beitrag</th>
+            <th class="pb-2 pr-4 font-medium text-right splid-spalte vollstaendig-spalte hidden">Ausgaben (Splid)</th>
+            <th class="pb-2 pr-4 font-medium text-right splid-spalte vollstaendig-spalte hidden">Noch zu zahlen</th>
+            <th class="pb-2 font-medium text-right vollstaendig-spalte hidden">Differenz</th>
           </tr>
         </thead>
         <tbody id="tabelle-body" class="divide-y divide-slate-100"></tbody>
       </table>
     </div>
 
-    <!-- Gebote-Anzahl -->
+    <!-- Status -->
     <p id="gebote-anzahl" class="text-xs text-slate-400 print:hidden"></p>
 
     <!-- Drucken -->
@@ -181,14 +175,18 @@ import Layout from '../../../../layouts/Layout.astro';
       }
     }
 
+    // Vollständigkeit prüfen
+    const totalErwartet = blob.slots.reduce((s, slot) => s + slot.anzahl, 0);
+    const allesDa = gebote.length >= totalErwartet;
+
+    // Kopfdaten immer anzeigen
+    document.getElementById('runde-name')!.textContent = blob.rundeName;
+    document.getElementById('kz-gesamtkosten')!.textContent = eur(blob.gesamtkosten);
+
     if (gebote.length === 0) {
-      document.getElementById('zustand-laden')!.classList.add('hidden');
-      document.getElementById('runde-name')!.textContent = blob.rundeName;
-      document.getElementById('kz-gesamtkosten')!.textContent = eur(blob.gesamtkosten);
       document.getElementById('kz-richtwert')!.textContent = '–';
-      document.getElementById('kz-summe-gebote')!.textContent = '0,00 €';
-      document.getElementById('kz-summe-beitraege')!.textContent = '0,00 €';
-      document.getElementById('gebote-anzahl')!.textContent = 'Noch keine Gebote eingegangen.';
+      document.getElementById('gebote-anzahl')!.textContent = `0 von ${totalErwartet} Geboten eingegangen.`;
+      document.getElementById('zustand-laden')!.classList.add('hidden');
       document.getElementById('zustand-auswertung')!.classList.remove('hidden');
       return;
     }
@@ -196,19 +194,16 @@ import Layout from '../../../../layouts/Layout.astro';
     // Auswertung berechnen
     const auswertung = berechneAuswertung(blob.gesamtkosten, gebote, blob.slots);
 
-    // Kennzahlen befüllen
-    document.getElementById('runde-name')!.textContent = blob.rundeName;
-    document.getElementById('kz-gesamtkosten')!.textContent = eur(auswertung.gesamtkosten);
     document.getElementById('kz-richtwert')!.textContent = eur(auswertung.richtwert);
-    document.getElementById('kz-summe-gebote')!.textContent = eur(auswertung.summeGebote);
     document.getElementById('kz-summe-beitraege')!.textContent = eur(auswertung.summeBeitraege);
 
-    if (auswertung.fehlbetrag > 0.005) {
-      document.getElementById('fehlbetrag-box')!.classList.remove('hidden');
-      document.getElementById('fehlbetrag-text')!.textContent = eur(auswertung.fehlbetrag);
-    } else if (auswertung.ueberschuss > 0.005) {
-      document.getElementById('ueberschuss-box')!.classList.remove('hidden');
-      document.getElementById('ueberschuss-text')!.textContent = eur(auswertung.ueberschuss);
+    // Fehlbetrag / Überschuss nur bei Vollständigkeit befüllen (Box bleibt hidden bis allesDa)
+    if (allesDa) {
+      if (auswertung.fehlbetrag > 0.005) {
+        document.getElementById('fehlbetrag-text')!.textContent = eur(auswertung.fehlbetrag);
+      } else if (auswertung.ueberschuss > 0.005) {
+        document.getElementById('ueberschuss-text')!.textContent = eur(auswertung.ueberschuss);
+      }
     }
 
     // Splid-Ausgaben-Map aufbauen (slotLabel → ausgaben)
@@ -220,26 +215,21 @@ import Layout from '../../../../layouts/Layout.astro';
     }
     const hatSplidDaten = ausgabenMap.size > 0;
 
-    // Splid-Spalten einblenden wenn Daten vorhanden
-    if (hatSplidDaten) {
-      document.querySelectorAll('.splid-spalte').forEach((el) => el.classList.remove('hidden'));
-    }
-
     // Tabelle befüllen
     const tbody = document.getElementById('tabelle-body')!;
     for (const e of auswertung.ergebnisse) {
       const tr = document.createElement('tr');
-      const diffSign = e.differenz > 0.005 ? '+' : '';
-      const diffClass = e.differenz > 0.005 ? 'text-green-700' : 'text-slate-600';
 
       const ausgaben = ausgabenMap.get(e.slotLabel) ?? 0;
       const nochZuZahlen = e.solidarischerBeitrag - ausgaben;
       const nochSign = nochZuZahlen > 0.005 ? '+' : '';
       const nochClass = nochZuZahlen > 0.005 ? 'text-red-600' : 'text-green-700';
+      const diffSign = e.differenz > 0.005 ? '+' : '';
+      const diffClass = e.differenz > 0.005 ? 'text-green-700' : 'text-slate-600';
 
       const splidZellen = hatSplidDaten
-        ? `<td class="py-2 pr-4 text-right text-slate-600">${eur(ausgaben)}</td>
-           <td class="py-2 pr-4 text-right font-medium ${nochClass}">${nochSign}${eur(nochZuZahlen)}</td>`
+        ? `<td class="py-2 pr-4 text-right text-slate-600 splid-spalte vollstaendig-spalte hidden">${eur(ausgaben)}</td>
+           <td class="py-2 pr-4 text-right font-medium splid-spalte vollstaendig-spalte hidden ${nochClass}">${nochSign}${eur(nochZuZahlen)}</td>`
         : '';
 
       tr.innerHTML = `
@@ -247,16 +237,35 @@ import Layout from '../../../../layouts/Layout.astro';
         <td class="py-2 pr-4 text-slate-800">${e.slotLabel}</td>
         <td class="py-2 pr-4 text-right text-slate-600">${e.gewichtung}</td>
         <td class="py-2 pr-4 text-right text-slate-500">${eur(e.richtwertAnteil)}</td>
-        <td class="py-2 pr-4 text-right text-slate-600">${eur(e.gebot)}</td>
-        <td class="py-2 pr-4 text-right text-green-700">${e.geldZurueck > 0.005 ? '−' + eur(e.geldZurueck) : '–'}</td>
-        <td class="py-2 pr-4 text-right font-medium">${eur(e.solidarischerBeitrag)}</td>
+        <td class="py-2 pr-4 text-right font-medium vollstaendig-spalte hidden">${eur(e.solidarischerBeitrag)}</td>
         ${splidZellen}
-        <td class="py-2 text-right ${diffClass}">${diffSign}${eur(e.differenz)}</td>
+        <td class="py-2 text-right vollstaendig-spalte hidden ${diffClass}">${diffSign}${eur(e.differenz)}</td>
       `;
       tbody.appendChild(tr);
     }
 
-    document.getElementById('gebote-anzahl')!.textContent = `${gebote.length} Gebot${gebote.length === 1 ? '' : 'e'}`;
+    // Vollständige Spalten + Boxen einblenden
+    if (allesDa) {
+      document.querySelectorAll('.vollstaendig-spalte').forEach((el) => el.classList.remove('hidden'));
+      // Splid-Spalten nur wenn Splid-Daten vorhanden (vollstaendig-spalte hat schon hidden entfernt,
+      // splid-spalte-Elemente brauchen beide Klassen)
+      if (!hatSplidDaten) {
+        document.querySelectorAll('.splid-spalte').forEach((el) => el.classList.add('hidden'));
+      }
+      // Fehlbetrag/Überschuss-Box
+      if (auswertung.fehlbetrag > 0.005) {
+        document.getElementById('fehlbetrag-box')!.classList.remove('hidden');
+      } else if (auswertung.ueberschuss > 0.005) {
+        document.getElementById('ueberschuss-box')!.classList.remove('hidden');
+      }
+    }
+
+    // Statuszeile
+    if (allesDa) {
+      document.getElementById('gebote-anzahl')!.textContent = `Alle ${totalErwartet} Gebote eingegangen — Auswertung vollständig`;
+    } else {
+      document.getElementById('gebote-anzahl')!.textContent = `${gebote.length} von ${totalErwartet} Geboten eingegangen`;
+    }
 
     document.getElementById('zustand-laden')!.classList.add('hidden');
     document.getElementById('zustand-auswertung')!.classList.remove('hidden');

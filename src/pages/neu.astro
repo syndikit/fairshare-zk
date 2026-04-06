@@ -216,6 +216,7 @@ import Layout from '../layouts/Layout.astro';
     exportKey,
   } from '../lib/crypto';
   import { parseSplid } from '../lib/splid';
+  import { saveRunde } from '../lib/storage';
 
   const form = document.getElementById('runde-form') as HTMLFormElement;
   const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
@@ -416,6 +417,16 @@ import Layout from '../layouts/Layout.astro';
       const origin = window.location.origin;
       const teilnehmerLink = `${origin}/runde/${id}#pk=${partKeyB64}`;
       const adminLink = `${origin}/runde/${id}/admin/${adminToken}#pk=${partKeyB64}&bk=${adminPrivKeyB64}`;
+
+      // Runde im localStorage speichern
+      saveRunde({
+        id,
+        name: rundeName,
+        hinzugefuegtAm: new Date().toISOString(),
+        teilnehmerLink,
+        adminLink,
+        slots: slots.map(({ label, gewichtung, anzahl }) => ({ label, gewichtung, anzahl })),
+      });
 
       // Anzeigen
       (document.getElementById('teilnehmer-link') as HTMLInputElement).value = teilnehmerLink;

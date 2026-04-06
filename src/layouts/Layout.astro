@@ -32,9 +32,12 @@ const { title } = Astro.props;
       </div>
     </div>
     <script>
-      if (localStorage.getItem('fairshare_sync_id')) {
-        document.getElementById('nav-meine-runden')?.classList.remove('hidden');
-      }
+      try {
+        const runden = JSON.parse(localStorage.getItem('fairshare_runden') || '[]');
+        if (Array.isArray(runden) && runden.length > 0) {
+          document.getElementById('nav-meine-runden')?.classList.remove('hidden');
+        }
+      } catch { /* ignore */ }
     </script>
     <main class="mx-auto max-w-2xl px-4 py-6">
       <slot />

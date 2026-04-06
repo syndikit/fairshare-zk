@@ -61,52 +61,71 @@ import Layout from '../layouts/Layout.astro';
       <div>
         <div class="flex items-center justify-between mb-2">
           <label class="block text-sm font-medium text-slate-700">Slot-Typen</label>
-          <button
-            type="button"
-            id="slot-hinzufuegen"
-            class="text-sm text-green-700 hover:text-green-900 font-medium"
-          >
-            + Typ hinzufügen
-          </button>
+          <div class="flex items-center gap-3">
+            <label class="flex items-center gap-1.5 text-sm text-slate-500 cursor-pointer select-none">
+              <input type="checkbox" id="ausgaben-toggle" class="accent-green-700" />
+              Ausgaben erfassen
+            </label>
+            <button
+              type="button"
+              id="slot-hinzufuegen"
+              class="text-sm text-green-700 hover:text-green-900 font-medium"
+            >
+              + Typ hinzufügen
+            </button>
+          </div>
         </div>
         <div id="slots-container" class="space-y-2">
           <!-- Initial ein Slot -->
-          <div class="slot-eintrag flex gap-2 items-center bg-white border border-slate-200 rounded-lg p-3">
-            <input
-              type="text"
-              name="label[]"
-              placeholder="Label (optional)"
-              class="flex-1 border border-slate-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
-            />
-            <div class="flex items-center gap-1">
-              <span class="text-xs text-slate-500">Faktor</span>
+          <div class="slot-eintrag bg-white border border-slate-200 rounded-lg p-3 space-y-2">
+            <div class="flex gap-2 items-center">
+              <input
+                type="text"
+                name="label[]"
+                placeholder="Label (optional)"
+                class="flex-1 border border-slate-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+              />
+              <div class="flex items-center gap-1">
+                <span class="text-xs text-slate-500">Faktor</span>
+                <input
+                  type="number"
+                  name="gewichtung[]"
+                  value="1"
+                  min="0.1"
+                  step="0.1"
+                  required
+                  class="w-16 border border-slate-300 rounded-md px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-green-600"
+                />
+              </div>
+              <div class="flex items-center gap-1">
+                <span class="text-xs text-slate-500">Plätze</span>
+                <input
+                  type="number"
+                  name="anzahl[]"
+                  value="1"
+                  min="1"
+                  step="1"
+                  required
+                  class="w-16 border border-slate-300 rounded-md px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-green-600"
+                />
+              </div>
+              <button
+                type="button"
+                class="slot-entfernen text-slate-400 hover:text-red-500 text-lg leading-none hidden"
+                aria-label="Slot entfernen"
+              >×</button>
+            </div>
+            <div class="ausgaben-zeile hidden flex items-center gap-2">
+              <span class="text-xs text-slate-500 shrink-0">Ausgaben (€)</span>
               <input
                 type="number"
-                name="gewichtung[]"
-                value="1"
-                min="0.1"
-                step="0.1"
-                required
-                class="w-16 border border-slate-300 rounded-md px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-green-600"
+                name="ausgaben[]"
+                min="0"
+                step="0.01"
+                placeholder="0,00"
+                class="w-28 border border-slate-300 rounded-md px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-green-600"
               />
             </div>
-            <div class="flex items-center gap-1">
-              <span class="text-xs text-slate-500">Plätze</span>
-              <input
-                type="number"
-                name="anzahl[]"
-                value="1"
-                min="1"
-                step="1"
-                required
-                class="w-16 border border-slate-300 rounded-md px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-green-600"
-              />
-            </div>
-            <button
-              type="button"
-              class="slot-entfernen text-slate-400 hover:text-red-500 text-lg leading-none hidden"
-              aria-label="Slot entfernen"
-            >×</button>
           </div>
         </div>
         <p class="text-xs text-slate-400 mt-1">Label ist optional. Ohne Label heißt der Slot „Slot".</p>
@@ -224,6 +243,17 @@ import Layout from '../layouts/Layout.astro';
   const formBereich = document.getElementById('form-bereich') as HTMLDivElement;
   const ergebnisBereich = document.getElementById('ergebnis-bereich') as HTMLDivElement;
   const slotsContainer = document.getElementById('slots-container') as HTMLDivElement;
+  const ausgabenToggle = document.getElementById('ausgaben-toggle') as HTMLInputElement;
+
+  function setzeAusgabenSichtbarkeit(sichtbar: boolean) {
+    slotsContainer.querySelectorAll<HTMLDivElement>('.ausgaben-zeile').forEach((zeile) => {
+      zeile.classList.toggle('hidden', !sichtbar);
+    });
+  }
+
+  ausgabenToggle.addEventListener('change', () => {
+    setzeAusgabenSichtbarkeit(ausgabenToggle.checked);
+  });
 
   function zeigeFehler(msg: string) {
     fehlerEl.textContent = msg;
@@ -281,8 +311,7 @@ import Layout from '../layouts/Layout.astro';
         (slotEl.querySelector('[name="label[]"]') as HTMLInputElement).value = label;
         (slotEl.querySelector('[name="gewichtung[]"]') as HTMLInputElement).value = '1';
         (slotEl.querySelector('[name="anzahl[]"]') as HTMLInputElement).value = '1';
-        // Ausgaben als data-Attribut speichern für die spätere Blob-Erstellung
-        slotEl.dataset.ausgaben = String(ausgaben);
+        (slotEl.querySelector('[name="ausgaben[]"]') as HTMLInputElement).value = ausgaben.toFixed(2);
       }
 
       befuelleSlot(ersterSlot, personen[0].name, personen[0].ausgaben);
@@ -295,6 +324,8 @@ import Layout from '../layouts/Layout.astro';
       }
 
       aktualisiereEntfernenButtons();
+      ausgabenToggle.checked = true;
+      setzeAusgabenSichtbarkeit(true);
 
       const namen = personen.map((p) => p.name).join(', ');
       splidErfolgEl.textContent = `${personen.length} Personen importiert: ${namen}`;
@@ -323,6 +354,9 @@ import Layout from '../layouts/Layout.astro';
       else if (inp.name === 'anzahl[]') inp.value = '1';
       else inp.value = '';
     });
+    // Ausgaben-Zeile entsprechend Toggle-Zustand ein-/ausblenden
+    const ausgabenZeile = klon.querySelector('.ausgaben-zeile') as HTMLDivElement;
+    ausgabenZeile.classList.toggle('hidden', !ausgabenToggle.checked);
     slotsContainer.appendChild(klon);
     aktualisiereEntfernenButtons();
   });
@@ -369,8 +403,8 @@ import Layout from '../layouts/Layout.astro';
 
       const slotEintraege = [...slotsContainer.querySelectorAll<HTMLDivElement>('.slot-eintrag')];
       const slots = labels.map((label, i) => {
-        const ausgabenRaw = slotEintraege[i]?.dataset.ausgaben;
-        const ausgaben = ausgabenRaw !== undefined ? parseFloat(ausgabenRaw) : undefined;
+        const ausgabenRaw = (slotEintraege[i]?.querySelector('[name="ausgaben[]"]') as HTMLInputElement)?.value;
+        const ausgaben = ausgabenRaw ? parseFloat(ausgabenRaw) : undefined;
         return {
           label,
           gewichtung: gewichtungen[i],

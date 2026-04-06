@@ -1,0 +1,173 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Meine Runden">
+  <div class="space-y-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-semibold mb-1">Meine Runden</h1>
+        <p class="text-slate-500 text-sm">Gespeichert in deinem Browser.</p>
+      </div>
+      <div class="flex gap-2">
+        <button
+          id="export-btn"
+          class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 transition-colors"
+        >
+          Exportieren
+        </button>
+        <button
+          id="import-btn"
+          class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 transition-colors"
+        >
+          Importieren
+        </button>
+        <input type="file" id="import-file" accept=".json" class="hidden" />
+      </div>
+    </div>
+
+    <div id="import-fehler" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm"></div>
+
+    <!-- Leer-Zustand -->
+    <div id="leer-zustand" class="hidden text-center py-16 text-slate-500">
+      <p class="mb-4">Noch keine Runden gespeichert.</p>
+      <a href="/neu" class="inline-block bg-green-700 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-green-800 transition-colors">
+        Neue Runde erstellen
+      </a>
+    </div>
+
+    <!-- Runden-Liste -->
+    <div id="runden-liste" class="space-y-3"></div>
+  </div>
+</Layout>
+
+<script>
+  import { getRunden, deleteRunde, exportJson, importJson } from '../lib/storage';
+  import type { LocalRunde } from '../lib/storage';
+
+  const rundenListe = document.getElementById('runden-liste')!;
+  const leerZustand = document.getElementById('leer-zustand')!;
+  const importFehler = document.getElementById('import-fehler')!;
+
+  function formatDatum(iso: string): string {
+    return new Date(iso).toLocaleDateString('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+  }
+
+  function renderRunden() {
+    const runden = getRunden().sort(
+      (a, b) => new Date(b.hinzugefuegtAm).getTime() - new Date(a.hinzugefuegtAm).getTime(),
+    );
+
+    rundenListe.innerHTML = '';
+
+    // Nav-Link synchronisieren
+    const navLink = document.getElementById('nav-meine-runden');
+    if (navLink) navLink.classList.toggle('hidden', runden.length === 0);
+
+    if (runden.length === 0) {
+      leerZustand.classList.remove('hidden');
+      return;
+    }
+
+    leerZustand.classList.add('hidden');
+
+    for (const runde of runden) {
+      const istAdmin = !!runde.adminLink;
+      const karte = document.createElement('div');
+      karte.className = 'bg-white border border-slate-200 rounded-xl p-4 space-y-3';
+
+      const badge = istAdmin
+        ? '<span class="text-xs font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">Admin</span>'
+        : '<span class="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">Teilnehmer:in</span>';
+
+      karte.innerHTML = `
+        <div class="flex items-start justify-between gap-2">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              ${badge}
+              <span class="text-sm font-medium text-slate-800">${runde.name}</span>
+            </div>
+            <p class="text-xs text-slate-400">Hinzugefügt am ${formatDatum(runde.hinzugefuegtAm)}</p>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <a
+            href="${runde.teilnehmerLink}"
+            class="inline-flex items-center gap-1 border border-slate-300 rounded-lg px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
+          >
+            Runde öffnen ↗
+          </a>
+          ${istAdmin ? `
+          <a
+            href="${runde.adminLink}"
+            class="inline-flex items-center gap-1 border border-amber-300 rounded-lg px-3 py-1.5 text-sm text-amber-700 hover:bg-amber-50 transition-colors"
+          >
+            Admin öffnen ↗
+          </a>
+          ` : ''}
+          <button
+            data-id="${runde.id}"
+            class="loeschen-btn ml-auto border border-red-200 rounded-lg px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+          >
+            Löschen
+          </button>
+        </div>
+      `;
+
+      rundenListe.appendChild(karte);
+    }
+
+  }
+
+  // Löschen (delegiert)
+  rundenListe.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.loeschen-btn');
+    if (!btn) return;
+    const id = btn.dataset.id!;
+    deleteRunde(id);
+    renderRunden();
+  });
+
+  // Export
+  document.getElementById('export-btn')!.addEventListener('click', () => {
+    const json = exportJson();
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'fairshare_runden.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // Import
+  const importFileInput = document.getElementById('import-file') as HTMLInputElement;
+
+  document.getElementById('import-btn')!.addEventListener('click', () => {
+    importFileInput.click();
+  });
+
+  importFileInput.addEventListener('change', async () => {
+    const file = importFileInput.files?.[0];
+    if (!file) return;
+    importFehler.classList.add('hidden');
+
+    try {
+      const text = await file.text();
+      importJson(text);
+      renderRunden();
+    } catch (err) {
+      importFehler.textContent =
+        err instanceof Error ? err.message : 'Fehler beim Importieren der Datei.';
+      importFehler.classList.remove('hidden');
+    }
+
+    importFileInput.value = '';
+  });
+
+  renderRunden();
+</script>

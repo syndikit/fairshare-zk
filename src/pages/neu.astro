@@ -153,6 +153,15 @@ import Layout from '../layouts/Layout.astro';
           Kopieren
         </button>
       </div>
+      <a
+        id="teilnehmer-link-oeffnen"
+        href="#"
+        target="_blank"
+        rel="noopener"
+        class="inline-block text-xs text-green-700 hover:underline"
+      >
+        Link öffnen ↗
+      </a>
     </div>
 
     <!-- Admin-Link -->
@@ -175,6 +184,15 @@ import Layout from '../layouts/Layout.astro';
           Kopieren
         </button>
       </div>
+      <a
+        id="admin-link-oeffnen"
+        href="#"
+        target="_blank"
+        rel="noopener"
+        class="inline-block text-xs text-amber-700 hover:underline"
+      >
+        Link öffnen ↗
+      </a>
       <p class="text-xs text-amber-700">
         ⚠️ Dieser Link enthält deinen privaten Schlüssel. Wer ihn hat, kann alle Gebote einsehen.
       </p>
@@ -402,6 +420,8 @@ import Layout from '../layouts/Layout.astro';
       // Anzeigen
       (document.getElementById('teilnehmer-link') as HTMLInputElement).value = teilnehmerLink;
       (document.getElementById('admin-link') as HTMLInputElement).value = adminLink;
+      (document.getElementById('teilnehmer-link-oeffnen') as HTMLAnchorElement).href = teilnehmerLink;
+      (document.getElementById('admin-link-oeffnen') as HTMLAnchorElement).href = adminLink;
       formBereich.classList.add('hidden');
       ergebnisBereich.classList.remove('hidden');
     } catch (err) {

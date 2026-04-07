@@ -55,13 +55,14 @@ import Layout from '../../../../layouts/Layout.astro';
       <table class="w-full text-sm border-collapse">
         <thead>
           <tr class="border-b border-slate-200 text-left text-xs text-slate-500">
-            <th class="pb-2 pr-4 font-medium">Emoji-ID</th>
+            <th class="pb-2 pr-4 font-medium emoji-spalte">Emoji-ID</th>
             <th class="pb-2 pr-4 font-medium">Slot</th>
             <th class="pb-2 pr-4 font-medium text-right">Faktor</th>
             <th class="pb-2 pr-4 font-medium text-right">Richtwert</th>
             <th class="pb-2 pr-4 font-medium text-right splid-spalte vollstaendig-spalte hidden">Ausgaben</th>
             <th class="pb-2 pr-4 font-medium text-right vollstaendig-spalte hidden">Beitrag</th>
             <th class="pb-2 pr-4 font-medium text-right splid-spalte vollstaendig-spalte hidden">Noch zu zahlen</th>
+            <th class="pb-2 font-medium">Status</th>
           </tr>
         </thead>
         <tbody id="tabelle-body" class="divide-y divide-slate-100"></tbody>
@@ -95,7 +96,7 @@ import Layout from '../../../../layouts/Layout.astro';
     decrypt,
     decryptGebot,
   } from '../../../../lib/crypto';
-  import { berechneAuswertung, berechneAusgleich, type Gebot } from '../../../../lib/solidarisch';
+  import { berechneAuswertung, berechneAusgleich, type Gebot, type GebotErgebnis } from '../../../../lib/solidarisch';
 
   interface TeilnehmerBlob {
     rundeName: string;
@@ -207,72 +208,117 @@ import Layout from '../../../../layouts/Layout.astro';
     document.getElementById('runde-name')!.textContent = blob.rundeName;
     document.getElementById('kz-gesamtkosten')!.textContent = eur(blob.gesamtkosten);
 
-    if (alleGebote.length === 0) {
-      document.getElementById('kz-richtwert')!.textContent = '–';
-      document.getElementById('gebote-anzahl')!.textContent = `0 von ${totalErwartet} Geboten eingegangen.`;
-      document.getElementById('zustand-laden')!.classList.add('hidden');
-      document.getElementById('zustand-auswertung')!.classList.remove('hidden');
-      return;
+    // Fehlbetrag-Früherkennung: wenn alle Gebote da, aber Summe < Kosten
+    if (allesDa && alleGebote.length > 0) {
+      const summeGebote = Math.round(alleGebote.reduce((s, g) => s + g.betrag, 0) * 100) / 100;
+      if (summeGebote < blob.gesamtkosten) {
+        const fehlbetrag = Math.round((blob.gesamtkosten - summeGebote) * 100) / 100;
+        document.getElementById('fehlbetrag-text')!.textContent = eur(fehlbetrag);
+        document.getElementById('fehlbetrag-box')!.classList.remove('hidden');
+        document.getElementById('gebote-anzahl')!.textContent =
+          'Alle Gebote eingegangen — Fehlbetrag, Runde muss wiederholt werden.';
+        document.getElementById('zustand-laden')!.classList.add('hidden');
+        document.getElementById('zustand-auswertung')!.classList.remove('hidden');
+        return;
+      }
     }
 
-    // Auswertung berechnen (mit echten + synthetischen Geboten)
-    const auswertung = berechneAuswertung(blob.gesamtkosten, alleGebote, blob.slots);
+    // Auswertung berechnen (nur wenn Gebote vorhanden)
+    const auswertung = alleGebote.length > 0
+      ? berechneAuswertung(blob.gesamtkosten, alleGebote, blob.slots)
+      : null;
 
-    document.getElementById('kz-richtwert')!.textContent = eur(auswertung.richtwert);
-    document.getElementById('kz-summe-beitraege')!.textContent = eur(auswertung.summeBeitraege);
-
-    // Fehlbetrag / Überschuss nur bei Vollständigkeit befüllen (Box bleibt hidden bis allesDa)
-    if (allesDa) {
-      if (auswertung.fehlbetrag > 0.005) {
-        document.getElementById('fehlbetrag-text')!.textContent = eur(auswertung.fehlbetrag);
-      } else if (auswertung.ueberschuss > 0.005) {
-        document.getElementById('ueberschuss-text')!.textContent = eur(auswertung.ueberschuss);
-      }
+    // Richtwert für Anzeige + "fehlt"-Zeilen
+    const summeAlleGewichtungen = blob.slots.reduce((s, sl) => s + sl.gewichtung * sl.anzahl, 0);
+    const rawRichtwert = blob.gesamtkosten / summeAlleGewichtungen;
+    document.getElementById('kz-richtwert')!.textContent = auswertung
+      ? eur(auswertung.richtwert)
+      : eur(Math.ceil(rawRichtwert * 100) / 100);
+    if (auswertung) {
+      document.getElementById('kz-summe-beitraege')!.textContent = eur(auswertung.summeBeitraege);
     }
 
     // Splid-Ausgaben-Map aufbauen (slotLabel → ausgaben)
     const ausgabenMap = new Map<string, number>();
     for (const slot of blob.slots) {
-      if (slot.ausgaben !== undefined) {
-        ausgabenMap.set(slot.label, slot.ausgaben);
-      }
+      if (slot.ausgaben !== undefined) ausgabenMap.set(slot.label, slot.ausgaben);
     }
     const hatSplidDaten = ausgabenMap.size > 0;
 
-    // Tabelle befüllen
+    // Ergebnisse nach Slot gruppieren für positionsbasierte Darstellung
+    const ergebnisseBySlot = new Map<string, GebotErgebnis[]>();
+    if (auswertung) {
+      for (const e of auswertung.ergebnisse) {
+        if (!ergebnisseBySlot.has(e.slotLabel)) ergebnisseBySlot.set(e.slotLabel, []);
+        ergebnisseBySlot.get(e.slotLabel)!.push(e);
+      }
+    }
+
+    // Tabelle befüllen — alle Slot-Positionen (geboten / auto / fehlt)
     const tbody = document.getElementById('tabelle-body')!;
-    for (const e of auswertung.ergebnisse) {
-      const tr = document.createElement('tr');
-      if (e.istStandard) tr.classList.add('text-slate-400');
+    for (const slot of blob.slots) {
+      const slotErgebnisse = ergebnisseBySlot.get(slot.label) ?? [];
+      const richtwertAnteil = Math.ceil(slot.gewichtung * rawRichtwert * 100) / 100;
+      const ausgaben = ausgabenMap.get(slot.label) ?? 0;
 
-      const ausgaben = ausgabenMap.get(e.slotLabel) ?? 0;
-      const nochZuZahlen = e.solidarischerBeitrag - ausgaben;
-      const nochSign = nochZuZahlen > 0.005 ? '+' : '';
-      const nochClass = e.istStandard ? '' : (nochZuZahlen > 0.005 ? 'text-red-600' : 'text-green-700');
-      const ausgabenZelle = hatSplidDaten
-        ? `<td class="py-2 pr-4 text-right splid-spalte vollstaendig-spalte hidden">${eur(ausgaben)}</td>`
-        : '';
-      const nochZuZahlenZelle = hatSplidDaten
-        ? `<td class="py-2 pr-4 text-right font-medium splid-spalte vollstaendig-spalte hidden ${nochClass}">${nochSign}${eur(nochZuZahlen)}</td>`
-        : '';
-      const emojiZelle = e.istStandard
-        ? `<td class="py-2 pr-4"><span class="text-xs bg-slate-100 text-slate-500 rounded px-1.5 py-0.5">Standard</span></td>`
-        : `<td class="py-2 pr-4 text-lg">${e.emojiId}</td>`;
+      for (let i = 0; i < slot.anzahl; i++) {
+        const e = slotErgebnisse[i];
+        const istStandard = e?.istStandard === true;
+        const hatGebot = !!e && !istStandard;
+        const fehlt = !e;
 
-      tr.innerHTML = `
-        ${emojiZelle}
-        <td class="py-2 pr-4">${e.slotLabel}</td>
-        <td class="py-2 pr-4 text-right">${e.gewichtung}</td>
-        <td class="py-2 pr-4 text-right">${eur(e.richtwertAnteil)}</td>
-        ${ausgabenZelle}
-        <td class="py-2 pr-4 text-right font-medium vollstaendig-spalte hidden">${eur(e.solidarischerBeitrag)}</td>
-        ${nochZuZahlenZelle}
-      `;
-      tbody.appendChild(tr);
+        const tr = document.createElement('tr');
+        if (!hatGebot) tr.classList.add('text-slate-400');
+
+        let statusBadge: string;
+        if (hatGebot) {
+          statusBadge = '<span class="text-xs bg-green-100 text-green-700 rounded px-1.5 py-0.5 font-medium">geboten</span>';
+        } else if (istStandard) {
+          statusBadge = '<span class="text-xs bg-green-100 text-green-700 rounded px-1.5 py-0.5 font-medium">auto</span>';
+        } else {
+          statusBadge = '<span class="text-xs bg-slate-100 text-slate-500 rounded px-1.5 py-0.5">fehlt</span>';
+        }
+
+        const emojiZelle = hatGebot
+          ? `<td class="py-2 pr-4 text-lg emoji-spalte">${e.emojiId}</td>`
+          : `<td class="py-2 pr-4 emoji-spalte">—</td>`;
+
+        const ausgabenZelle = hatSplidDaten
+          ? `<td class="py-2 pr-4 text-right splid-spalte vollstaendig-spalte hidden">${fehlt ? '—' : eur(ausgaben)}</td>`
+          : '';
+
+        const beitragZelle = fehlt
+          ? `<td class="py-2 pr-4 text-right vollstaendig-spalte hidden">—</td>`
+          : `<td class="py-2 pr-4 text-right font-medium vollstaendig-spalte hidden">${eur(e.solidarischerBeitrag)}</td>`;
+
+        let nochZuZahlenZelle = '';
+        if (hatSplidDaten) {
+          if (fehlt) {
+            nochZuZahlenZelle = `<td class="py-2 pr-4 text-right splid-spalte vollstaendig-spalte hidden">—</td>`;
+          } else {
+            const nochZuZahlen = e.solidarischerBeitrag - ausgaben;
+            const nochSign = nochZuZahlen > 0.005 ? '+' : '';
+            const nochClass = istStandard ? '' : (nochZuZahlen > 0.005 ? 'text-red-600' : 'text-green-700');
+            nochZuZahlenZelle = `<td class="py-2 pr-4 text-right font-medium splid-spalte vollstaendig-spalte hidden ${nochClass}">${nochSign}${eur(nochZuZahlen)}</td>`;
+          }
+        }
+
+        tr.innerHTML = `
+          ${emojiZelle}
+          <td class="py-2 pr-4">${slot.label}</td>
+          <td class="py-2 pr-4 text-right">${slot.gewichtung}</td>
+          <td class="py-2 pr-4 text-right">${fehlt ? eur(richtwertAnteil) : eur(e.richtwertAnteil)}</td>
+          ${ausgabenZelle}
+          ${beitragZelle}
+          ${nochZuZahlenZelle}
+          <td class="py-2 pr-4">${statusBadge}</td>
+        `;
+        tbody.appendChild(tr);
+      }
     }
 
     // Ausgleichszahlungen (nur wenn vollständig, kein Fehlbetrag, Ausgaben vorhanden)
-    if (allesDa && auswertung.fehlbetrag <= 0.005 && ausgabenMap.size > 0) {
+    if (allesDa && auswertung && auswertung.fehlbetrag <= 0.005 && ausgabenMap.size > 0) {
       const zahlungen = berechneAusgleich(auswertung.ergebnisse, ausgabenMap);
       if (zahlungen.length > 0) {
         const liste = document.getElementById('ausgleich-liste')!;
@@ -286,22 +332,21 @@ import Layout from '../../../../layouts/Layout.astro';
     }
 
     // Vollständige Spalten + Boxen einblenden
-    if (allesDa) {
+    if (allesDa && auswertung) {
       document.querySelectorAll('.vollstaendig-spalte').forEach((el) => el.classList.remove('hidden'));
-      // Splid-Spalten nur wenn Splid-Daten vorhanden (vollstaendig-spalte hat schon hidden entfernt,
-      // splid-spalte-Elemente brauchen beide Klassen)
       if (!hatSplidDaten) {
         document.querySelectorAll('.splid-spalte').forEach((el) => el.classList.add('hidden'));
       }
-      // Fehlbetrag/Überschuss-Box
-      if (auswertung.fehlbetrag > 0.005) {
-        document.getElementById('fehlbetrag-box')!.classList.remove('hidden');
-      } else if (auswertung.ueberschuss > 0.005) {
+      if (hatSplidDaten) {
+        document.querySelectorAll('.emoji-spalte').forEach((el) => el.classList.add('hidden'));
+      }
+      if (auswertung.ueberschuss > 0.005) {
+        document.getElementById('ueberschuss-text')!.textContent = eur(auswertung.ueberschuss);
         document.getElementById('ueberschuss-box')!.classList.remove('hidden');
       }
     }
 
-    // Statuszeile (echte Gebote zählen, nicht synthetische)
+    // Statuszeile
     if (allesDa) {
       document.getElementById('gebote-anzahl')!.textContent =
         totalErwartet === 0

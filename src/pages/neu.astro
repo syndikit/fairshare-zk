@@ -302,11 +302,11 @@ import Layout from '../layouts/Layout.astro';
     }, 0);
     if (summeGewichtungen <= 0) return;
 
-    const richtwert = Math.round((gesamtkosten / summeGewichtungen) * 100) / 100;
+    const rawRichtwert = gesamtkosten / summeGewichtungen;
 
     slotEls.forEach((el) => {
       const g = parseFloat((el.querySelector('[name="gewichtung[]"]') as HTMLInputElement).value) || 1;
-      const richtwertSlot = Math.round(richtwert * g * 100) / 100;
+      const richtwertSlot = Math.ceil(rawRichtwert * g * 100) / 100;
 
       const stdInput = el.querySelector<HTMLInputElement>('[name="standardgebot[]"]');
       if (stdInput && stdInput.dataset.auto === 'true') {
@@ -494,7 +494,10 @@ import Layout from '../layouts/Layout.astro';
       const slots = labels.map((label, i) => {
         const ausgabenRaw = (slotEintraege[i]?.querySelector('[name="ausgaben[]"]') as HTMLInputElement)?.value;
         const ausgaben = ausgabenRaw ? parseFloat(ausgabenRaw) : undefined;
-        const stdRaw = (slotEintraege[i]?.querySelector('[name="standardgebot[]"]') as HTMLInputElement)?.value;
+        const stdCheckbox = slotEintraege[i]?.querySelector<HTMLInputElement>('.standardgebot-checkbox');
+        const stdRaw = stdCheckbox?.checked
+          ? (slotEintraege[i]?.querySelector<HTMLInputElement>('[name="standardgebot[]"]'))?.value
+          : undefined;
         const standardgebot = stdRaw ? parseFloat(stdRaw) : undefined;
         return {
           label,

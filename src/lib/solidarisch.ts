@@ -86,7 +86,7 @@ export function generiereEmojiId(): string {
  */
 export function berechneRichtwert(gesamtkosten: number, slots: Slot[]): number {
   const summe = slots.reduce((s, slot) => s + slot.gewichtung * slot.anzahl, 0);
-  return Math.round(gesamtkosten / summe * 100) / 100;
+  return Math.ceil(gesamtkosten / summe * 100) / 100;
 }
 
 function runden(x: number): number {
@@ -121,7 +121,8 @@ export function berechneAuswertung(
     (s, slot) => s + slot.gewichtung * slot.anzahl,
     0,
   );
-  const richtwert = runden(gesamtkosten / summeAlleGewichtungen);
+  const rawRichtwert = gesamtkosten / summeAlleGewichtungen;
+  const richtwert = Math.ceil(rawRichtwert * 100) / 100; // ROUNDUP (wie Excel)
 
   // 2. Summe Gebote + Überschuss (negativ = Fehlbetrag)
   const summeGebote = runden(gebote.reduce((s, g) => s + g.betrag, 0));
@@ -130,7 +131,7 @@ export function berechneAuswertung(
 
   // 3. Erster Pass: richtwertAnteil + ueberRichtwert pro Gebot
   const mitUeberRichtwert = gebote.map((g) => {
-    const richtwertAnteil = runden(g.gewichtung * richtwert);
+    const richtwertAnteil = Math.ceil(g.gewichtung * rawRichtwert * 100) / 100; // ROUNDUP pro Person
     const ueberRichtwert = runden(Math.max(0, g.betrag - richtwertAnteil));
     return { ...g, richtwertAnteil, ueberRichtwert };
   });

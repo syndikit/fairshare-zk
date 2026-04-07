@@ -165,9 +165,7 @@ import Layout from '../../layouts/Layout.astro';
       (s, slot) => s + slot.gewichtung * slot.anzahl,
       0,
     );
-    const richtwert = summeGewichtungen > 0
-      ? Math.round((blob.gesamtkosten / summeGewichtungen) * 100) / 100
-      : 0;
+    const rawRichtwert = summeGewichtungen > 0 ? blob.gesamtkosten / summeGewichtungen : 0;
 
     // Seite befüllen
     document.getElementById('runde-name')!.textContent = blob.rundeName;
@@ -176,7 +174,7 @@ import Layout from '../../layouts/Layout.astro';
     // Slot-Auswahl rendern
     const slotAuswahl = document.getElementById('slot-auswahl')!;
     blob.slots.forEach((slot, idx) => {
-      const richtwertSlot = Math.round(richtwert * slot.gewichtung * 100) / 100;
+      const richtwertSlot = Math.ceil(rawRichtwert * slot.gewichtung * 100) / 100;
       const label = document.createElement('label');
       label.className =
         'flex items-center gap-3 bg-white border border-slate-200 rounded-lg p-3 cursor-pointer hover:border-green-500 has-[:checked]:border-green-600 has-[:checked]:bg-green-50 transition-colors';
@@ -197,7 +195,7 @@ import Layout from '../../layouts/Layout.astro';
     function aktualisiereBetragFeld(slotIdx: number) {
       const slot = blob.slots[slotIdx];
       if (!slot) return;
-      const richtwertSlot = Math.round(richtwert * slot.gewichtung * 100) / 100;
+      const richtwertSlot = Math.ceil(rawRichtwert * slot.gewichtung * 100) / 100;
       if (slot.standardgebot !== undefined) {
         betragInput.value = slot.standardgebot.toFixed(2);
         betragHinweis.textContent = `Standardgebot: ${slot.standardgebot.toFixed(2).replace('.', ',')} € · Richtwert: ${richtwertSlot.toFixed(2).replace('.', ',')} €`;

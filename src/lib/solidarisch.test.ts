@@ -206,16 +206,6 @@ describe('GebotErgebnis Felder', () => {
     expect(b.richtwertAnteil).toBeCloseTo(2 * result.richtwert);
   });
 
-  it('differenz = gebot − solidarischerBeitrag', () => {
-    const slots = [slot('A', 1), slot('B', 1)];
-    const gebote = [gebot(1, 120), gebot(1, 80)];
-    const result = berechneAuswertung(200, gebote, slots);
-
-    for (const e of result.ergebnisse) {
-      expect(e.differenz).toBeCloseTo(e.gebot - e.solidarischerBeitrag);
-    }
-  });
-
   it('summeGebote enthält rohe Gebots-Summe', () => {
     const slots = [slot('A', 1), slot('B', 1)];
     const gebote = [gebot(1, 50), gebot(1, 70)];

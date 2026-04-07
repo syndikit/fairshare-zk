@@ -51,6 +51,16 @@ import Layout from '../../layouts/Layout.astro';
       <!-- Fehler -->
       <div id="gebot-fehler" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm"></div>
 
+      <!-- Duplikat-Warnung (Soft-Warning, kein Hard-Block) -->
+      <div id="duplikat-warnung" class="hidden bg-amber-50 border border-amber-300 text-amber-800 rounded-lg p-3 text-sm space-y-2">
+        <p class="font-medium">Von diesem Gerät wurde für diesen Slot bereits ein Gebot abgegeben.</p>
+        <p class="text-xs text-amber-700">Möchtest du trotzdem ein weiteres Gebot einreichen?</p>
+        <div class="flex gap-2 pt-1">
+          <button type="button" id="duplikat-abbrechen" class="flex-1 border border-amber-400 text-amber-800 rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-amber-100 transition-colors">Abbrechen</button>
+          <button type="button" id="duplikat-bestaetigen" class="flex-1 bg-amber-600 text-white rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-amber-700 transition-colors">Trotzdem abgeben</button>
+        </div>
+      </div>
+
       <button
         type="submit"
         id="gebot-btn"
@@ -58,6 +68,8 @@ import Layout from '../../layouts/Layout.astro';
       >
         Gebot abgeben
       </button>
+
+      <p class="text-xs text-slate-400 text-center">Dieser Schutz gilt nur für dieses Gerät.</p>
     </form>
   </div>
 
@@ -171,10 +183,22 @@ import Layout from '../../layouts/Layout.astro';
     document.getElementById('runde-name')!.textContent = blob.rundeName;
     document.getElementById('gesamtkosten')!.textContent = `${blob.gesamtkosten.toLocaleString('de-DE')} €`;
 
+    // localStorage-Helfer: speichert welche Slots von diesem Gerät bereits geboten wurden
+    function lsKey(label: string) {
+      return `fairshare-slot-${rundenId}-${encodeURIComponent(label)}`;
+    }
+    function slotBereitsGeboten(label: string): boolean {
+      return localStorage.getItem(lsKey(label)) === '1';
+    }
+    function slotAlsGebotenMarkieren(label: string) {
+      localStorage.setItem(lsKey(label), '1');
+    }
+
     // Slot-Auswahl rendern
     const slotAuswahl = document.getElementById('slot-auswahl')!;
     blob.slots.forEach((slot, idx) => {
       const richtwertSlot = Math.ceil(rawRichtwert * slot.gewichtung * 100) / 100;
+      const bereitsGeboten = slotBereitsGeboten(slot.label);
       const label = document.createElement('label');
       label.className =
         'flex items-center gap-3 bg-white border border-slate-200 rounded-lg p-3 cursor-pointer hover:border-green-500 has-[:checked]:border-green-600 has-[:checked]:bg-green-50 transition-colors';
@@ -183,6 +207,7 @@ import Layout from '../../layouts/Layout.astro';
         <span class="flex-1">
           <span class="text-sm font-medium text-slate-800">${slot.label}</span>
           <span class="text-xs text-slate-500 ml-2">Faktor ${slot.gewichtung} · ${slot.anzahl} Platz/Plätze · Richtwert: ${richtwertSlot.toFixed(2).replace('.', ',')} €</span>
+          ${bereitsGeboten ? '<span class="text-xs text-amber-600 ml-1">(bereits abgegeben)</span>' : ''}
         </span>
       `;
       slotAuswahl.appendChild(label);
@@ -223,10 +248,14 @@ import Layout from '../../layouts/Layout.astro';
     const gebotForm = document.getElementById('gebot-form') as HTMLFormElement;
     const gebotBtn = document.getElementById('gebot-btn') as HTMLButtonElement;
     const gebotFehler = document.getElementById('gebot-fehler') as HTMLDivElement;
+    const duplikatWarnung = document.getElementById('duplikat-warnung') as HTMLDivElement;
+    const duplikatAbbrechen = document.getElementById('duplikat-abbrechen') as HTMLButtonElement;
+    const duplikatBestaetigen = document.getElementById('duplikat-bestaetigen') as HTMLButtonElement;
 
-    gebotForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    // Kernfunktion: Gebot tatsächlich einreichen
+    async function gebot_einreichen() {
       gebotFehler.classList.add('hidden');
+      duplikatWarnung.classList.add('hidden');
       gebotBtn.disabled = true;
       gebotBtn.textContent = 'Verschlüssele…';
 
@@ -267,6 +296,9 @@ import Layout from '../../layouts/Layout.astro';
           return;
         }
 
+        // localStorage: Slot als geboten markieren
+        slotAlsGebotenMarkieren(selectedSlot.label);
+
         // Bestätigung anzeigen
         document.getElementById('emoji-anzeige')!.textContent = emojiId;
         document.getElementById('emoji-id-text')!.textContent = emojiId;
@@ -280,6 +312,33 @@ import Layout from '../../layouts/Layout.astro';
         gebotBtn.disabled = false;
         gebotBtn.textContent = 'Gebot abgeben';
       }
+    }
+
+    gebotForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // Prüfen ob gewählter Slot von diesem Gerät bereits geboten wurde
+      const selectedIdx = parseInt(
+        (gebotForm.querySelector('input[name="slot"]:checked') as HTMLInputElement).value,
+        10,
+      );
+      const selectedSlot = blob.slots[selectedIdx];
+
+      if (slotBereitsGeboten(selectedSlot.label)) {
+        // Soft-Warning anzeigen, nicht direkt einreichen
+        duplikatWarnung.classList.remove('hidden');
+        return;
+      }
+
+      await gebot_einreichen();
+    });
+
+    // Warnung-Buttons
+    duplikatAbbrechen.addEventListener('click', () => {
+      duplikatWarnung.classList.add('hidden');
+    });
+    duplikatBestaetigen.addEventListener('click', async () => {
+      await gebot_einreichen();
     });
   }
 

@@ -40,6 +40,11 @@ import Layout from '../../../../layouts/Layout.astro';
     </div>
 
     <!-- Fehlbetrag / Überschuss -->
+    <div id="duplikat-box" class="hidden bg-red-50 border border-red-200 rounded-xl p-4 print:rounded-md print:p-3">
+      <p class="text-sm font-medium text-red-800">⚠️ Zu viele Gebote — Auswertung nicht möglich</p>
+      <p class="text-xs text-red-700 mt-1 mb-2">Für folgende Slots sind mehr Gebote eingegangen als erwartet. Bitte kläre die Doppeleinreichung und bitte die betroffene Person, nicht nochmals zu bieten.</p>
+      <ul id="duplikat-liste" class="text-xs text-red-700 space-y-0.5 list-disc list-inside"></ul>
+    </div>
     <div id="fehlbetrag-box" class="hidden bg-red-50 border border-red-200 rounded-xl p-4 print:rounded-md print:p-3">
       <p class="text-sm font-medium text-red-800">Fehlbetrag</p>
       <p id="fehlbetrag-text" class="text-2xl font-bold text-red-700 print:text-xl"></p>
@@ -185,7 +190,18 @@ import Layout from '../../../../layouts/Layout.astro';
     const totalErwartet = blob.slots
       .filter((s) => s.standardgebot === undefined)
       .reduce((s, slot) => s + slot.anzahl, 0);
-    const allesDa = gebote.length >= totalErwartet;
+    const allesDa = gebote.length === totalErwartet;
+
+    // Duplikat-Check: Gebote pro Slot zählen und gegen slot.anzahl prüfen
+    const zuVieleProSlot = blob.slots
+      .filter((s) => s.standardgebot === undefined)
+      .map((slot) => ({
+        label: slot.label,
+        eingegangen: gebote.filter((g) => g.slotLabel === slot.label).length,
+        erwartet: slot.anzahl,
+      }))
+      .filter((s) => s.eingegangen > s.erwartet);
+    const hatDuplikate = zuVieleProSlot.length > 0;
 
     // Synthetische Gebote für Slots mit standardgebot (fehlende Plätze auffüllen)
     const alleGebote: Gebot[] = [...gebote];
@@ -221,6 +237,17 @@ import Layout from '../../../../layouts/Layout.astro';
         document.getElementById('zustand-auswertung')!.classList.remove('hidden');
         return;
       }
+    }
+
+    // Duplikat-Warnung anzeigen (vor Berechnung)
+    if (hatDuplikate) {
+      const liste = document.getElementById('duplikat-liste')!;
+      for (const s of zuVieleProSlot) {
+        const li = document.createElement('li');
+        li.textContent = `Slot „${s.label}": ${s.eingegangen} Gebote erhalten, ${s.erwartet} erwartet (+${s.eingegangen - s.erwartet})`;
+        liste.appendChild(li);
+      }
+      document.getElementById('duplikat-box')!.classList.remove('hidden');
     }
 
     // Auswertung berechnen (nur wenn Gebote vorhanden)
@@ -317,8 +344,8 @@ import Layout from '../../../../layouts/Layout.astro';
       }
     }
 
-    // Ausgleichszahlungen (nur wenn vollständig, kein Fehlbetrag, Ausgaben vorhanden)
-    if (allesDa && auswertung && auswertung.fehlbetrag <= 0.005 && ausgabenMap.size > 0) {
+    // Ausgleichszahlungen (nur wenn vollständig, kein Fehlbetrag, keine Duplikate, Ausgaben vorhanden)
+    if (allesDa && !hatDuplikate && auswertung && auswertung.fehlbetrag <= 0.005 && ausgabenMap.size > 0) {
       const zahlungen = berechneAusgleich(auswertung.ergebnisse, ausgabenMap);
       if (zahlungen.length > 0) {
         const liste = document.getElementById('ausgleich-liste')!;
@@ -331,8 +358,8 @@ import Layout from '../../../../layouts/Layout.astro';
       }
     }
 
-    // Vollständige Spalten + Boxen einblenden
-    if (allesDa && auswertung) {
+    // Vollständige Spalten + Boxen einblenden (nur wenn vollständig und keine Duplikate)
+    if (allesDa && !hatDuplikate && auswertung) {
       document.querySelectorAll('.vollstaendig-spalte').forEach((el) => el.classList.remove('hidden'));
       if (!hatSplidDaten) {
         document.querySelectorAll('.splid-spalte').forEach((el) => el.classList.add('hidden'));
@@ -346,8 +373,12 @@ import Layout from '../../../../layouts/Layout.astro';
       }
     }
 
-    // Statuszeile
-    if (allesDa) {
+    // Statuszeile (echte Gebote zählen, nicht synthetische)
+    if (hatDuplikate) {
+      const total = gebote.length;
+      document.getElementById('gebote-anzahl')!.textContent =
+        `${total} Gebote eingegangen, ${totalErwartet} erwartet — bitte Doppelgebote klären`;
+    } else if (allesDa) {
       document.getElementById('gebote-anzahl')!.textContent =
         totalErwartet === 0
           ? 'Auswertung vollständig (alle Slots mit Standardgebot)'

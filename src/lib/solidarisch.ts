@@ -32,7 +32,6 @@ export interface GebotErgebnis {
   ueberRichtwert: number;       // max(0, gebot − richtwertAnteil)
   geldZurueck: number;          // proportionaler Anteil am Überschuss
   solidarischerBeitrag: number; // gebot − geldZurueck
-  differenz: number;            // gebot − solidarischerBeitrag (= geldZurueck)
 }
 
 export interface Auswertung {
@@ -138,7 +137,6 @@ export function berechneAuswertung(
       ueberRichtwert: g.ueberRichtwert,
       geldZurueck,
       solidarischerBeitrag,
-      differenz: runden(g.betrag - solidarischerBeitrag),
     };
   });
 
@@ -155,9 +153,6 @@ export function berechneAuswertung(
       ergebnisse[idx].geldZurueck = runden(ergebnisse[idx].geldZurueck + delta);
       ergebnisse[idx].solidarischerBeitrag = runden(
         ergebnisse[idx].solidarischerBeitrag - delta,
-      );
-      ergebnisse[idx].differenz = runden(
-        ergebnisse[idx].gebot - ergebnisse[idx].solidarischerBeitrag,
       );
     }
   }

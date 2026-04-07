@@ -48,6 +48,7 @@ export const POST: APIRoute = async ({ params, request }) => {
     });
   }
 
+  const isCorrection = b.isCorrection === true;
   const { emojiHmac, encGebot } = b as { emojiHmac: string; encGebot: string };
 
   let runde: RundeJSON;
@@ -64,11 +65,22 @@ export const POST: APIRoute = async ({ params, request }) => {
     throw err;
   }
 
-  if (runde.gebote.some((g) => g.emojiHmac === emojiHmac)) {
-    return new Response(
-      JSON.stringify({ error: 'Gebot mit dieser Emoji-ID bereits vorhanden' }),
-      { status: 409, headers: { 'Content-Type': 'application/json' } },
-    );
+  const exists = runde.gebote.some((g) => g.emojiHmac === emojiHmac);
+
+  if (isCorrection) {
+    if (!exists) {
+      return new Response(
+        JSON.stringify({ error: 'Kein Gebot mit dieser Emoji-ID gefunden' }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } },
+      );
+    }
+  } else {
+    if (exists) {
+      return new Response(
+        JSON.stringify({ error: 'Gebot mit dieser Emoji-ID bereits vorhanden' }),
+        { status: 409, headers: { 'Content-Type': 'application/json' } },
+      );
+    }
   }
 
   runde.gebote.push({ emojiHmac, encGebot });

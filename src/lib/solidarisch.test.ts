@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import {
   berechneAuswertung,
+  berechneAusgleich,
   berechneRichtwert,
   type Gebot,
+  type GebotErgebnis,
   type Slot,
 } from './solidarisch';
 
@@ -306,6 +308,117 @@ describe('Standardgebot (synthetische Gebote)', () => {
     ];
     const result = berechneAuswertung(120, gebote, slots);
     expect(result.summeBeitraege).toBeCloseTo(120);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// berechneAusgleich
+// ---------------------------------------------------------------------------
+
+function ergebnis(
+  emojiId: string,
+  slotLabel: string,
+  solidarischerBeitrag: number,
+  overrides: Partial<GebotErgebnis> = {},
+): GebotErgebnis {
+  return {
+    emojiId,
+    slotLabel,
+    gewichtung: 1,
+    gebot: solidarischerBeitrag,
+    richtwertAnteil: solidarischerBeitrag,
+    ueberRichtwert: 0,
+    geldZurueck: 0,
+    solidarischerBeitrag,
+    ...overrides,
+  };
+}
+
+describe('berechneAusgleich', () => {
+  it('einfacher Fall: A schuldet B → eine Überweisung', () => {
+    // A hat 30 € gezahlt, soll 80 € zahlen → schuldet 50 €
+    // B hat 120 € gezahlt, soll 70 € zahlen → bekommt 50 € zurück
+    const ergebnisse: GebotErgebnis[] = [
+      ergebnis('🐼🚀🌈', 'A', 80),
+      ergebnis('🦊🌙⭐', 'B', 70),
+    ];
+    const ausgaben = new Map([['A', 30], ['B', 120]]);
+    const zahlungen = berechneAusgleich(ergebnisse, ausgaben);
+
+    expect(zahlungen).toHaveLength(1);
+    expect(zahlungen[0].von).toBe('🐼🚀🌈');
+    expect(zahlungen[0].an).toBe('🦊🌙⭐');
+    expect(zahlungen[0].betrag).toBeCloseTo(50);
+  });
+
+  it('ohne Ausgaben → leere Liste (keine Gläubiger)', () => {
+    const ergebnisse: GebotErgebnis[] = [
+      ergebnis('🐼🚀🌈', 'A', 80),
+      ergebnis('🦊🌙⭐', 'B', 70),
+    ];
+    const ausgaben = new Map<string, number>();
+    expect(berechneAusgleich(ergebnisse, ausgaben)).toHaveLength(0);
+  });
+
+  it('ausgeglichener Fall: nochZuZahlen = 0 für alle → leere Liste', () => {
+    const ergebnisse: GebotErgebnis[] = [
+      ergebnis('🐼🚀🌈', 'A', 80),
+      ergebnis('🦊🌙⭐', 'B', 70),
+    ];
+    const ausgaben = new Map([['A', 80], ['B', 70]]);
+    expect(berechneAusgleich(ergebnisse, ausgaben)).toHaveLength(0);
+  });
+
+  it('drei Personen: A schuldet B und C', () => {
+    // A: zahlt 0, schuldet 100 → schuldet 100
+    // B: zahlt 60, schuldet 40 → Gläubiger 20
+    // C: zahlt 90, schuldet 60 → Gläubiger 30
+    // Gesamtschulden = 100, Gesamtforderungen = 50
+    // (Zahlen nicht exakt ausgeglichen → Fehlbetrag-Szenario, aber Algorithmus läuft durch)
+    const ergebnisse: GebotErgebnis[] = [
+      ergebnis('🐼🚀🌈', 'A', 100),
+      ergebnis('🦊🌙⭐', 'B', 40),
+      ergebnis('🌟🎉🦋', 'C', 60),
+    ];
+    const ausgaben = new Map([['A', 0], ['B', 60], ['C', 90]]);
+    const zahlungen = berechneAusgleich(ergebnisse, ausgaben);
+    // C ist größter Gläubiger (30), B Gläubiger (20), A Schuldner (100)
+    // A zahlt 30 an C, dann 20 an B, dann Rest (50) bleibt offen (kein weiterer Gläubiger)
+    expect(zahlungen.length).toBeGreaterThanOrEqual(2);
+    const anC = zahlungen.find((z) => z.an === '🌟🎉🦋');
+    const anB = zahlungen.find((z) => z.an === '🦊🌙⭐');
+    expect(anC?.betrag).toBeCloseTo(30);
+    expect(anB?.betrag).toBeCloseTo(20);
+  });
+
+  it('minimiert Überweisungen: A schuldet B, B schuldet C → direkt A an C', () => {
+    // A: zahlt 0, soll 50 → schuldet 50
+    // B: zahlt 50, soll 50 → ausgeglichen
+    // C: zahlt 100, soll 50 → Gläubiger 50
+    const ergebnisse: GebotErgebnis[] = [
+      ergebnis('🐼🚀🌈', 'A', 50),
+      ergebnis('🦊🌙⭐', 'B', 50),
+      ergebnis('🌟🎉🦋', 'C', 50),
+    ];
+    const ausgaben = new Map([['A', 0], ['B', 50], ['C', 100]]);
+    const zahlungen = berechneAusgleich(ergebnisse, ausgaben);
+    expect(zahlungen).toHaveLength(1);
+    expect(zahlungen[0].von).toBe('🐼🚀🌈');
+    expect(zahlungen[0].an).toBe('🌟🎉🦋');
+    expect(zahlungen[0].betrag).toBeCloseTo(50);
+  });
+
+  it('istStandard-Einträge werden übersprungen', () => {
+    const ergebnisse: GebotErgebnis[] = [
+      ergebnis('🐼🚀🌈', 'A', 80),
+      ergebnis('—', 'B', 40, { istStandard: true }),
+      ergebnis('🦊🌙⭐', 'C', 70),
+    ];
+    // A schuldet 50 (zahlt 30), C Gläubiger 30 (zahlt 100)
+    // Standard-Eintrag soll ignoriert werden
+    const ausgaben = new Map([['A', 30], ['B', 0], ['C', 100]]);
+    const zahlungen = berechneAusgleich(ergebnisse, ausgaben);
+    expect(zahlungen.every((z) => z.von !== '—' && z.an !== '—')).toBe(true);
   });
 });
 

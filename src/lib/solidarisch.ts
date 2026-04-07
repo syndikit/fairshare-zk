@@ -37,6 +37,12 @@ export interface GebotErgebnis {
   istStandard?: boolean;        // true wenn aus standardgebot synthetisiert (kein echtes Gebot)
 }
 
+export interface Ausgleichszahlung {
+  von: string;  // emojiId Schuldner
+  an: string;   // emojiId Gläubiger
+  betrag: number;
+}
+
 export interface Auswertung {
   richtwert: number;
   gesamtkosten: number;
@@ -184,4 +190,57 @@ export function berechneAuswertung(
     ueberschuss: Math.max(0, rohUeberschuss),
     ergebnisse,
   };
+}
+
+/**
+ * Berechnet Ausgleichszahlungen (minimale Anzahl Überweisungen).
+ *
+ * Nur sinnvoll wenn:
+ * - Ausgaben bekannt (ausgabenProSlot.size > 0)
+ * - Kein Fehlbetrag (alle Kosten gedeckt)
+ *
+ * Algorithmus: Greedy-Schuldenminimierung.
+ * Schuldner (nochZuZahlen > 0) überweisen an Gläubiger (nochZuZahlen < 0),
+ * jeweils den kleinstmöglichen Betrag, um beide Seiten zu begleichen.
+ */
+export function berechneAusgleich(
+  ergebnisse: GebotErgebnis[],
+  ausgabenProSlot: Map<string, number>,
+): Ausgleichszahlung[] {
+  // Netto-Bilanz pro Person berechnen (synthetische Einträge überspringen)
+  type Posten = { emojiId: string; betrag: number };
+  const schuldner: Posten[] = [];
+  const glaeubiger: Posten[] = [];
+
+  for (const e of ergebnisse) {
+    if (e.istStandard) continue;
+    const ausgaben = ausgabenProSlot.get(e.slotLabel) ?? 0;
+    const nochZuZahlen = runden(e.solidarischerBeitrag - ausgaben);
+    if (nochZuZahlen > 0.005) {
+      schuldner.push({ emojiId: e.emojiId, betrag: nochZuZahlen });
+    } else if (nochZuZahlen < -0.005) {
+      glaeubiger.push({ emojiId: e.emojiId, betrag: -nochZuZahlen });
+    }
+  }
+
+  // Absteigend sortieren
+  schuldner.sort((a, b) => b.betrag - a.betrag);
+  glaeubiger.sort((a, b) => b.betrag - a.betrag);
+
+  const zahlungen: Ausgleichszahlung[] = [];
+
+  let si = 0;
+  let gi = 0;
+  while (si < schuldner.length && gi < glaeubiger.length) {
+    const s = schuldner[si];
+    const g = glaeubiger[gi];
+    const transfer = runden(Math.min(s.betrag, g.betrag));
+    zahlungen.push({ von: s.emojiId, an: g.emojiId, betrag: transfer });
+    s.betrag = runden(s.betrag - transfer);
+    g.betrag = runden(g.betrag - transfer);
+    if (s.betrag <= 0.005) si++;
+    if (g.betrag <= 0.005) gi++;
+  }
+
+  return zahlungen;
 }

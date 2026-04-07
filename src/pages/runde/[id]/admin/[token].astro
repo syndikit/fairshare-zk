@@ -253,7 +253,8 @@ import Layout from '../../../../layouts/Layout.astro';
     document.getElementById('kz-richtwert')!.textContent = auswertung
       ? eur(auswertung.richtwert)
       : eur(Math.ceil(rawRichtwert * 100) / 100);
-    if (auswertung) {
+    // Summe Beiträge nur zeigen wenn kein Fehlbetrag (sonst rekonstruierbar)
+    if (auswertung && auswertung.fehlbetrag <= 0.005) {
       document.getElementById('kz-summe-beitraege')!.textContent = eur(auswertung.summeBeitraege);
     }
 
@@ -357,21 +358,24 @@ import Layout from '../../../../layouts/Layout.astro';
       }
     }
 
-    // Vollständige Spalten + Boxen einblenden (nur wenn vollständig und keine Duplikate)
+    // Fehlbetrag / Überschuss anzeigen (nur wenn vollständig und keine Duplikate)
     if (allesDa && !hatDuplikate && auswertung) {
-      document.querySelectorAll('.vollstaendig-spalte').forEach((el) => el.classList.remove('hidden'));
-      if (!hatSplidDaten) {
-        document.querySelectorAll('.splid-spalte').forEach((el) => el.classList.add('hidden'));
-      }
-      if (hatSplidDaten) {
-        document.querySelectorAll('.emoji-spalte').forEach((el) => el.classList.add('hidden'));
-      }
       if (auswertung.fehlbetrag > 0.005) {
         document.getElementById('fehlbetrag-text')!.textContent = eur(auswertung.fehlbetrag);
         document.getElementById('fehlbetrag-box')!.classList.remove('hidden');
-      } else if (auswertung.ueberschuss > 0.005) {
-        document.getElementById('ueberschuss-text')!.textContent = eur(auswertung.ueberschuss);
-        document.getElementById('ueberschuss-box')!.classList.remove('hidden');
+      } else {
+        // Nur ohne Fehlbetrag: Beitrag-Spalten einblenden (sonst wären Gebote rekonstruierbar)
+        document.querySelectorAll('.vollstaendig-spalte').forEach((el) => el.classList.remove('hidden'));
+        if (!hatSplidDaten) {
+          document.querySelectorAll('.splid-spalte').forEach((el) => el.classList.add('hidden'));
+        }
+        if (hatSplidDaten) {
+          document.querySelectorAll('.emoji-spalte').forEach((el) => el.classList.add('hidden'));
+        }
+        if (auswertung.ueberschuss > 0.005) {
+          document.getElementById('ueberschuss-text')!.textContent = eur(auswertung.ueberschuss);
+          document.getElementById('ueberschuss-box')!.classList.remove('hidden');
+        }
       }
     }
 

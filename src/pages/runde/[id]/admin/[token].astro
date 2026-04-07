@@ -190,7 +190,14 @@ import Layout from '../../../../layouts/Layout.astro';
     const totalErwartet = blob.slots
       .filter((s) => s.standardgebot === undefined)
       .reduce((s, slot) => s + slot.anzahl, 0);
-    const allesDa = gebote.length === totalErwartet;
+
+    // Für allesDa nur Gebote für Slots ohne standardgebot zählen —
+    // echte Gebote für Slots mit standardgebot (z.B. Kind 1 überschreibt Auto) sind ok und ignorierbar
+    const labelsOhneStandard = new Set(
+      blob.slots.filter((s) => s.standardgebot === undefined).map((s) => s.label),
+    );
+    const geboteOhneStandard = gebote.filter((g) => labelsOhneStandard.has(g.slotLabel));
+    const allesDa = geboteOhneStandard.length === totalErwartet;
 
     // Duplikat-Check: Gebote pro Slot zählen und gegen slot.anzahl prüfen
     const zuVieleProSlot = blob.slots
@@ -348,10 +355,17 @@ import Layout from '../../../../layouts/Layout.astro';
     if (allesDa && !hatDuplikate && auswertung && auswertung.fehlbetrag <= 0.005 && ausgabenMap.size > 0) {
       const zahlungen = berechneAusgleich(auswertung.ergebnisse, ausgabenMap);
       if (zahlungen.length > 0) {
+        // Hilfsmaps: emojiId → slotLabel (für Namensanzeige statt Emoji-ID)
+        const emojiZuLabel = new Map<string, string>();
+        for (const e of auswertung.ergebnisse) {
+          if (!e.istStandard) emojiZuLabel.set(e.emojiId, e.slotLabel);
+        }
         const liste = document.getElementById('ausgleich-liste')!;
         for (const z of zahlungen) {
           const li = document.createElement('li');
-          li.textContent = `${z.von} → ${z.an}   ${eur(z.betrag)}`;
+          const vonLabel = emojiZuLabel.get(z.von) ?? z.von;
+          const anLabel = emojiZuLabel.get(z.an) ?? z.an;
+          li.textContent = `${vonLabel} → ${anLabel}   ${eur(z.betrag)}`;
           liste.appendChild(li);
         }
         document.getElementById('ausgleich-section')!.classList.remove('hidden');
@@ -373,18 +387,17 @@ import Layout from '../../../../layouts/Layout.astro';
       }
     }
 
-    // Statuszeile (echte Gebote zählen, nicht synthetische)
+    // Statuszeile (nur Gebote für Slots ohne standardgebot zählen)
     if (hatDuplikate) {
-      const total = gebote.length;
       document.getElementById('gebote-anzahl')!.textContent =
-        `${total} Gebote eingegangen, ${totalErwartet} erwartet — bitte Doppelgebote klären`;
+        `${geboteOhneStandard.length} Gebote eingegangen, ${totalErwartet} erwartet — bitte Doppelgebote klären`;
     } else if (allesDa) {
       document.getElementById('gebote-anzahl')!.textContent =
         totalErwartet === 0
           ? 'Auswertung vollständig (alle Slots mit Standardgebot)'
           : `Alle ${totalErwartet} Gebote eingegangen — Auswertung vollständig`;
     } else {
-      document.getElementById('gebote-anzahl')!.textContent = `${gebote.length} von ${totalErwartet} Geboten eingegangen`;
+      document.getElementById('gebote-anzahl')!.textContent = `${geboteOhneStandard.length} von ${totalErwartet} Geboten eingegangen`;
     }
 
     document.getElementById('zustand-laden')!.classList.add('hidden');

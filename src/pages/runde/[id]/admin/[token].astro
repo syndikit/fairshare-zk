@@ -175,9 +175,14 @@ import Layout from '../../../../layouts/Layout.astro';
       return;
     }
 
+    // Deduplizierung: pro emojiHmac das neueste Gebot behalten (Korrekturen überschreiben alte)
+    const latestByHmac = new Map<string, { emojiHmac: string; encGebot: string }>();
+    for (const g of blobData.gebote) latestByHmac.set(g.emojiHmac, g);
+    const dedupGebote = [...latestByHmac.values()];
+
     // Gebote entschlüsseln
     const gebote: Gebot[] = [];
-    for (const { encGebot } of blobData.gebote) {
+    for (const { encGebot } of dedupGebote) {
       try {
         const g = JSON.parse(await decryptGebot(adminPrivKey, encGebot)) as Gebot;
         gebote.push(g);

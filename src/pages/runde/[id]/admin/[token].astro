@@ -58,9 +58,9 @@ import Layout from '../../../../layouts/Layout.astro';
             <th class="pb-2 pr-4 font-medium">Emoji-ID</th>
             <th class="pb-2 pr-4 font-medium">Slot</th>
             <th class="pb-2 pr-4 font-medium text-right">Faktor</th>
-            <th class="pb-2 pr-4 font-medium text-right">Richtwert-Anteil</th>
-            <th class="pb-2 pr-4 font-medium text-right vollstaendig-spalte hidden">Beitrag</th>
+            <th class="pb-2 pr-4 font-medium text-right">Richtwert</th>
             <th class="pb-2 pr-4 font-medium text-right splid-spalte vollstaendig-spalte hidden">Ausgaben</th>
+            <th class="pb-2 pr-4 font-medium text-right vollstaendig-spalte hidden">Beitrag</th>
             <th class="pb-2 pr-4 font-medium text-right splid-spalte vollstaendig-spalte hidden">Noch zu zahlen</th>
           </tr>
         </thead>
@@ -223,9 +223,11 @@ import Layout from '../../../../layouts/Layout.astro';
       const nochZuZahlen = e.solidarischerBeitrag - ausgaben;
       const nochSign = nochZuZahlen > 0.005 ? '+' : '';
       const nochClass = nochZuZahlen > 0.005 ? 'text-red-600' : 'text-green-700';
-      const splidZellen = hatSplidDaten
-        ? `<td class="py-2 pr-4 text-right text-slate-600 splid-spalte vollstaendig-spalte hidden">${eur(ausgaben)}</td>
-           <td class="py-2 pr-4 text-right font-medium splid-spalte vollstaendig-spalte hidden ${nochClass}">${nochSign}${eur(nochZuZahlen)}</td>`
+      const ausgabenZelle = hatSplidDaten
+        ? `<td class="py-2 pr-4 text-right text-slate-600 splid-spalte vollstaendig-spalte hidden">${eur(ausgaben)}</td>`
+        : '';
+      const nochZuZahlenZelle = hatSplidDaten
+        ? `<td class="py-2 pr-4 text-right font-medium splid-spalte vollstaendig-spalte hidden ${nochClass}">${nochSign}${eur(nochZuZahlen)}</td>`
         : '';
 
       tr.innerHTML = `
@@ -233,8 +235,9 @@ import Layout from '../../../../layouts/Layout.astro';
         <td class="py-2 pr-4 text-slate-800">${e.slotLabel}</td>
         <td class="py-2 pr-4 text-right text-slate-600">${e.gewichtung}</td>
         <td class="py-2 pr-4 text-right text-slate-500">${eur(e.richtwertAnteil)}</td>
+        ${ausgabenZelle}
         <td class="py-2 pr-4 text-right font-medium vollstaendig-spalte hidden">${eur(e.solidarischerBeitrag)}</td>
-        ${splidZellen}
+        ${nochZuZahlenZelle}
       `;
       tbody.appendChild(tr);
     }

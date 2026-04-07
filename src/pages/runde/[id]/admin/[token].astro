@@ -96,7 +96,7 @@ import Layout from '../../../../layouts/Layout.astro';
     gesamtkosten: number;
     adminPubKey: string;
     hmacKey: string;
-    slots: { label: string; gewichtung: number; anzahl: number; ausgaben?: number }[];
+    slots: { label: string; gewichtung: number; anzahl: number; ausgaben?: number; standardgebot?: number }[];
   }
 
   function eur(value: number): string {
@@ -174,15 +174,34 @@ import Layout from '../../../../layouts/Layout.astro';
       }
     }
 
-    // Vollständigkeit prüfen
-    const totalErwartet = blob.slots.reduce((s, slot) => s + slot.anzahl, 0);
+    // Nur Slots OHNE standardgebot brauchen echte Gebote
+    const totalErwartet = blob.slots
+      .filter((s) => s.standardgebot === undefined)
+      .reduce((s, slot) => s + slot.anzahl, 0);
     const allesDa = gebote.length >= totalErwartet;
+
+    // Synthetische Gebote für Slots mit standardgebot (fehlende Plätze auffüllen)
+    const alleGebote: Gebot[] = [...gebote];
+    for (const slot of blob.slots) {
+      if (slot.standardgebot === undefined) continue;
+      const echteDesSlots = gebote.filter((g) => g.slotLabel === slot.label).length;
+      const fehlende = slot.anzahl - echteDesSlots;
+      for (let i = 0; i < fehlende; i++) {
+        alleGebote.push({
+          emojiId: '—',
+          slotLabel: slot.label,
+          gewichtung: slot.gewichtung,
+          betrag: slot.standardgebot,
+          istStandard: true,
+        });
+      }
+    }
 
     // Kopfdaten immer anzeigen
     document.getElementById('runde-name')!.textContent = blob.rundeName;
     document.getElementById('kz-gesamtkosten')!.textContent = eur(blob.gesamtkosten);
 
-    if (gebote.length === 0) {
+    if (alleGebote.length === 0) {
       document.getElementById('kz-richtwert')!.textContent = '–';
       document.getElementById('gebote-anzahl')!.textContent = `0 von ${totalErwartet} Geboten eingegangen.`;
       document.getElementById('zustand-laden')!.classList.add('hidden');
@@ -190,8 +209,8 @@ import Layout from '../../../../layouts/Layout.astro';
       return;
     }
 
-    // Auswertung berechnen
-    const auswertung = berechneAuswertung(blob.gesamtkosten, gebote, blob.slots);
+    // Auswertung berechnen (mit echten + synthetischen Geboten)
+    const auswertung = berechneAuswertung(blob.gesamtkosten, alleGebote, blob.slots);
 
     document.getElementById('kz-richtwert')!.textContent = eur(auswertung.richtwert);
     document.getElementById('kz-summe-beitraege')!.textContent = eur(auswertung.summeBeitraege);
@@ -218,23 +237,27 @@ import Layout from '../../../../layouts/Layout.astro';
     const tbody = document.getElementById('tabelle-body')!;
     for (const e of auswertung.ergebnisse) {
       const tr = document.createElement('tr');
+      if (e.istStandard) tr.classList.add('text-slate-400');
 
       const ausgaben = ausgabenMap.get(e.slotLabel) ?? 0;
       const nochZuZahlen = e.solidarischerBeitrag - ausgaben;
       const nochSign = nochZuZahlen > 0.005 ? '+' : '';
-      const nochClass = nochZuZahlen > 0.005 ? 'text-red-600' : 'text-green-700';
+      const nochClass = e.istStandard ? '' : (nochZuZahlen > 0.005 ? 'text-red-600' : 'text-green-700');
       const ausgabenZelle = hatSplidDaten
-        ? `<td class="py-2 pr-4 text-right text-slate-600 splid-spalte vollstaendig-spalte hidden">${eur(ausgaben)}</td>`
+        ? `<td class="py-2 pr-4 text-right splid-spalte vollstaendig-spalte hidden">${eur(ausgaben)}</td>`
         : '';
       const nochZuZahlenZelle = hatSplidDaten
         ? `<td class="py-2 pr-4 text-right font-medium splid-spalte vollstaendig-spalte hidden ${nochClass}">${nochSign}${eur(nochZuZahlen)}</td>`
         : '';
+      const emojiZelle = e.istStandard
+        ? `<td class="py-2 pr-4"><span class="text-xs bg-slate-100 text-slate-500 rounded px-1.5 py-0.5">Standard</span></td>`
+        : `<td class="py-2 pr-4 text-lg">${e.emojiId}</td>`;
 
       tr.innerHTML = `
-        <td class="py-2 pr-4 text-lg">${e.emojiId}</td>
-        <td class="py-2 pr-4 text-slate-800">${e.slotLabel}</td>
-        <td class="py-2 pr-4 text-right text-slate-600">${e.gewichtung}</td>
-        <td class="py-2 pr-4 text-right text-slate-500">${eur(e.richtwertAnteil)}</td>
+        ${emojiZelle}
+        <td class="py-2 pr-4">${e.slotLabel}</td>
+        <td class="py-2 pr-4 text-right">${e.gewichtung}</td>
+        <td class="py-2 pr-4 text-right">${eur(e.richtwertAnteil)}</td>
         ${ausgabenZelle}
         <td class="py-2 pr-4 text-right font-medium vollstaendig-spalte hidden">${eur(e.solidarischerBeitrag)}</td>
         ${nochZuZahlenZelle}
@@ -258,9 +281,12 @@ import Layout from '../../../../layouts/Layout.astro';
       }
     }
 
-    // Statuszeile
+    // Statuszeile (echte Gebote zählen, nicht synthetische)
     if (allesDa) {
-      document.getElementById('gebote-anzahl')!.textContent = `Alle ${totalErwartet} Gebote eingegangen — Auswertung vollständig`;
+      document.getElementById('gebote-anzahl')!.textContent =
+        totalErwartet === 0
+          ? 'Auswertung vollständig (alle Slots mit Standardgebot)'
+          : `Alle ${totalErwartet} Gebote eingegangen — Auswertung vollständig`;
     } else {
       document.getElementById('gebote-anzahl')!.textContent = `${gebote.length} von ${totalErwartet} Geboten eingegangen`;
     }

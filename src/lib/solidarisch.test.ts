@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   berechneAuswertung,
+  berechneRichtwert,
   type Gebot,
   type Slot,
 } from './solidarisch';
@@ -226,6 +227,85 @@ describe('Rundungskorrektur', () => {
     const result = berechneAuswertung(299.99, gebote, slots);
 
     expect(Math.abs(result.summeBeitraege - result.gesamtkosten)).toBeLessThanOrEqual(0.01);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// berechneRichtwert
+// ---------------------------------------------------------------------------
+
+describe('berechneRichtwert', () => {
+  it('berechnet richtwert korrekt', () => {
+    // 3 Slots à gewichtung=1, anzahl=1 → summe=3, richtwert=300/3=100
+    const slots: Slot[] = [
+      { label: 'A', gewichtung: 1, anzahl: 1 },
+      { label: 'B', gewichtung: 1, anzahl: 1 },
+      { label: 'C', gewichtung: 1, anzahl: 1 },
+    ];
+    expect(berechneRichtwert(300, slots)).toBe(100);
+  });
+
+  it('berücksichtigt gewichtung × anzahl', () => {
+    // Familie: gewichtung=2, anzahl=2 → 4; Single: gewichtung=1, anzahl=1 → 1; summe=5
+    const slots: Slot[] = [
+      { label: 'Familie', gewichtung: 2, anzahl: 2 },
+      { label: 'Single', gewichtung: 1, anzahl: 1 },
+    ];
+    expect(berechneRichtwert(500, slots)).toBe(100);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Standardgebot: synthetische Gebote werden korrekt verarbeitet
+// ---------------------------------------------------------------------------
+
+describe('Standardgebot (synthetische Gebote)', () => {
+  it('istStandard wird in GebotErgebnis durchgereicht', () => {
+    const slots: Slot[] = [
+      { label: 'Erwachsener', gewichtung: 1, anzahl: 1 },
+      { label: 'Kind', gewichtung: 0.5, anzahl: 1, standardgebot: 40 },
+    ];
+    const gebote: Gebot[] = [
+      { emojiId: '🐼🚀🌈', slotLabel: 'Erwachsener', gewichtung: 1, betrag: 80 },
+      { emojiId: '—', slotLabel: 'Kind', gewichtung: 0.5, betrag: 40, istStandard: true },
+    ];
+    const result = berechneAuswertung(120, gebote, slots);
+
+    const kind = result.ergebnisse.find((e) => e.slotLabel === 'Kind')!;
+    expect(kind.istStandard).toBe(true);
+    expect(kind.gebot).toBe(40);
+  });
+
+  it('echtes Gebot für Slot mit standardgebot: istStandard bleibt undefined', () => {
+    const slots: Slot[] = [
+      { label: 'Kind', gewichtung: 0.5, anzahl: 1, standardgebot: 40 },
+    ];
+    const gebote: Gebot[] = [
+      { emojiId: '🌟🎉🦋', slotLabel: 'Kind', gewichtung: 0.5, betrag: 60 },
+    ];
+    const result = berechneAuswertung(120, gebote, slots);
+    expect(result.ergebnisse[0].istStandard).toBeUndefined();
+    expect(result.ergebnisse[0].gebot).toBe(60);
+  });
+
+  it('summeBeitraege korrekt bei gemischten echten + synthetischen Geboten', () => {
+    // richtwert = 120 / (1×1 + 0.5×1) = 120 / 1.5 = 80
+    // Erwachsener: gebot=90, richtwertAnteil=80, ueberRichtwert=10
+    // Kind (Standard): gebot=40, richtwertAnteil=40, ueberRichtwert=0
+    // summeGebote = 130, überschuss = 10
+    // Erwachsener: geldZurueck = 10, beitrag = 80
+    // Kind: beitrag = 40
+    // summeBeitraege ≈ 120
+    const slots: Slot[] = [
+      { label: 'Erwachsener', gewichtung: 1, anzahl: 1 },
+      { label: 'Kind', gewichtung: 0.5, anzahl: 1, standardgebot: 40 },
+    ];
+    const gebote: Gebot[] = [
+      { emojiId: '🐼🚀🌈', slotLabel: 'Erwachsener', gewichtung: 1, betrag: 90 },
+      { emojiId: '—', slotLabel: 'Kind', gewichtung: 0.5, betrag: 40, istStandard: true },
+    ];
+    const result = berechneAuswertung(120, gebote, slots);
+    expect(result.summeBeitraege).toBeCloseTo(120);
   });
 });
 

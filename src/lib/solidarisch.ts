@@ -14,6 +14,7 @@ export interface Slot {
   gewichtung: number;
   anzahl: number;
   ausgaben?: number; // aus Splid importierte Ausgaben der Person (optional)
+  standardgebot?: number; // optionaler Standardwert (€), wird zur Auswertungszeit eingesetzt
 }
 
 export interface Gebot {
@@ -21,6 +22,7 @@ export interface Gebot {
   slotLabel: string;
   gewichtung: number;
   betrag: number;
+  istStandard?: boolean; // true wenn aus standardgebot synthetisiert (kein echtes Gebot)
 }
 
 export interface GebotErgebnis {
@@ -32,6 +34,7 @@ export interface GebotErgebnis {
   ueberRichtwert: number;       // max(0, gebot − richtwertAnteil)
   geldZurueck: number;          // proportionaler Anteil am Überschuss
   solidarischerBeitrag: number; // gebot − geldZurueck
+  istStandard?: boolean;        // true wenn aus standardgebot synthetisiert (kein echtes Gebot)
 }
 
 export interface Auswertung {
@@ -70,6 +73,15 @@ export function generiereEmojiId(): string {
 // ---------------------------------------------------------------------------
 // Berechnungslogik
 // ---------------------------------------------------------------------------
+
+/**
+ * Berechnet den Richtwert (Kosten pro Gewichtungseinheit) aus allen definierten Slots.
+ * Kann auf Teilnehmer- und Admin-Seite genutzt werden.
+ */
+export function berechneRichtwert(gesamtkosten: number, slots: Slot[]): number {
+  const summe = slots.reduce((s, slot) => s + slot.gewichtung * slot.anzahl, 0);
+  return Math.round(gesamtkosten / summe * 100) / 100;
+}
 
 function runden(x: number): number {
   return Math.round(x * 100) / 100;
@@ -137,6 +149,7 @@ export function berechneAuswertung(
       ueberRichtwert: g.ueberRichtwert,
       geldZurueck,
       solidarischerBeitrag,
+      ...(g.istStandard ? { istStandard: true } : {}),
     };
   });
 

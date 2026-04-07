@@ -68,6 +68,12 @@ import Layout from '../../../../layouts/Layout.astro';
       </table>
     </div>
 
+    <!-- Ausgleichszahlungen -->
+    <div id="ausgleich-section" class="hidden space-y-2">
+      <h2 class="text-sm font-medium text-slate-700 print:text-xs">Ausgleichszahlungen</h2>
+      <ul id="ausgleich-liste" class="space-y-1 text-sm print:text-xs"></ul>
+    </div>
+
     <!-- Status -->
     <p id="gebote-anzahl" class="text-xs text-slate-400 print:hidden"></p>
 
@@ -89,7 +95,7 @@ import Layout from '../../../../layouts/Layout.astro';
     decrypt,
     decryptGebot,
   } from '../../../../lib/crypto';
-  import { berechneAuswertung, type Gebot } from '../../../../lib/solidarisch';
+  import { berechneAuswertung, berechneAusgleich, type Gebot } from '../../../../lib/solidarisch';
 
   interface TeilnehmerBlob {
     rundeName: string;
@@ -263,6 +269,20 @@ import Layout from '../../../../layouts/Layout.astro';
         ${nochZuZahlenZelle}
       `;
       tbody.appendChild(tr);
+    }
+
+    // Ausgleichszahlungen (nur wenn vollständig, kein Fehlbetrag, Ausgaben vorhanden)
+    if (allesDa && auswertung.fehlbetrag <= 0.005 && ausgabenMap.size > 0) {
+      const zahlungen = berechneAusgleich(auswertung.ergebnisse, ausgabenMap);
+      if (zahlungen.length > 0) {
+        const liste = document.getElementById('ausgleich-liste')!;
+        for (const z of zahlungen) {
+          const li = document.createElement('li');
+          li.textContent = `${z.von} → ${z.an}   ${eur(z.betrag)}`;
+          liste.appendChild(li);
+        }
+        document.getElementById('ausgleich-section')!.classList.remove('hidden');
+      }
     }
 
     // Vollständige Spalten + Boxen einblenden

@@ -126,6 +126,23 @@ import Layout from '../layouts/Layout.astro';
                 class="w-28 border border-slate-300 rounded-md px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-green-600"
               />
             </div>
+            <div class="standardgebot-zeile flex items-center gap-2 flex-wrap">
+              <span class="standardgebot-richtwert text-xs text-slate-400"></span>
+              <label class="flex items-center gap-1 text-xs text-slate-500 cursor-pointer select-none">
+                <input type="checkbox" class="standardgebot-checkbox accent-green-700" />
+                Standardgebot festlegen
+              </label>
+              <div class="standardgebot-eingabe hidden flex items-center gap-1">
+                <input
+                  type="number"
+                  name="standardgebot[]"
+                  min="0"
+                  step="0.01"
+                  data-auto="true"
+                  class="w-28 border border-slate-300 rounded-md px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-green-600"
+                />
+              </div>
+            </div>
           </div>
         </div>
         <p class="text-xs text-slate-400 mt-1">Label ist optional. Ohne Label heißt der Slot „Slot".</p>
@@ -271,6 +288,67 @@ import Layout from '../layouts/Layout.astro';
     });
   }
 
+  function aktualisiereRichtwert() {
+    const gesamtkosten = parseFloat(
+      (form.querySelector('#gesamtkosten') as HTMLInputElement).value,
+    );
+    if (!gesamtkosten || gesamtkosten <= 0) return;
+
+    const slotEls = [...slotsContainer.querySelectorAll<HTMLDivElement>('.slot-eintrag')];
+    const summeGewichtungen = slotEls.reduce((s, el) => {
+      const g = parseFloat((el.querySelector('[name="gewichtung[]"]') as HTMLInputElement).value) || 0;
+      const a = parseInt((el.querySelector('[name="anzahl[]"]') as HTMLInputElement).value) || 0;
+      return s + g * a;
+    }, 0);
+    if (summeGewichtungen <= 0) return;
+
+    const richtwert = Math.round((gesamtkosten / summeGewichtungen) * 100) / 100;
+
+    slotEls.forEach((el) => {
+      const g = parseFloat((el.querySelector('[name="gewichtung[]"]') as HTMLInputElement).value) || 1;
+      const richtwertSlot = Math.round(richtwert * g * 100) / 100;
+
+      const stdInput = el.querySelector<HTMLInputElement>('[name="standardgebot[]"]');
+      if (stdInput && stdInput.dataset.auto === 'true') {
+        stdInput.value = richtwertSlot.toFixed(2);
+      }
+
+      const richtwertAnzeige = el.querySelector<HTMLSpanElement>('.standardgebot-richtwert');
+      if (richtwertAnzeige) {
+        richtwertAnzeige.textContent = `Richtwert: ${richtwertSlot.toFixed(2).replace('.', ',')} €`;
+      }
+    });
+  }
+
+  document.getElementById('gesamtkosten')!.addEventListener('input', aktualisiereRichtwert);
+
+  slotsContainer.addEventListener('input', (e) => {
+    const target = e.target as HTMLInputElement;
+    if (target.name === 'standardgebot[]') {
+      target.dataset.auto = 'false';
+    } else if (target.name === 'gewichtung[]' || target.name === 'anzahl[]') {
+      aktualisiereRichtwert();
+    }
+  });
+
+  slotsContainer.addEventListener('change', (e) => {
+    const target = e.target as HTMLInputElement;
+    if (!target.classList.contains('standardgebot-checkbox')) return;
+    const eintrag = target.closest('.slot-eintrag') as HTMLDivElement;
+    const eingabe = eintrag.querySelector('.standardgebot-eingabe') as HTMLDivElement;
+    const stdInput = eintrag.querySelector<HTMLInputElement>('[name="standardgebot[]"]');
+    if (target.checked) {
+      eingabe.classList.remove('hidden');
+      // aktualisiereRichtwert hat data-auto-Felder schon befüllt
+    } else {
+      eingabe.classList.add('hidden');
+      if (stdInput) {
+        stdInput.value = '';
+        stdInput.dataset.auto = 'true';
+      }
+    }
+  });
+
   // ---------------------------------------------------------------------------
   // Splid-Import
   // ---------------------------------------------------------------------------
@@ -326,6 +404,7 @@ import Layout from '../layouts/Layout.astro';
       aktualisiereEntfernenButtons();
       ausgabenToggle.checked = true;
       setzeAusgabenSichtbarkeit(true);
+      aktualisiereRichtwert();
 
       const namen = personen.map((p) => p.name).join(', ');
       splidErfolgEl.textContent = `${personen.length} Personen importiert: ${namen}`;
@@ -354,11 +433,21 @@ import Layout from '../layouts/Layout.astro';
       else if (inp.name === 'anzahl[]') inp.value = '1';
       else inp.value = '';
     });
+    // Standardgebot zurücksetzen
+    const stdCheckbox = klon.querySelector<HTMLInputElement>('.standardgebot-checkbox');
+    if (stdCheckbox) stdCheckbox.checked = false;
+    const stdEingabe = klon.querySelector<HTMLDivElement>('.standardgebot-eingabe');
+    if (stdEingabe) stdEingabe.classList.add('hidden');
+    const stdInput = klon.querySelector<HTMLInputElement>('[name="standardgebot[]"]');
+    if (stdInput) { stdInput.value = ''; stdInput.dataset.auto = 'true'; }
+    const richtwertAnzeige = klon.querySelector<HTMLSpanElement>('.standardgebot-richtwert');
+    if (richtwertAnzeige) richtwertAnzeige.textContent = '';
     // Ausgaben-Zeile entsprechend Toggle-Zustand ein-/ausblenden
     const ausgabenZeile = klon.querySelector('.ausgaben-zeile') as HTMLDivElement;
     ausgabenZeile.classList.toggle('hidden', !ausgabenToggle.checked);
     slotsContainer.appendChild(klon);
     aktualisiereEntfernenButtons();
+    aktualisiereRichtwert();
   });
 
   // Slot entfernen (delegiert)
@@ -405,11 +494,16 @@ import Layout from '../layouts/Layout.astro';
       const slots = labels.map((label, i) => {
         const ausgabenRaw = (slotEintraege[i]?.querySelector('[name="ausgaben[]"]') as HTMLInputElement)?.value;
         const ausgaben = ausgabenRaw ? parseFloat(ausgabenRaw) : undefined;
+        const stdRaw = (slotEintraege[i]?.querySelector('[name="standardgebot[]"]') as HTMLInputElement)?.value;
+        const standardgebot = stdRaw ? parseFloat(stdRaw) : undefined;
         return {
           label,
           gewichtung: gewichtungen[i],
           anzahl: anzahlen[i],
           ...(ausgaben !== undefined && isFinite(ausgaben) ? { ausgaben } : {}),
+          ...(standardgebot !== undefined && isFinite(standardgebot) && standardgebot > 0
+            ? { standardgebot }
+            : {}),
         };
       });
 

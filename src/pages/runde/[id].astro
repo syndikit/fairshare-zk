@@ -45,9 +45,7 @@ import Layout from '../../layouts/Layout.astro';
           placeholder="z.B. 80"
           class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
         />
-        <p class="text-xs text-slate-400 mt-1">
-          Gib den Betrag, den du beitragen kannst oder möchtest.
-        </p>
+        <p id="betrag-richtwert-hinweis" class="text-xs text-slate-400 mt-1"></p>
       </div>
 
       <!-- Fehler -->
@@ -95,7 +93,7 @@ import Layout from '../../layouts/Layout.astro';
     gesamtkosten: number;
     adminPubKey: string;
     hmacKey: string;
-    slots: { label: string; gewichtung: number; anzahl: number }[];
+    slots: { label: string; gewichtung: number; anzahl: number; standardgebot?: number }[];
   }
 
   function zeigeFehler(msg: string) {
@@ -162,6 +160,15 @@ import Layout from '../../layouts/Layout.astro';
       teilnehmerLink: originalUrl,
     });
 
+    // Richtwert berechnen
+    const summeGewichtungen = blob.slots.reduce(
+      (s, slot) => s + slot.gewichtung * slot.anzahl,
+      0,
+    );
+    const richtwert = summeGewichtungen > 0
+      ? Math.round((blob.gesamtkosten / summeGewichtungen) * 100) / 100
+      : 0;
+
     // Seite befüllen
     document.getElementById('runde-name')!.textContent = blob.rundeName;
     document.getElementById('gesamtkosten')!.textContent = `${blob.gesamtkosten.toLocaleString('de-DE')} €`;
@@ -169,6 +176,7 @@ import Layout from '../../layouts/Layout.astro';
     // Slot-Auswahl rendern
     const slotAuswahl = document.getElementById('slot-auswahl')!;
     blob.slots.forEach((slot, idx) => {
+      const richtwertSlot = Math.round(richtwert * slot.gewichtung * 100) / 100;
       const label = document.createElement('label');
       label.className =
         'flex items-center gap-3 bg-white border border-slate-200 rounded-lg p-3 cursor-pointer hover:border-green-500 has-[:checked]:border-green-600 has-[:checked]:bg-green-50 transition-colors';
@@ -176,11 +184,38 @@ import Layout from '../../layouts/Layout.astro';
         <input type="radio" name="slot" value="${idx}" class="accent-green-700" ${idx === 0 ? 'checked' : ''} />
         <span class="flex-1">
           <span class="text-sm font-medium text-slate-800">${slot.label}</span>
-          <span class="text-xs text-slate-500 ml-2">Faktor ${slot.gewichtung} · ${slot.anzahl} Platz/Plätze</span>
+          <span class="text-xs text-slate-500 ml-2">Faktor ${slot.gewichtung} · ${slot.anzahl} Platz/Plätze · Richtwert: ${richtwertSlot.toFixed(2).replace('.', ',')} €</span>
         </span>
       `;
       slotAuswahl.appendChild(label);
     });
+
+    // Betrag-Feld + Richtwert-Hinweis bei Slot-Wechsel aktualisieren
+    const betragInput = document.getElementById('betrag') as HTMLInputElement;
+    const betragHinweis = document.getElementById('betrag-richtwert-hinweis')!;
+
+    function aktualisiereBetragFeld(slotIdx: number) {
+      const slot = blob.slots[slotIdx];
+      if (!slot) return;
+      const richtwertSlot = Math.round(richtwert * slot.gewichtung * 100) / 100;
+      if (slot.standardgebot !== undefined) {
+        betragInput.value = slot.standardgebot.toFixed(2);
+        betragHinweis.textContent = `Standardgebot: ${slot.standardgebot.toFixed(2).replace('.', ',')} € · Richtwert: ${richtwertSlot.toFixed(2).replace('.', ',')} €`;
+      } else {
+        betragInput.value = '';
+        betragHinweis.textContent = `Richtwert für diesen Slot: ${richtwertSlot.toFixed(2).replace('.', ',')} €`;
+      }
+    }
+
+    slotAuswahl.addEventListener('change', (e) => {
+      const radio = e.target as HTMLInputElement;
+      if (radio.name === 'slot') {
+        aktualisiereBetragFeld(parseInt(radio.value, 10));
+      }
+    });
+
+    // Initiale Vorausfüllung für den ersten Slot
+    aktualisiereBetragFeld(0);
 
     // Formular anzeigen
     document.getElementById('zustand-laden')!.classList.add('hidden');

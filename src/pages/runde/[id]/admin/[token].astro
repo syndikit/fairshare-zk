@@ -231,21 +231,6 @@ import Layout from '../../../../layouts/Layout.astro';
     document.getElementById('runde-name')!.textContent = blob.rundeName;
     document.getElementById('kz-gesamtkosten')!.textContent = eur(blob.gesamtkosten);
 
-    // Fehlbetrag-Früherkennung: wenn alle Gebote da, aber Summe < Kosten
-    if (allesDa && alleGebote.length > 0) {
-      const summeGebote = Math.round(alleGebote.reduce((s, g) => s + g.betrag, 0) * 100) / 100;
-      if (summeGebote < blob.gesamtkosten) {
-        const fehlbetrag = Math.round((blob.gesamtkosten - summeGebote) * 100) / 100;
-        document.getElementById('fehlbetrag-text')!.textContent = eur(fehlbetrag);
-        document.getElementById('fehlbetrag-box')!.classList.remove('hidden');
-        document.getElementById('gebote-anzahl')!.textContent =
-          'Alle Gebote eingegangen — Fehlbetrag, Runde muss wiederholt werden.';
-        document.getElementById('zustand-laden')!.classList.add('hidden');
-        document.getElementById('zustand-auswertung')!.classList.remove('hidden');
-        return;
-      }
-    }
-
     // Duplikat-Warnung anzeigen (vor Berechnung)
     if (hatDuplikate) {
       const liste = document.getElementById('duplikat-liste')!;
@@ -381,7 +366,10 @@ import Layout from '../../../../layouts/Layout.astro';
       if (hatSplidDaten) {
         document.querySelectorAll('.emoji-spalte').forEach((el) => el.classList.add('hidden'));
       }
-      if (auswertung.ueberschuss > 0.005) {
+      if (auswertung.fehlbetrag > 0.005) {
+        document.getElementById('fehlbetrag-text')!.textContent = eur(auswertung.fehlbetrag);
+        document.getElementById('fehlbetrag-box')!.classList.remove('hidden');
+      } else if (auswertung.ueberschuss > 0.005) {
         document.getElementById('ueberschuss-text')!.textContent = eur(auswertung.ueberschuss);
         document.getElementById('ueberschuss-box')!.classList.remove('hidden');
       }
@@ -392,10 +380,13 @@ import Layout from '../../../../layouts/Layout.astro';
       document.getElementById('gebote-anzahl')!.textContent =
         `${geboteOhneStandard.length} Gebote eingegangen, ${totalErwartet} erwartet — bitte Doppelgebote klären`;
     } else if (allesDa) {
+      const fehlbetragVorhanden = auswertung && auswertung.fehlbetrag > 0.005;
       document.getElementById('gebote-anzahl')!.textContent =
         totalErwartet === 0
           ? 'Auswertung vollständig (alle Slots mit Standardgebot)'
-          : `Alle ${totalErwartet} Gebote eingegangen — Auswertung vollständig`;
+          : fehlbetragVorhanden
+            ? `Alle ${totalErwartet} Gebote eingegangen — Fehlbetrag, Runde muss wiederholt werden`
+            : `Alle ${totalErwartet} Gebote eingegangen — Auswertung vollständig`;
     } else {
       document.getElementById('gebote-anzahl')!.textContent = `${geboteOhneStandard.length} von ${totalErwartet} Geboten eingegangen`;
     }

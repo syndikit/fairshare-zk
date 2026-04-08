@@ -5,6 +5,7 @@ interface Props {
   title: string;
 }
 const { title } = Astro.props;
+const pathname = Astro.url.pathname;
 ---
 
 <!doctype html>
@@ -26,21 +27,31 @@ const { title } = Astro.props;
           </span>
         </a>
         <nav class="flex items-center gap-1">
-          <a href="/neu" class="px-3 py-1.5 rounded-lg text-sm text-slate-600 hover:bg-slate-200 transition-colors">Neue Runde</a>
-          <a id="nav-meine-runden" href="/meine-runden" class="hidden px-3 py-1.5 rounded-lg text-sm text-slate-600 hover:bg-slate-200 transition-colors">Meine Runden</a>
+          <a href="/neu" class={`px-3 py-1.5 rounded-lg text-sm transition-colors hover:bg-slate-200 ${pathname === '/neu' ? 'text-brand font-semibold' : 'text-slate-600'}`}>Neue Runde</a>
+          <a id="nav-meine-runden" href="/meine-runden" class={`px-3 py-1.5 rounded-lg text-sm transition-colors hover:bg-slate-200 ${pathname === '/meine-runden' ? 'text-brand font-semibold' : 'text-slate-600 hidden'}`}>Meine Runden</a>
         </nav>
       </div>
     </div>
     <script>
       try {
-        const runden = JSON.parse(localStorage.getItem('fairshare_runden') || '[]');
-        if (Array.isArray(runden) && runden.length > 0) {
-          document.getElementById('nav-meine-runden')?.classList.remove('hidden');
+        const navLink = document.getElementById('nav-meine-runden');
+        if (navLink) {
+          const runden = JSON.parse(localStorage.getItem('fairshare_runden') || '[]');
+          if (Array.isArray(runden) && runden.length > 0) {
+            navLink.classList.remove('hidden');
+          }
+          // Always show when on the page itself
+          if (window.location.pathname === '/meine-runden') {
+            navLink.classList.remove('hidden');
+          }
         }
       } catch { /* ignore */ }
     </script>
     <main class="mx-auto max-w-2xl px-4 py-6">
       <slot />
     </main>
+    <footer class="mx-auto max-w-2xl px-4 py-4 text-center">
+      <a href="/ueber" class="text-xs text-slate-400 hover:text-slate-600 transition-colors">Über FairShare</a>
+    </footer>
   </body>
 </html>

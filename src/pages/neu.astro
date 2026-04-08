@@ -8,9 +8,10 @@ import Layout from '../layouts/Layout.astro';
     <h1 class="text-2xl font-semibold mb-1">Neue Runde erstellen</h1>
     <p class="text-slate-500 text-sm mb-6">Alle Daten werden im Browser verschlüsselt — der Server sieht nie Klartext.</p>
 
-    <!-- Splid-Import (kompakt) -->
+    <!-- Import (kompakt) -->
     <p class="mb-6 text-sm text-slate-400">
-      Bereits eine Splid-Abrechnung? <a href="#" id="splid-import-btn" class="underline hover:text-slate-600 transition-colors">XLSX hochladen →</a>
+      <a href="#" id="splid-import-btn" class="underline hover:text-slate-600 transition-colors">Abrechnung importieren →</a>
+      <span class="block text-xs mt-0.5">Derzeit wird Splid (XLSX) unterstützt.</span>
     </p>
     <input type="file" id="splid-file" accept=".xlsx,.xls" class="hidden" />
     <div id="splid-erfolg" class="hidden mb-4 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2"></div>
@@ -52,7 +53,7 @@ import Layout from '../layouts/Layout.astro';
       <!-- Slot-Typen -->
       <div>
         <div class="flex items-center justify-between mb-2">
-          <label class="block text-sm font-medium text-slate-700">Slot-Typen</label>
+          <label class="block text-sm font-medium text-slate-700">Typen</label>
           <div class="flex items-center gap-3">
             <label class="flex items-center gap-1.5 text-sm text-slate-500 cursor-pointer select-none">
               <input type="checkbox" id="ausgaben-toggle" class="accent-green-700" />
@@ -77,6 +78,18 @@ import Layout from '../layouts/Layout.astro';
                 placeholder="Label (optional)"
                 class="flex-1 border border-slate-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
               />
+              <!-- Ausgaben inline (nur sichtbar wenn Toggle aktiv) -->
+              <div class="ausgaben-inline hidden flex items-center gap-1">
+                <span class="text-xs text-slate-400 shrink-0">€</span>
+                <input
+                  type="number"
+                  name="ausgaben[]"
+                  min="0"
+                  step="0.01"
+                  placeholder="0,00"
+                  class="w-24 border border-slate-300 rounded-md px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-green-600"
+                />
+              </div>
               <button
                 type="button"
                 class="slot-entfernen text-slate-400 hover:text-red-500 text-lg leading-none hidden"
@@ -113,19 +126,20 @@ import Layout from '../layouts/Layout.astro';
                     </label>
                     <input
                       type="number"
-                      class="slot-gewichtung-manuell hidden w-16 border border-slate-300 rounded-md px-2 py-1 text-sm text-center focus:outline-none focus:ring-2 focus:ring-green-600"
+                      class="slot-gewichtung-manuell w-16 border border-slate-300 rounded-md px-2 py-1 text-sm text-center opacity-50 cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-green-600"
                       min="0.1"
                       max="2"
                       step="0.05"
                       value="1"
                       placeholder="0,0–2,0"
+                      readonly
                     />
                   </div>
                   <input type="hidden" name="gewichtung[]" value="1" />
                 </div>
-                <!-- Plätze -->
+                <!-- Anzahl -->
                 <div class="flex items-center gap-2">
-                  <span class="text-xs text-slate-500">Plätze</span>
+                  <span class="text-xs text-slate-500">Anzahl</span>
                   <input
                     type="number"
                     name="anzahl[]"
@@ -134,18 +148,6 @@ import Layout from '../layouts/Layout.astro';
                     step="1"
                     required
                     class="w-16 border border-slate-300 rounded-md px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-green-600"
-                  />
-                </div>
-                <!-- Ausgaben -->
-                <div class="ausgaben-zeile hidden flex items-center gap-2">
-                  <span class="text-xs text-slate-500 shrink-0">Ausgaben (€)</span>
-                  <input
-                    type="number"
-                    name="ausgaben[]"
-                    min="0"
-                    step="0.01"
-                    placeholder="0,00"
-                    class="w-28 border border-slate-300 rounded-md px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-green-600"
                   />
                 </div>
                 <!-- Standardgebot -->
@@ -169,7 +171,7 @@ import Layout from '../layouts/Layout.astro';
             </details>
           </div>
         </div>
-        <p class="text-xs text-slate-400 mt-1">Label ist optional. Ohne Label heißt der Slot „Slot".</p>
+        <p class="text-xs text-slate-400 mt-1">Label ist optional. Ohne Label wird der Preset-Name verwendet (z.&nbsp;B. „Erwachsen").</p>
       </div>
 
       <!-- Fehler -->
@@ -188,73 +190,75 @@ import Layout from '../layouts/Layout.astro';
 
   <!-- Ergebnis-Bereich -->
   <div id="ergebnis-bereich" class="hidden space-y-6">
-    <div>
-      <h1 class="text-2xl font-semibold mb-1">Runde erstellt</h1>
-      <p class="text-slate-500 text-sm">Speichere beide Links — sie werden hier nicht gespeichert.</p>
+    <!-- Header -->
+    <div class="text-center pt-4 pb-2">
+      <div class="text-5xl text-brand mb-3">✓</div>
+      <h1 class="text-2xl font-bold text-slate-900 mb-1">Runde erstellt!</h1>
+      <p class="text-sm text-slate-500">Speichere beide Links — sie werden hier nicht erneut angezeigt.</p>
     </div>
 
-    <!-- Teilnehmer-Link -->
-    <div class="bg-white border border-slate-200 rounded-xl p-4 space-y-2">
-      <div class="flex items-center justify-between">
-        <p class="text-sm font-medium text-slate-700">Teilnehmer-Link</p>
-        <span class="text-xs text-slate-400">zum Teilen mit der Gruppe</span>
+    <!-- Teilnehmer-Link (primär) -->
+    <div class="bg-white border border-brand/30 rounded-xl p-5 space-y-3">
+      <div>
+        <p class="text-sm font-semibold text-slate-900">Teilnehmer:innen-Link</p>
+        <p class="text-xs text-slate-500 mt-0.5">Diesen Link mit allen Teilnehmenden teilen</p>
       </div>
+      <input
+        id="teilnehmer-link"
+        type="text"
+        readonly
+        class="w-full border border-slate-200 rounded-md px-2 py-1.5 text-xs text-slate-600 bg-slate-50 font-mono"
+      />
       <div class="flex gap-2">
-        <input
-          id="teilnehmer-link"
-          type="text"
-          readonly
-          class="flex-1 border border-slate-300 rounded-md px-2 py-1.5 text-xs text-slate-600 bg-slate-50 font-mono"
-        />
         <button
           id="copy-teilnehmer"
-          class="border border-slate-300 rounded-md px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap"
+          class="flex-1 bg-brand text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-brand-dark transition-colors"
         >
-          Kopieren
+          Link kopieren
         </button>
+        <a
+          id="teilnehmer-link-oeffnen"
+          href="#"
+          target="_blank"
+          rel="noopener"
+          class="border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap"
+        >
+          Öffnen ↗
+        </a>
       </div>
-      <a
-        id="teilnehmer-link-oeffnen"
-        href="#"
-        target="_blank"
-        rel="noopener"
-        class="inline-block text-xs text-green-700 hover:underline"
-      >
-        Link öffnen ↗
-      </a>
     </div>
 
-    <!-- Admin-Link -->
-    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
-      <div class="flex items-center justify-between">
-        <p class="text-sm font-medium text-amber-800">Admin-Link</p>
-        <span class="text-xs text-amber-600">nur für dich — sicher aufbewahren</span>
+    <!-- Admin-Link (sekundär) -->
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-5 space-y-3">
+      <div>
+        <p class="text-sm font-semibold text-amber-900">⚠ Admin-Link</p>
+        <p class="text-xs text-amber-700 mt-0.5">Nur für dich — sicher aufbewahren</p>
       </div>
+      <input
+        id="admin-link"
+        type="text"
+        readonly
+        class="w-full border border-amber-300 rounded-md px-2 py-1.5 text-xs text-amber-900 bg-amber-100 font-mono"
+      />
       <div class="flex gap-2">
-        <input
-          id="admin-link"
-          type="text"
-          readonly
-          class="flex-1 border border-amber-300 rounded-md px-2 py-1.5 text-xs text-amber-900 bg-amber-100 font-mono"
-        />
         <button
           id="copy-admin"
-          class="border border-amber-300 rounded-md px-3 py-1.5 text-xs text-amber-800 hover:bg-amber-200 transition-colors whitespace-nowrap"
+          class="flex-1 border border-amber-300 rounded-lg px-4 py-2 text-sm text-amber-800 hover:bg-amber-200 transition-colors"
         >
           Kopieren
         </button>
+        <a
+          id="admin-link-oeffnen"
+          href="#"
+          target="_blank"
+          rel="noopener"
+          class="border border-amber-300 rounded-lg px-4 py-2 text-sm text-amber-800 hover:bg-amber-200 transition-colors whitespace-nowrap"
+        >
+          Öffnen ↗
+        </a>
       </div>
-      <a
-        id="admin-link-oeffnen"
-        href="#"
-        target="_blank"
-        rel="noopener"
-        class="inline-block text-xs text-amber-700 hover:underline"
-      >
-        Link öffnen ↗
-      </a>
       <p class="text-xs text-amber-700">
-        ⚠️ Dieser Link enthält deinen privaten Schlüssel. Wer ihn hat, kann alle Gebote einsehen.
+        Dieser Link enthält deinen privaten Schlüssel. Wer ihn hat, kann alle Gebote einsehen.
       </p>
     </div>
 
@@ -262,7 +266,7 @@ import Layout from '../layouts/Layout.astro';
       href="/neu"
       class="block text-center text-sm text-slate-500 hover:text-slate-700 transition-colors"
     >
-      Weitere Runde erstellen
+      Weitere Runde erstellen →
     </a>
   </div>
 </Layout>
@@ -303,15 +307,9 @@ import Layout from '../layouts/Layout.astro';
   let slotCounter = 1;
 
   function setzeAusgabenSichtbarkeit(sichtbar: boolean) {
-    slotsContainer.querySelectorAll<HTMLDivElement>('.ausgaben-zeile').forEach((zeile) => {
+    slotsContainer.querySelectorAll<HTMLDivElement>('.ausgaben-inline').forEach((zeile) => {
       zeile.classList.toggle('hidden', !sichtbar);
     });
-    // Erweitert-Panel automatisch öffnen wenn Ausgaben eingeblendet werden
-    if (sichtbar) {
-      slotsContainer.querySelectorAll<HTMLDetailsElement>('.slot-erweitert-details').forEach(d => {
-        d.open = true;
-      });
-    }
   }
 
   ausgabenToggle.addEventListener('change', () => {
@@ -394,10 +392,17 @@ import Layout from '../layouts/Layout.astro';
       const hiddenInput = eintrag.querySelector<HTMLInputElement>('[name="gewichtung[]"]');
       const manuellInput = eintrag.querySelector<HTMLInputElement>('.slot-gewichtung-manuell');
       if (target.value === 'manuell') {
-        manuellInput?.classList.remove('hidden');
-        if (hiddenInput && manuellInput?.value) hiddenInput.value = manuellInput.value;
+        if (manuellInput) {
+          manuellInput.readOnly = false;
+          manuellInput.classList.remove('opacity-50', 'cursor-not-allowed');
+          if (hiddenInput && manuellInput.value) hiddenInput.value = manuellInput.value;
+        }
       } else {
-        manuellInput?.classList.add('hidden');
+        if (manuellInput) {
+          manuellInput.value = target.value;
+          manuellInput.readOnly = true;
+          manuellInput.classList.add('opacity-50', 'cursor-not-allowed');
+        }
         if (hiddenInput) hiddenInput.value = target.value;
         aktualisiereRichtwert();
       }
@@ -517,8 +522,11 @@ import Layout from '../layouts/Layout.astro';
     klon.querySelectorAll<HTMLInputElement>('input[name="anzahl[]"]').forEach(el => { el.value = '1'; });
     klon.querySelectorAll<HTMLInputElement>('input[name="ausgaben[]"]').forEach(el => { el.value = ''; });
     klon.querySelectorAll<HTMLInputElement>('[name="gewichtung[]"]').forEach(el => { el.value = '1'; });
+    // Gewichtung-Feld: Erwachsen vorauswählen → readonly + ausgegraut
     klon.querySelectorAll<HTMLInputElement>('.slot-gewichtung-manuell').forEach(el => {
-      el.value = '1'; el.classList.add('hidden');
+      el.value = '1';
+      el.readOnly = true;
+      el.classList.add('opacity-50', 'cursor-not-allowed');
     });
 
     // Standardgebot zurücksetzen
@@ -531,9 +539,9 @@ import Layout from '../layouts/Layout.astro';
     const richtwertAnzeige = klon.querySelector<HTMLSpanElement>('.standardgebot-richtwert');
     if (richtwertAnzeige) richtwertAnzeige.textContent = '';
 
-    // Ausgaben-Zeile entsprechend Toggle-Zustand
-    const ausgabenZeile = klon.querySelector('.ausgaben-zeile') as HTMLDivElement;
-    ausgabenZeile.classList.toggle('hidden', !ausgabenToggle.checked);
+    // Ausgaben-Inline entsprechend Toggle-Zustand
+    const ausgabenInline = klon.querySelector('.ausgaben-inline') as HTMLDivElement;
+    ausgabenInline.classList.toggle('hidden', !ausgabenToggle.checked);
 
     // Details schließen für neuen Slot
     const details = klon.querySelector<HTMLDetailsElement>('.slot-erweitert-details');
@@ -559,13 +567,20 @@ import Layout from '../layouts/Layout.astro';
     if (matchingValue) {
       const radio = slotEl.querySelector<HTMLInputElement>(`.slot-gewichtung-radio[value="${matchingValue}"]`);
       if (radio) radio.checked = true;
+      const manuellInput = slotEl.querySelector<HTMLInputElement>('.slot-gewichtung-manuell');
+      if (manuellInput) {
+        manuellInput.value = matchingValue;
+        manuellInput.readOnly = true;
+        manuellInput.classList.add('opacity-50', 'cursor-not-allowed');
+      }
     } else {
       const manuellRadio = slotEl.querySelector<HTMLInputElement>('.slot-gewichtung-radio[value="manuell"]');
       const manuellInput = slotEl.querySelector<HTMLInputElement>('.slot-gewichtung-manuell');
       if (manuellRadio) manuellRadio.checked = true;
       if (manuellInput) {
         manuellInput.value = String(gewichtung);
-        manuellInput.classList.remove('hidden');
+        manuellInput.readOnly = false;
+        manuellInput.classList.remove('opacity-50', 'cursor-not-allowed');
       }
     }
   }
@@ -587,8 +602,10 @@ import Layout from '../layouts/Layout.astro';
         slotEl: HTMLDivElement,
         slot: { label: string; gewichtung: number; anzahl: number; standardgebot?: number },
       ) {
+        const presetNamenWiederhol: Record<string, string> = { 'Erwachsen': '', 'Ermäßigt': '', 'Kind': '', 'Beitrag': '' };
+        // Labels die reine Preset-Namen sind, als leer behandeln (Preset-Name wird beim Absenden wieder gesetzt)
         (slotEl.querySelector('[name="label[]"]') as HTMLInputElement).value =
-          slot.label === 'Slot' ? '' : slot.label;
+          (slot.label in presetNamenWiederhol) ? '' : slot.label;
         (slotEl.querySelector('[name="anzahl[]"]') as HTMLInputElement).value = String(slot.anzahl);
         setzeGewichtungRadio(slotEl, slot.gewichtung);
 
@@ -652,9 +669,16 @@ import Layout from '../layouts/Layout.astro';
         (form.querySelector('#gesamtkosten') as HTMLInputElement).value,
       );
 
-      const labels = [...form.querySelectorAll<HTMLInputElement>('[name="label[]"]')].map(
-        (el) => el.value.trim() || 'Slot',
-      );
+      const presetNamen: Record<string, string> = { '1.0': 'Erwachsen', '0.75': 'Ermäßigt', '0.5': 'Kind' };
+      const labels = [...slotsContainer.querySelectorAll<HTMLDivElement>('.slot-eintrag')].map((slotEl) => {
+        const labelEl = slotEl.querySelector<HTMLInputElement>('[name="label[]"]');
+        const labelVal = labelEl?.value.trim() ?? '';
+        if (labelVal) return labelVal;
+        // Fallback: Preset-Name aus aktivem Radio
+        const checkedRadio = slotEl.querySelector<HTMLInputElement>('.slot-gewichtung-radio:checked');
+        const radioVal = checkedRadio?.value ?? '';
+        return presetNamen[radioVal] ?? 'Beitrag';
+      });
       const gewichtungen = [...form.querySelectorAll<HTMLInputElement>('[name="gewichtung[]"]')].map(
         (el) => parseFloat(el.value),
       );

@@ -3,62 +3,32 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="Solidarische Gruppenfinanzierung">
-  <!-- Hero -->
-  <div class="mb-10">
-    <h1 class="text-3xl font-bold text-slate-900 mb-3">Solidarische Gruppenfinanzierung</h1>
-    <p class="text-lg text-slate-600 leading-relaxed">
-      FairShare hilft Gruppen dabei, gemeinsame Kosten solidarisch aufzuteilen —
-      jede Person bietet, was sie tragen kann. Anonym, ohne Registrierung, ohne dass
-      der Server eure Daten je zu sehen bekommt.
-    </p>
-  </div>
+  <div class="flex flex-col items-center text-center py-12 space-y-8">
+    <!-- Hero -->
+    <div class="space-y-3 max-w-sm">
+      <h1 class="text-3xl font-bold text-slate-900 leading-tight">
+        Teilt Kosten solidarisch —<br />jede Person zahlt, was sie kann.
+      </h1>
+    </div>
 
-  <!-- Wie es funktioniert -->
-  <div class="mb-10">
-    <h2 class="text-base font-semibold text-slate-500 uppercase tracking-wide mb-4">So funktioniert's</h2>
-    <ol class="space-y-4">
-      <li class="flex gap-4">
-        <span class="flex-shrink-0 w-8 h-8 rounded-full bg-brand text-white text-sm font-bold flex items-center justify-center">1</span>
-        <div>
-          <p class="font-medium text-slate-900">Runde erstellen</p>
-          <p class="text-sm text-slate-600 mt-0.5">Die Organisator*in legt Gesamtkosten und Slot-Typen fest (z.&nbsp;B. Erwachsene, Kinder). Die App generiert Links für Teilnehmende und einen Admin-Link.</p>
-        </div>
-      </li>
-      <li class="flex gap-4">
-        <span class="flex-shrink-0 w-8 h-8 rounded-full bg-brand text-white text-sm font-bold flex items-center justify-center">2</span>
-        <div>
-          <p class="font-medium text-slate-900">Gebot abgeben</p>
-          <p class="text-sm text-slate-600 mt-0.5">Jede Person öffnet ihren persönlichen Link und gibt an, was sie zahlen kann — anonym, nur mit einer zufälligen Emoji-ID erkennbar.</p>
-        </div>
-      </li>
-      <li class="flex gap-4">
-        <span class="flex-shrink-0 w-8 h-8 rounded-full bg-brand text-white text-sm font-bold flex items-center justify-center">3</span>
-        <div>
-          <p class="font-medium text-slate-900">Auswertung im Browser</p>
-          <p class="text-sm text-slate-600 mt-0.5">Die Organisator*in öffnet den Admin-Link — die Gebote werden direkt im Browser entschlüsselt und ausgewertet. Der Server sieht nie Klartext.</p>
-        </div>
-      </li>
-    </ol>
-  </div>
+    <!-- CTA -->
+    <div class="flex flex-col items-center gap-3 w-full max-w-xs">
+      <a
+        href="/neu"
+        class="w-full inline-flex items-center justify-center px-6 py-3 rounded-xl bg-brand text-white font-semibold hover:bg-brand-dark transition-colors text-base"
+      >
+        Neue Runde erstellen
+      </a>
+      <a
+        id="cta-meine-runden"
+        href="/meine-runden"
+        class="hidden w-full inline-flex items-center justify-center px-6 py-3 rounded-xl border border-slate-300 text-slate-700 font-medium hover:bg-slate-100 transition-colors"
+      >
+        Meine gespeicherten Runden
+      </a>
+    </div>
 
-  <!-- CTA -->
-  <div class="flex flex-col sm:flex-row items-center gap-3 mb-8">
-    <a
-      href="/neu"
-      class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-lg bg-brand text-white font-semibold hover:bg-brand-dark transition-colors"
-    >
-      Neue Runde erstellen
-    </a>
-    <a
-      id="cta-meine-runden"
-      href="/meine-runden"
-      class="hidden w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-100 transition-colors"
-    >
-      Meine gespeicherten Runden
-    </a>
-  </div>
-
-  <div class="text-center">
+    <!-- Mehr erfahren -->
     <a href="/ueber" class="text-sm text-slate-400 hover:text-brand transition-colors underline underline-offset-2">
       Wie funktioniert das genau? →
     </a>

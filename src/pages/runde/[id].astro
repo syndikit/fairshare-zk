@@ -44,7 +44,7 @@ import Layout from '../../layouts/Layout.astro';
       <form id="gebot-form" class="space-y-5">
         <!-- Slot-Auswahl -->
         <div>
-          <p class="text-sm font-medium text-slate-700 mb-2">Wähle deinen Slot-Typ</p>
+          <p class="text-sm font-medium text-slate-700 mb-2">Wähle deinen Typ</p>
           <div id="slot-auswahl" class="space-y-2"></div>
         </div>
 
@@ -69,14 +69,23 @@ import Layout from '../../layouts/Layout.astro';
         <!-- Fehler -->
         <div id="gebot-fehler" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm"></div>
 
-        <!-- Duplikat-Warnung (Soft-Warning, kein Hard-Block) -->
-        <div id="duplikat-warnung" class="hidden bg-amber-50 border border-amber-300 text-amber-800 rounded-lg p-3 text-sm space-y-2">
-          <p class="font-medium">Von diesem Gerät wurde für diesen Slot bereits ein Gebot abgegeben.</p>
-          <p class="text-xs text-amber-700">Möchtest du trotzdem ein weiteres Gebot einreichen? Oder willst du dein bestehendes Gebot korrigieren?</p>
-          <div class="flex gap-2 pt-1 flex-wrap">
-            <button type="button" id="duplikat-abbrechen" class="border border-amber-400 text-amber-800 rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-amber-100 transition-colors">Abbrechen</button>
-            <button type="button" id="duplikat-korrigieren" class="border border-amber-500 bg-amber-100 text-amber-900 rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-amber-200 transition-colors">Gebot korrigieren</button>
-            <button type="button" id="duplikat-bestaetigen" class="bg-amber-600 text-white rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-amber-700 transition-colors">Trotzdem abgeben</button>
+        <!-- Duplikat-Warnung Two-Step (Soft-Warning, kein Hard-Block) -->
+        <div id="duplikat-warnung" class="hidden bg-amber-50 border border-amber-300 text-amber-800 rounded-lg p-3 text-sm">
+          <!-- Schritt 1 -->
+          <div id="duplikat-schritt1">
+            <p class="font-medium">Du hast für diesen Typ bereits geboten.</p>
+            <div class="flex gap-2 pt-2">
+              <button type="button" id="duplikat-abbrechen" class="border border-amber-400 text-amber-800 rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-amber-100 transition-colors">Abbrechen</button>
+              <button type="button" id="duplikat-weiter" class="border border-amber-500 bg-amber-100 text-amber-900 rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-amber-200 transition-colors">Fortfahren →</button>
+            </div>
+          </div>
+          <!-- Schritt 2 -->
+          <div id="duplikat-schritt2" class="hidden">
+            <p class="text-sm text-amber-800">Was möchtest du tun?</p>
+            <div class="flex gap-2 pt-2 flex-wrap">
+              <button type="button" id="duplikat-korrigieren" class="border border-amber-500 bg-amber-100 text-amber-900 rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-amber-200 transition-colors">Gebot korrigieren</button>
+              <button type="button" id="duplikat-bestaetigen" class="bg-amber-600 text-white rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-amber-700 transition-colors">Zweites Gebot abgeben</button>
+            </div>
           </div>
         </div>
 
@@ -88,7 +97,11 @@ import Layout from '../../layouts/Layout.astro';
           Gebot abgeben
         </button>
 
-        <p class="text-xs text-slate-400 text-center">Dieser Schutz gilt nur für dieses Gerät.</p>
+        <p class="text-center mt-1">
+          <button type="button" id="korrektur-link-btn" class="text-xs text-slate-400 hover:text-slate-600 underline transition-colors">
+            Gebot von anderem Gerät korrigieren →
+          </button>
+        </p>
       </form>
     </div>
 
@@ -113,7 +126,7 @@ import Layout from '../../layouts/Layout.astro';
 
         <!-- Slot-Auswahl -->
         <div>
-          <p class="text-sm font-medium text-slate-700 mb-2">Neuer Slot-Typ</p>
+          <p class="text-sm font-medium text-slate-700 mb-2">Neuer Typ</p>
           <div id="slot-auswahl-korrektur" class="space-y-2"></div>
         </div>
 
@@ -153,10 +166,8 @@ import Layout from '../../layouts/Layout.astro';
   <div id="zustand-bestaetigung" class="hidden text-center space-y-4 py-8">
     <h2 id="bestaetigung-titel" class="text-xl font-semibold">Gebot abgegeben</h2>
     <p id="bestaetigung-text" class="text-slate-500 text-sm max-w-sm mx-auto"></p>
-    <div id="emoji-box" class="bg-slate-100 rounded-xl px-6 py-4 inline-block">
-      <p class="text-xs text-slate-500 mb-1">Deine Emoji-ID</p>
-      <p id="emoji-id-text" class="text-3xl tracking-widest"></p>
-    </div>
+    <div id="emoji-anzeige" class="text-6xl tracking-widest mb-2"></div>
+    <p class="text-xs text-slate-500">Deine Emoji-ID</p>
   </div>
 </Layout>
 
@@ -280,6 +291,7 @@ import Layout from '../../layouts/Layout.astro';
           <span class="flex-1">
             <span class="text-sm font-medium text-slate-800">${slot.label}</span>
             <span class="text-xs text-slate-500 ml-2">Richtwert: ${richtwertSlot.toFixed(2).replace('.', ',')} €</span>
+            ${bereitsGeboten && nameAttr === 'slot' ? '<span class="text-green-600 ml-1 text-xs">✓ abgegeben</span>' : ''}
           </span>
         `;
         container.appendChild(label);
@@ -307,7 +319,16 @@ import Layout from '../../layouts/Layout.astro';
 
     document.getElementById('slot-auswahl')!.addEventListener('change', (e) => {
       const radio = e.target as HTMLInputElement;
-      if (radio.name === 'slot') betragFeldAktualisieren(parseInt(radio.value, 10), 'betrag', 'betrag-richtwert-hinweis');
+      if (radio.name === 'slot') {
+        betragFeldAktualisieren(parseInt(radio.value, 10), 'betrag', 'betrag-richtwert-hinweis');
+        // Slot gewechselt → Duplikat-Warnung auf Abbrechen-Zustand zurücksetzen
+        const duplikatWarnung = document.getElementById('duplikat-warnung')!;
+        if (!duplikatWarnung.classList.contains('hidden')) {
+          document.getElementById('duplikat-schritt1')!.classList.remove('hidden');
+          document.getElementById('duplikat-schritt2')!.classList.add('hidden');
+          duplikatWarnung.classList.add('hidden');
+        }
+      }
     });
     document.getElementById('slot-auswahl-korrektur')!.addEventListener('change', (e) => {
       const radio = e.target as HTMLInputElement;
@@ -357,11 +378,16 @@ import Layout from '../../layouts/Layout.astro';
     const gebotFehler = document.getElementById('gebot-fehler') as HTMLDivElement;
     const duplikatWarnung = document.getElementById('duplikat-warnung') as HTMLDivElement;
     const duplikatAbbrechen = document.getElementById('duplikat-abbrechen') as HTMLButtonElement;
+    const duplikatWeiter = document.getElementById('duplikat-weiter') as HTMLButtonElement;
+    const duplikatSchritt1 = document.getElementById('duplikat-schritt1') as HTMLDivElement;
+    const duplikatSchritt2 = document.getElementById('duplikat-schritt2') as HTMLDivElement;
     const duplikatKorrigieren = document.getElementById('duplikat-korrigieren') as HTMLButtonElement;
     const duplikatBestaetigen = document.getElementById('duplikat-bestaetigen') as HTMLButtonElement;
 
     function zeigeBestaetigung(emojiId: string, istKorrektur: boolean) {
-      document.getElementById('emoji-id-text')!.textContent = emojiId;
+      const emojiAnzeige = document.getElementById('emoji-anzeige')!;
+      emojiAnzeige.textContent = emojiId;
+      emojiAnzeige.classList.add('animate-pop-in');
       document.getElementById('bestaetigung-titel')!.textContent = istKorrektur ? 'Gebot korrigiert' : 'Gebot abgegeben';
       document.getElementById('bestaetigung-text')!.textContent = istKorrektur
         ? 'Dein Gebot wurde erfolgreich ersetzt. Deine Emoji-ID bleibt dieselbe.'
@@ -370,7 +396,6 @@ import Layout from '../../layouts/Layout.astro';
       const zustandBestaetigung = document.getElementById('zustand-bestaetigung')!;
       zustandBestaetigung.classList.remove('hidden');
       zustandBestaetigung.classList.add('animate-fade-in');
-      document.getElementById('emoji-box')!.classList.add('animate-pop-in');
     }
 
     // Kernfunktion: Gebot tatsächlich einreichen (mit Auto-Retry bei Emoji-Kollision)
@@ -451,16 +476,35 @@ import Layout from '../../layouts/Layout.astro';
       await gebot_einreichen();
     });
 
-    duplikatAbbrechen.addEventListener('click', () => {
+    function duplikatZuruecksetzen() {
+      duplikatSchritt1.classList.remove('hidden');
+      duplikatSchritt2.classList.add('hidden');
       duplikatWarnung.classList.add('hidden');
+    }
+
+    duplikatAbbrechen.addEventListener('click', () => {
+      duplikatZuruecksetzen();
+    });
+    duplikatWeiter.addEventListener('click', () => {
+      duplikatSchritt1.classList.add('hidden');
+      duplikatSchritt2.classList.remove('hidden');
     });
     duplikatKorrigieren.addEventListener('click', () => {
-      duplikatWarnung.classList.add('hidden');
+      duplikatZuruecksetzen();
+      tabKorrigieren.classList.remove('hidden');
       zeigeTab('korrigieren');
       document.getElementById('korrektur-emoji')?.focus();
     });
     duplikatBestaetigen.addEventListener('click', async () => {
+      duplikatZuruecksetzen();
       await gebot_einreichen();
+    });
+
+    // Korrektur-Link (immer sichtbar, öffnet Korrektur-Tab)
+    document.getElementById('korrektur-link-btn')!.addEventListener('click', () => {
+      tabKorrigieren.classList.remove('hidden');
+      zeigeTab('korrigieren');
+      document.getElementById('korrektur-emoji')?.focus();
     });
 
     // ── Tab 2: Gebot korrigieren ──────────────────────────────────────────────

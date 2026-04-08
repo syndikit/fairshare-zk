@@ -39,20 +39,11 @@ import Layout from '../../../../layouts/Layout.astro';
       </div>
     </div>
 
-    <!-- Fehlbetrag / Überschuss -->
+    <!-- Duplikat-Warnung -->
     <div id="duplikat-box" class="hidden bg-red-50 border border-red-200 rounded-xl p-4 print:rounded-md print:p-3">
       <p class="text-sm font-medium text-red-800">⚠️ Zu viele Gebote — Auswertung nicht möglich</p>
       <p class="text-xs text-red-700 mt-1 mb-2">Für folgende Slots sind mehr Gebote eingegangen als erwartet. Bitte kläre die Doppeleinreichung und bitte die betroffene Person, nicht nochmals zu bieten.</p>
       <ul id="duplikat-liste" class="text-xs text-red-700 space-y-0.5 list-disc list-inside"></ul>
-    </div>
-    <div id="fehlbetrag-box" class="hidden bg-red-50 border border-red-200 rounded-xl p-4 print:rounded-md print:p-3">
-      <p class="text-sm font-medium text-red-800">Fehlbetrag</p>
-      <p id="fehlbetrag-text" class="text-2xl font-bold text-red-700 print:text-xl"></p>
-      <p class="text-xs text-red-600 mt-1">Die solidarischen Beiträge decken die Gesamtkosten nicht.</p>
-    </div>
-    <div id="ueberschuss-box" class="hidden bg-green-50 border border-green-200 rounded-xl p-4 print:rounded-md print:p-3">
-      <p class="text-sm font-medium text-green-800">Überschuss</p>
-      <p id="ueberschuss-text" class="text-2xl font-bold text-green-700 print:text-xl"></p>
     </div>
 
     <!-- Status-Banner -->
@@ -80,7 +71,7 @@ import Layout from '../../../../layouts/Layout.astro';
     <!-- Ausgleichszahlungen -->
     <div id="ausgleich-section" class="hidden space-y-2">
       <h2 class="text-sm font-medium text-slate-700 print:text-xs">Ausgleichszahlungen</h2>
-      <div id="ausgleich-liste" class="rounded-xl border border-slate-200 bg-white overflow-hidden print:text-xs"></div>
+      <div id="ausgleich-liste" class="rounded-xl border border-slate-200 bg-white px-4 py-3 space-y-2 print:text-xs"></div>
     </div>
 
     <!-- Status (klein, ergänzend zum Banner) -->
@@ -377,10 +368,13 @@ import Layout from '../../../../layouts/Layout.astro';
           const zeile = document.createElement('div');
           const vonLabel = emojiZuLabel.get(z.von) ?? z.von;
           const anLabel = emojiZuLabel.get(z.an) ?? z.an;
-          zeile.className = `flex justify-between items-center px-4 py-2.5 ${idx < zahlungen.length - 1 ? 'border-b border-slate-100' : ''}`;
+          zeile.className = `grid items-center gap-x-3 text-sm${idx < zahlungen.length - 1 ? ' pb-2 border-b border-slate-100' : ''}`;
+          zeile.style.gridTemplateColumns = '1fr auto 1fr auto';
           zeile.innerHTML = `
-            <span class="text-sm text-slate-700">${vonLabel} → ${anLabel}</span>
-            <span class="text-sm font-semibold text-slate-900">${eur(z.betrag)}</span>
+            <span class="text-slate-700 text-right">${vonLabel}</span>
+            <span class="text-slate-400">→</span>
+            <span class="text-slate-700">${anLabel}</span>
+            <span class="font-semibold text-slate-900 text-right">${eur(z.betrag)}</span>
           `;
           liste.appendChild(zeile);
         });
@@ -388,24 +382,14 @@ import Layout from '../../../../layouts/Layout.astro';
       }
     }
 
-    // Fehlbetrag / Überschuss anzeigen (nur wenn vollständig und keine Duplikate)
-    if (allesDa && !hatDuplikate && auswertung) {
-      if (auswertung.fehlbetrag > 0.005) {
-        document.getElementById('fehlbetrag-text')!.textContent = eur(auswertung.fehlbetrag);
-        document.getElementById('fehlbetrag-box')!.classList.remove('hidden');
-      } else {
-        // Nur ohne Fehlbetrag: Beitrag-Spalten einblenden (sonst wären Gebote rekonstruierbar)
-        document.querySelectorAll('.vollstaendig-spalte').forEach((el) => el.classList.remove('hidden'));
-        if (!hatSplidDaten) {
-          document.querySelectorAll('.splid-spalte').forEach((el) => el.classList.add('hidden'));
-        }
-        if (hatSplidDaten) {
-          document.querySelectorAll('.emoji-spalte').forEach((el) => el.classList.add('hidden'));
-        }
-        if (auswertung.ueberschuss > 0.005) {
-          document.getElementById('ueberschuss-text')!.textContent = eur(auswertung.ueberschuss);
-          document.getElementById('ueberschuss-box')!.classList.remove('hidden');
-        }
+    // Beitrag-Spalten einblenden wenn vollständig, keine Duplikate, kein Fehlbetrag
+    if (allesDa && !hatDuplikate && auswertung && auswertung.fehlbetrag <= 0.005) {
+      document.querySelectorAll('.vollstaendig-spalte').forEach((el) => el.classList.remove('hidden'));
+      if (!hatSplidDaten) {
+        document.querySelectorAll('.splid-spalte').forEach((el) => el.classList.add('hidden'));
+      }
+      if (hatSplidDaten) {
+        document.querySelectorAll('.emoji-spalte').forEach((el) => el.classList.add('hidden'));
       }
     }
 

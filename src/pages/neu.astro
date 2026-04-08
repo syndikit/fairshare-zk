@@ -459,6 +459,70 @@ import Layout from '../layouts/Layout.astro';
     aktualisiereEntfernenButtons();
   });
 
+  // ---------------------------------------------------------------------------
+  // Runde wiederholen (Vorausfüllen aus sessionStorage)
+  // ---------------------------------------------------------------------------
+
+  const wiederholenRaw = sessionStorage.getItem('rundeWiederholen');
+  if (wiederholenRaw) {
+    sessionStorage.removeItem('rundeWiederholen');
+    try {
+      const config = JSON.parse(wiederholenRaw) as {
+        name: string;
+        kosten: number;
+        slots: { label: string; gewichtung: number; anzahl: number; standardgebot?: number }[];
+      };
+
+      (form.querySelector('#rundeName') as HTMLInputElement).value = config.name;
+      (form.querySelector('#gesamtkosten') as HTMLInputElement).value = String(config.kosten);
+
+      function befuelleWiederholSlot(
+        slotEl: HTMLDivElement,
+        slot: { label: string; gewichtung: number; anzahl: number; standardgebot?: number },
+      ) {
+        (slotEl.querySelector('[name="label[]"]') as HTMLInputElement).value =
+          slot.label === 'Slot' ? '' : slot.label;
+        (slotEl.querySelector('[name="gewichtung[]"]') as HTMLInputElement).value = String(slot.gewichtung);
+        (slotEl.querySelector('[name="anzahl[]"]') as HTMLInputElement).value = String(slot.anzahl);
+
+        const checkbox = slotEl.querySelector<HTMLInputElement>('.standardgebot-checkbox')!;
+        const eingabe = slotEl.querySelector<HTMLDivElement>('.standardgebot-eingabe')!;
+        const stdInput = slotEl.querySelector<HTMLInputElement>('[name="standardgebot[]"]')!;
+
+        if (slot.standardgebot !== undefined) {
+          checkbox.checked = true;
+          eingabe.classList.remove('hidden');
+          stdInput.value = slot.standardgebot.toFixed(2);
+          stdInput.dataset.auto = 'false';
+        } else {
+          checkbox.checked = false;
+          eingabe.classList.add('hidden');
+          stdInput.value = '';
+          stdInput.dataset.auto = 'true';
+        }
+      }
+
+      // Alle außer dem ersten Slot entfernen
+      slotsContainer.querySelectorAll<HTMLDivElement>('.slot-eintrag').forEach((s, i) => {
+        if (i > 0) s.remove();
+      });
+
+      const ersterSlot = slotsContainer.querySelector('.slot-eintrag') as HTMLDivElement;
+      befuelleWiederholSlot(ersterSlot, config.slots[0]);
+
+      for (let i = 1; i < config.slots.length; i++) {
+        const klon = ersterSlot.cloneNode(true) as HTMLDivElement;
+        slotsContainer.appendChild(klon);
+        befuelleWiederholSlot(klon, config.slots[i]);
+      }
+
+      aktualisiereEntfernenButtons();
+      aktualisiereRichtwert();
+    } catch {
+      // Ungültiger sessionStorage-Eintrag — ignorieren
+    }
+  }
+
   // Kopieren
   function kopieren(inputId: string) {
     const el = document.getElementById(inputId) as HTMLInputElement;

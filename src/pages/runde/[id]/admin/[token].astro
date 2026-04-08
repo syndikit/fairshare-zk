@@ -83,14 +83,21 @@ import Layout from '../../../../layouts/Layout.astro';
     <!-- Status -->
     <p id="gebote-anzahl" class="text-xs text-slate-400 print:hidden"></p>
 
-    <!-- Drucken -->
-    <button
-      id="drucken-btn"
-      onclick="window.print()"
-      class="border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 transition-colors print:hidden"
-    >
-      Als PDF drucken
-    </button>
+    <!-- Drucken / Wiederholen -->
+    <div class="flex gap-3 print:hidden">
+      <button
+        onclick="window.print()"
+        class="border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 transition-colors"
+      >
+        Als PDF drucken
+      </button>
+      <button
+        id="wiederholen-btn"
+        class="border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 transition-colors"
+      >
+        Runde wiederholen
+      </button>
+    </div>
   </div>
 </Layout>
 
@@ -402,6 +409,21 @@ import Layout from '../../../../layouts/Layout.astro';
 
     document.getElementById('zustand-laden')!.classList.add('hidden');
     document.getElementById('zustand-auswertung')!.classList.remove('hidden');
+
+    // Runde wiederholen: Slot-Konfiguration in sessionStorage speichern und zu /neu navigieren
+    document.getElementById('wiederholen-btn')!.addEventListener('click', () => {
+      sessionStorage.setItem('rundeWiederholen', JSON.stringify({
+        name: blob.rundeName,
+        kosten: blob.gesamtkosten,
+        slots: blob.slots.map(({ label, gewichtung, anzahl, standardgebot }) => ({
+          label,
+          gewichtung,
+          anzahl,
+          ...(standardgebot !== undefined ? { standardgebot } : {}),
+        })),
+      }));
+      location.href = '/neu';
+    });
   }
 
   init();

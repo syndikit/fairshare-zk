@@ -33,7 +33,7 @@ import Layout from '../../layouts/Layout.astro';
       </button>
       <button
         id="tab-korrigieren"
-        class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-slate-500 -mb-px hover:text-slate-700 transition-colors"
+        class="hidden px-4 py-2 text-sm font-medium border-b-2 border-transparent text-slate-500 -mb-px hover:text-slate-700 transition-colors"
       >
         Gebot korrigieren
       </button>
@@ -151,13 +151,9 @@ import Layout from '../../layouts/Layout.astro';
 
   <!-- Bestätigung -->
   <div id="zustand-bestaetigung" class="hidden text-center space-y-4 py-8">
-    <div class="text-6xl mb-2" id="emoji-anzeige"></div>
     <h2 id="bestaetigung-titel" class="text-xl font-semibold">Gebot abgegeben</h2>
-    <p id="bestaetigung-text" class="text-slate-500 text-sm max-w-sm mx-auto">
-      Das ist dein persönlicher Beleg. Merke dir diese Emoji-Kombination —
-      sie beweist, dass dein Gebot registriert wurde.
-    </p>
-    <div class="bg-slate-100 rounded-xl px-6 py-4 inline-block">
+    <p id="bestaetigung-text" class="text-slate-500 text-sm max-w-sm mx-auto"></p>
+    <div id="emoji-box" class="bg-slate-100 rounded-xl px-6 py-4 inline-block">
       <p class="text-xs text-slate-500 mb-1">Deine Emoji-ID</p>
       <p id="emoji-id-text" class="text-3xl tracking-widest"></p>
     </div>
@@ -283,8 +279,7 @@ import Layout from '../../layouts/Layout.astro';
           <input type="radio" name="${nameAttr}" value="${idx}" class="accent-green-700" ${idx === 0 ? 'checked' : ''} />
           <span class="flex-1">
             <span class="text-sm font-medium text-slate-800">${slot.label}</span>
-            <span class="text-xs text-slate-500 ml-2">Faktor ${slot.gewichtung} · ${slot.anzahl} Platz/Plätze · Richtwert: ${richtwertSlot.toFixed(2).replace('.', ',')} €</span>
-            ${bereitsGeboten && nameAttr === 'slot' ? '<span class="text-xs text-amber-600 ml-1">(bereits abgegeben)</span>' : ''}
+            <span class="text-xs text-slate-500 ml-2">Richtwert: ${richtwertSlot.toFixed(2).replace('.', ',')} €</span>
           </span>
         `;
         container.appendChild(label);
@@ -347,7 +342,14 @@ import Layout from '../../layouts/Layout.astro';
 
     // Formular anzeigen
     document.getElementById('zustand-laden')!.classList.add('hidden');
-    document.getElementById('zustand-formular')!.classList.remove('hidden');
+    const zustandFormular = document.getElementById('zustand-formular')!;
+    zustandFormular.classList.remove('hidden');
+    zustandFormular.classList.add('animate-fade-in');
+
+    // Korrektur-Tab einblenden falls bereits geboten
+    if (blob.slots.some(s => slotBereitsGeboten(s.label))) {
+      document.getElementById('tab-korrigieren')!.classList.remove('hidden');
+    }
 
     // ── Tab 1: Gebot abgeben ──────────────────────────────────────────────────
     const gebotForm = document.getElementById('gebot-form') as HTMLFormElement;
@@ -359,14 +361,16 @@ import Layout from '../../layouts/Layout.astro';
     const duplikatBestaetigen = document.getElementById('duplikat-bestaetigen') as HTMLButtonElement;
 
     function zeigeBestaetigung(emojiId: string, istKorrektur: boolean) {
-      document.getElementById('emoji-anzeige')!.textContent = emojiId;
       document.getElementById('emoji-id-text')!.textContent = emojiId;
       document.getElementById('bestaetigung-titel')!.textContent = istKorrektur ? 'Gebot korrigiert' : 'Gebot abgegeben';
       document.getElementById('bestaetigung-text')!.textContent = istKorrektur
         ? 'Dein Gebot wurde erfolgreich ersetzt. Deine Emoji-ID bleibt dieselbe.'
-        : 'Das ist dein persönlicher Beleg. Merke dir diese Emoji-Kombination — sie beweist, dass dein Gebot registriert wurde.';
+        : 'Speichere sie — du brauchst sie, um dein Gebot zu korrigieren und deinen Eintrag in der Auswertung wiederzufinden.';
       document.getElementById('zustand-formular')!.classList.add('hidden');
-      document.getElementById('zustand-bestaetigung')!.classList.remove('hidden');
+      const zustandBestaetigung = document.getElementById('zustand-bestaetigung')!;
+      zustandBestaetigung.classList.remove('hidden');
+      zustandBestaetigung.classList.add('animate-fade-in');
+      document.getElementById('emoji-box')!.classList.add('animate-pop-in');
     }
 
     // Kernfunktion: Gebot tatsächlich einreichen (mit Auto-Retry bei Emoji-Kollision)
@@ -418,6 +422,7 @@ import Layout from '../../layouts/Layout.astro';
         }
 
         slotAlsGebotenMarkieren(selectedSlot.label);
+        document.getElementById('tab-korrigieren')!.classList.remove('hidden');
         zeigeBestaetigung(emojiId!, false);
       } catch (err) {
         gebotFehler.textContent = 'Unerwarteter Fehler. Bitte versuche es erneut.';

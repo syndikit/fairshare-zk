@@ -9,21 +9,24 @@ import Layout from '../layouts/Layout.astro';
         <h1 class="text-2xl font-semibold mb-1">Meine Runden</h1>
         <p class="text-slate-500 text-sm">Gespeichert in deinem Browser.</p>
       </div>
-      <div class="flex gap-2">
-        <button
-          id="export-btn"
-          class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 transition-colors"
-        >
-          Exportieren
-        </button>
-        <button
-          id="import-btn"
-          class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 transition-colors"
-        >
-          Importieren
-        </button>
-        <input type="file" id="import-file" accept=".json" class="hidden" />
-      </div>
+      <details class="relative">
+        <summary class="cursor-pointer text-slate-400 hover:text-slate-600 transition-colors text-xl select-none list-none px-2 py-1">⋯</summary>
+        <div class="absolute right-0 top-9 bg-white border border-slate-200 rounded-xl shadow-lg z-10 min-w-36 p-1">
+          <button
+            id="export-btn"
+            class="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
+          >
+            Exportieren
+          </button>
+          <button
+            id="import-btn"
+            class="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
+          >
+            Importieren
+          </button>
+        </div>
+      </details>
+      <input type="file" id="import-file" accept=".json" class="hidden" />
     </div>
 
     <div id="import-fehler" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm"></div>
@@ -31,7 +34,7 @@ import Layout from '../layouts/Layout.astro';
     <!-- Leer-Zustand -->
     <div id="leer-zustand" class="hidden text-center py-16 text-slate-500">
       <p class="mb-4">Noch keine Runden gespeichert.</p>
-      <a href="/neu" class="inline-block bg-green-700 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-green-800 transition-colors">
+      <a href="/neu" class="inline-block bg-brand text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-brand-dark transition-colors">
         Neue Runde erstellen
       </a>
     </div>
@@ -39,6 +42,16 @@ import Layout from '../layouts/Layout.astro';
     <!-- Runden-Liste -->
     <div id="runden-liste" class="space-y-3"></div>
   </div>
+
+  <!-- Löschen-Bestätigung -->
+  <dialog id="loeschen-dialog" class="rounded-xl p-6 shadow-xl max-w-sm w-full backdrop:bg-black/30">
+    <p class="font-medium text-slate-800 mb-1">Runde wirklich löschen?</p>
+    <p class="text-sm text-slate-500 mb-5">Diese Aktion kann nicht rückgängig gemacht werden.</p>
+    <div class="flex gap-3 justify-end">
+      <button id="loeschen-abbrechen" class="border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 transition-colors">Abbrechen</button>
+      <button id="loeschen-bestaetigen" class="bg-red-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-red-700 transition-colors">Ja, löschen</button>
+    </div>
+  </dialog>
 </Layout>
 
 <script>
@@ -48,6 +61,8 @@ import Layout from '../layouts/Layout.astro';
   const rundenListe = document.getElementById('runden-liste')!;
   const leerZustand = document.getElementById('leer-zustand')!;
   const importFehler = document.getElementById('import-fehler')!;
+  const loeschenDialog = document.getElementById('loeschen-dialog') as HTMLDialogElement;
+  let pendingDeleteId: string | null = null;
 
   function formatDatum(iso: string): string {
     return new Date(iso).toLocaleDateString('de-DE', {
@@ -94,7 +109,7 @@ import Layout from '../layouts/Layout.astro';
             <p class="text-xs text-slate-400">Hinzugefügt am ${formatDatum(runde.hinzugefuegtAm)}</p>
           </div>
         </div>
-        <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap items-center gap-2">
           <a
             href="${runde.teilnehmerLink}"
             class="inline-flex items-center gap-1 border border-slate-300 rounded-lg px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
@@ -111,7 +126,7 @@ import Layout from '../layouts/Layout.astro';
           ` : ''}
           <button
             data-id="${runde.id}"
-            class="loeschen-btn ml-auto border border-red-200 rounded-lg px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+            class="loeschen-btn ml-auto text-xs text-red-400 hover:text-red-600 transition-colors"
           >
             Löschen
           </button>
@@ -120,15 +135,27 @@ import Layout from '../layouts/Layout.astro';
 
       rundenListe.appendChild(karte);
     }
-
   }
 
-  // Löschen (delegiert)
+  // Löschen (delegiert) — öffnet Bestätigungsdialog
   rundenListe.addEventListener('click', (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.loeschen-btn');
     if (!btn) return;
-    const id = btn.dataset.id!;
-    deleteRunde(id);
+    pendingDeleteId = btn.dataset.id!;
+    loeschenDialog.showModal();
+  });
+
+  document.getElementById('loeschen-abbrechen')!.addEventListener('click', () => {
+    pendingDeleteId = null;
+    loeschenDialog.close();
+  });
+
+  document.getElementById('loeschen-bestaetigen')!.addEventListener('click', () => {
+    if (pendingDeleteId) {
+      deleteRunde(pendingDeleteId);
+      pendingDeleteId = null;
+    }
+    loeschenDialog.close();
     renderRunden();
   });
 

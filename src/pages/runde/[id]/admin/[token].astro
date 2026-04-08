@@ -55,9 +55,12 @@ import Layout from '../../../../layouts/Layout.astro';
       <p id="ueberschuss-text" class="text-2xl font-bold text-green-700 print:text-xl"></p>
     </div>
 
+    <!-- Status-Banner -->
+    <div id="status-banner" class="hidden rounded-xl px-4 py-3 text-sm font-medium print:hidden"></div>
+
     <!-- Tabelle -->
     <div class="overflow-x-auto">
-      <table class="w-full text-sm border-collapse">
+      <table class="results-table w-full text-sm border-collapse">
         <thead>
           <tr class="border-b border-slate-200 text-left text-xs text-slate-500">
             <th class="pb-2 pr-4 font-medium emoji-spalte">Emoji-ID</th>
@@ -65,8 +68,8 @@ import Layout from '../../../../layouts/Layout.astro';
             <th class="pb-2 pr-4 font-medium text-right">Faktor</th>
             <th class="pb-2 pr-4 font-medium text-right">Richtwert</th>
             <th class="pb-2 pr-4 font-medium text-right splid-spalte vollstaendig-spalte hidden">Ausgaben</th>
-            <th class="pb-2 pr-4 font-medium text-right vollstaendig-spalte hidden">Beitrag</th>
-            <th class="pb-2 pr-4 font-medium text-right splid-spalte vollstaendig-spalte hidden">Noch zu zahlen</th>
+            <th class="pb-2 pr-4 font-semibold text-right vollstaendig-spalte hidden">Beitrag</th>
+            <th class="pb-2 pr-4 font-semibold text-right splid-spalte vollstaendig-spalte hidden">Noch zu zahlen</th>
             <th class="pb-2 font-medium">Status</th>
           </tr>
         </thead>
@@ -77,23 +80,23 @@ import Layout from '../../../../layouts/Layout.astro';
     <!-- Ausgleichszahlungen -->
     <div id="ausgleich-section" class="hidden space-y-2">
       <h2 class="text-sm font-medium text-slate-700 print:text-xs">Ausgleichszahlungen</h2>
-      <ul id="ausgleich-liste" class="space-y-1 text-sm print:text-xs"></ul>
+      <div id="ausgleich-liste" class="rounded-xl border border-slate-200 bg-white overflow-hidden print:text-xs"></div>
     </div>
 
-    <!-- Status -->
+    <!-- Status (klein, ergänzend zum Banner) -->
     <p id="gebote-anzahl" class="text-xs text-slate-400 print:hidden"></p>
 
     <!-- Drucken / Wiederholen -->
     <div class="flex gap-3 print:hidden">
       <button
         onclick="window.print()"
-        class="border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 transition-colors"
+        class="bg-brand text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-brand-dark transition-colors"
       >
         Als PDF drucken
       </button>
       <button
         id="wiederholen-btn"
-        class="border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 transition-colors"
+        class="border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
       >
         Runde wiederholen
       </button>
@@ -126,6 +129,17 @@ import Layout from '../../../../layouts/Layout.astro';
     document.getElementById('zustand-laden')!.classList.add('hidden');
     document.getElementById('zustand-fehler')!.classList.remove('hidden');
     document.getElementById('fehler-text')!.textContent = msg;
+  }
+
+  function zeigeBanner(text: string, farbe: 'green' | 'amber' | 'red') {
+    const banner = document.getElementById('status-banner')!;
+    const farbenKlassen: Record<string, string> = {
+      green: 'bg-green-50 border border-green-200 text-green-800',
+      amber: 'bg-amber-50 border border-amber-200 text-amber-800',
+      red:   'bg-red-50 border border-red-200 text-red-800',
+    };
+    banner.className = `rounded-xl px-4 py-3 text-sm font-medium print:hidden ${farbenKlassen[farbe]}`;
+    banner.textContent = text;
   }
 
   async function init() {
@@ -312,38 +326,38 @@ import Layout from '../../../../layouts/Layout.astro';
         }
 
         const emojiZelle = hatGebot
-          ? `<td class="py-2 pr-4 text-lg emoji-spalte">${e.emojiId}</td>`
-          : `<td class="py-2 pr-4 emoji-spalte">—</td>`;
+          ? `<td data-label="Emoji-ID" class="py-2 pr-4 text-lg emoji-spalte">${e.emojiId}</td>`
+          : `<td data-label="Emoji-ID" class="py-2 pr-4 emoji-spalte">—</td>`;
 
         const ausgabenZelle = hatSplidDaten
-          ? `<td class="py-2 pr-4 text-right splid-spalte vollstaendig-spalte hidden">${fehlt ? '—' : eur(ausgaben)}</td>`
+          ? `<td data-label="Ausgaben" class="py-2 pr-4 text-right splid-spalte vollstaendig-spalte hidden">${fehlt ? '—' : eur(ausgaben)}</td>`
           : '';
 
         const beitragZelle = fehlt
-          ? `<td class="py-2 pr-4 text-right vollstaendig-spalte hidden">—</td>`
-          : `<td class="py-2 pr-4 text-right font-medium vollstaendig-spalte hidden">${eur(e.solidarischerBeitrag)}</td>`;
+          ? `<td data-label="Beitrag" class="py-2 pr-4 text-right vollstaendig-spalte hidden">—</td>`
+          : `<td data-label="Beitrag" class="py-2 pr-4 text-right font-bold text-slate-900 vollstaendig-spalte hidden">${eur(e.solidarischerBeitrag)}</td>`;
 
         let nochZuZahlenZelle = '';
         if (hatSplidDaten) {
           if (fehlt) {
-            nochZuZahlenZelle = `<td class="py-2 pr-4 text-right splid-spalte vollstaendig-spalte hidden">—</td>`;
+            nochZuZahlenZelle = `<td data-label="Noch zu zahlen" class="py-2 pr-4 text-right splid-spalte vollstaendig-spalte hidden">—</td>`;
           } else {
             const nochZuZahlen = e.solidarischerBeitrag - ausgaben;
             const nochSign = nochZuZahlen > 0.005 ? '+' : '';
             const nochClass = istStandard ? '' : (nochZuZahlen > 0.005 ? 'text-red-600' : 'text-green-700');
-            nochZuZahlenZelle = `<td class="py-2 pr-4 text-right font-medium splid-spalte vollstaendig-spalte hidden ${nochClass}">${nochSign}${eur(nochZuZahlen)}</td>`;
+            nochZuZahlenZelle = `<td data-label="Noch zu zahlen" class="py-2 pr-4 text-right font-bold splid-spalte vollstaendig-spalte hidden ${nochClass}">${nochSign}${eur(nochZuZahlen)}</td>`;
           }
         }
 
         tr.innerHTML = `
           ${emojiZelle}
-          <td class="py-2 pr-4">${slot.label}</td>
-          <td class="py-2 pr-4 text-right">${slot.gewichtung}</td>
-          <td class="py-2 pr-4 text-right">${fehlt ? eur(richtwertAnteil) : eur(e.richtwertAnteil)}</td>
+          <td data-label="Slot" class="py-2 pr-4">${slot.label}</td>
+          <td data-label="Faktor" class="py-2 pr-4 text-right">${slot.gewichtung}</td>
+          <td data-label="Richtwert" class="py-2 pr-4 text-right">${fehlt ? eur(richtwertAnteil) : eur(e.richtwertAnteil)}</td>
           ${ausgabenZelle}
           ${beitragZelle}
           ${nochZuZahlenZelle}
-          <td class="py-2 pr-4">${statusBadge}</td>
+          <td data-label="Status" class="py-2 pr-4">${statusBadge}</td>
         `;
         tbody.appendChild(tr);
       }
@@ -359,13 +373,17 @@ import Layout from '../../../../layouts/Layout.astro';
           if (!e.istStandard) emojiZuLabel.set(e.emojiId, e.slotLabel);
         }
         const liste = document.getElementById('ausgleich-liste')!;
-        for (const z of zahlungen) {
-          const li = document.createElement('li');
+        zahlungen.forEach((z, idx) => {
+          const zeile = document.createElement('div');
           const vonLabel = emojiZuLabel.get(z.von) ?? z.von;
           const anLabel = emojiZuLabel.get(z.an) ?? z.an;
-          li.textContent = `${vonLabel} → ${anLabel}   ${eur(z.betrag)}`;
-          liste.appendChild(li);
-        }
+          zeile.className = `flex justify-between items-center px-4 py-2.5 ${idx < zahlungen.length - 1 ? 'border-b border-slate-100' : ''}`;
+          zeile.innerHTML = `
+            <span class="text-sm text-slate-700">${vonLabel} → ${anLabel}</span>
+            <span class="text-sm font-semibold text-slate-900">${eur(z.betrag)}</span>
+          `;
+          liste.appendChild(zeile);
+        });
         document.getElementById('ausgleich-section')!.classList.remove('hidden');
       }
     }
@@ -391,20 +409,22 @@ import Layout from '../../../../layouts/Layout.astro';
       }
     }
 
-    // Statuszeile (nur Gebote für Slots ohne standardgebot zählen)
+    // Status-Banner + Statuszeile (nur Gebote für Slots ohne standardgebot zählen)
     if (hatDuplikate) {
+      zeigeBanner('Doppelgebote vorhanden — bitte klären.', 'amber');
       document.getElementById('gebote-anzahl')!.textContent =
-        `${geboteOhneStandard.length} Gebote eingegangen, ${totalErwartet} erwartet — bitte Doppelgebote klären`;
+        `${geboteOhneStandard.length} Gebote eingegangen, ${totalErwartet} erwartet`;
     } else if (allesDa) {
       const fehlbetragVorhanden = auswertung && auswertung.fehlbetrag > 0.005;
-      document.getElementById('gebote-anzahl')!.textContent =
-        totalErwartet === 0
-          ? 'Auswertung vollständig (alle Slots mit Standardgebot)'
-          : fehlbetragVorhanden
-            ? `Alle ${totalErwartet} Gebote eingegangen — Fehlbetrag, Runde muss wiederholt werden`
-            : `Alle ${totalErwartet} Gebote eingegangen — Auswertung vollständig`;
+      if (totalErwartet === 0) {
+        zeigeBanner('Auswertung vollständig (alle Slots mit Standardgebot).', 'green');
+      } else if (fehlbetragVorhanden) {
+        zeigeBanner(`Fehlbetrag: ${eur(auswertung!.fehlbetrag)} — Runde muss wiederholt werden.`, 'red');
+      } else {
+        zeigeBanner('Alle Gebote eingegangen. Auswertung abgeschlossen.', 'green');
+      }
     } else {
-      document.getElementById('gebote-anzahl')!.textContent = `${geboteOhneStandard.length} von ${totalErwartet} Geboten eingegangen`;
+      zeigeBanner(`${geboteOhneStandard.length} von ${totalErwartet} Geboten eingegangen.`, 'amber');
     }
 
     document.getElementById('zustand-laden')!.classList.add('hidden');

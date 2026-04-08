@@ -8,21 +8,13 @@ import Layout from '../layouts/Layout.astro';
     <h1 class="text-2xl font-semibold mb-1">Neue Runde erstellen</h1>
     <p class="text-slate-500 text-sm mb-6">Alle Daten werden im Browser verschlüsselt — der Server sieht nie Klartext.</p>
 
-    <!-- Splid-Import -->
-    <div class="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-xl">
-      <p class="text-sm font-medium text-slate-700 mb-2">Aus Splid importieren</p>
-      <p class="text-xs text-slate-500 mb-3">Exportiere deine Runde in Splid als XLSX und lade sie hier hoch. Die Datei verlässt deinen Browser nicht.</p>
-      <input type="file" id="splid-file" accept=".xlsx,.xls" class="hidden" />
-      <button
-        type="button"
-        id="splid-import-btn"
-        class="border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 transition-colors"
-      >
-        XLSX-Datei auswählen…
-      </button>
-      <div id="splid-erfolg" class="hidden mt-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2"></div>
-      <div id="splid-fehler" class="hidden mt-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></div>
-    </div>
+    <!-- Splid-Import (kompakt) -->
+    <p class="mb-6 text-sm text-slate-400">
+      Bereits eine Splid-Abrechnung? <a href="#" id="splid-import-btn" class="underline hover:text-slate-600 transition-colors">XLSX hochladen →</a>
+    </p>
+    <input type="file" id="splid-file" accept=".xlsx,.xls" class="hidden" />
+    <div id="splid-erfolg" class="hidden mb-4 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2"></div>
+    <div id="splid-fehler" class="hidden mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></div>
 
     <form id="runde-form" class="space-y-6">
       <!-- Runden-Name -->
@@ -85,64 +77,96 @@ import Layout from '../layouts/Layout.astro';
                 placeholder="Label (optional)"
                 class="flex-1 border border-slate-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
               />
-              <div class="flex items-center gap-1">
-                <span class="text-xs text-slate-500">Faktor</span>
-                <input
-                  type="number"
-                  name="gewichtung[]"
-                  value="1"
-                  min="0.1"
-                  step="0.1"
-                  required
-                  class="w-16 border border-slate-300 rounded-md px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-green-600"
-                />
-              </div>
-              <div class="flex items-center gap-1">
-                <span class="text-xs text-slate-500">Plätze</span>
-                <input
-                  type="number"
-                  name="anzahl[]"
-                  value="1"
-                  min="1"
-                  step="1"
-                  required
-                  class="w-16 border border-slate-300 rounded-md px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-green-600"
-                />
-              </div>
               <button
                 type="button"
                 class="slot-entfernen text-slate-400 hover:text-red-500 text-lg leading-none hidden"
                 aria-label="Slot entfernen"
               >×</button>
             </div>
-            <div class="ausgaben-zeile hidden flex items-center gap-2">
-              <span class="text-xs text-slate-500 shrink-0">Ausgaben (€)</span>
-              <input
-                type="number"
-                name="ausgaben[]"
-                min="0"
-                step="0.01"
-                placeholder="0,00"
-                class="w-28 border border-slate-300 rounded-md px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-green-600"
-              />
-            </div>
-            <div class="standardgebot-zeile flex items-center gap-2 flex-wrap">
-              <span class="standardgebot-richtwert text-xs text-slate-400"></span>
-              <label class="flex items-center gap-1 text-xs text-slate-500 cursor-pointer select-none">
-                <input type="checkbox" class="standardgebot-checkbox accent-green-700" />
-                Standardgebot festlegen
-              </label>
-              <div class="standardgebot-eingabe hidden flex items-center gap-1">
-                <input
-                  type="number"
-                  name="standardgebot[]"
-                  min="0"
-                  step="0.01"
-                  data-auto="true"
-                  class="w-28 border border-slate-300 rounded-md px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-green-600"
-                />
+            <span class="standardgebot-richtwert text-xs text-slate-400"></span>
+
+            <!-- Erweiterte Optionen (eingeklappt) -->
+            <details class="slot-erweitert-details">
+              <summary class="text-xs text-slate-400 cursor-pointer hover:text-slate-600 transition-colors select-none list-none flex items-center gap-1">
+                <span class="inline-block transition-transform details-arrow">›</span> Erweitert
+              </summary>
+              <div class="pt-3 space-y-3">
+                <!-- Gewichtungs-Kategorien -->
+                <div class="slot-gewichtung-gruppe">
+                  <p class="text-xs text-slate-500 mb-1.5">Gewichtung</p>
+                  <div class="flex flex-wrap gap-1.5">
+                    <label class="slot-gewichtung-label cursor-pointer">
+                      <input type="radio" class="slot-gewichtung-radio sr-only" name="gw-slot-0" value="1.0" checked />
+                      <span class="slot-gewichtung-badge inline-block border border-slate-200 rounded-md px-2.5 py-1 text-xs text-slate-600 hover:border-green-500 transition-colors selected:border-green-600 selected:bg-green-50 selected:text-green-800">Erwachsen</span>
+                    </label>
+                    <label class="slot-gewichtung-label cursor-pointer">
+                      <input type="radio" class="slot-gewichtung-radio sr-only" name="gw-slot-0" value="0.75" />
+                      <span class="slot-gewichtung-badge inline-block border border-slate-200 rounded-md px-2.5 py-1 text-xs text-slate-600 hover:border-green-500 transition-colors">Ermäßigt</span>
+                    </label>
+                    <label class="slot-gewichtung-label cursor-pointer">
+                      <input type="radio" class="slot-gewichtung-radio sr-only" name="gw-slot-0" value="0.5" />
+                      <span class="slot-gewichtung-badge inline-block border border-slate-200 rounded-md px-2.5 py-1 text-xs text-slate-600 hover:border-green-500 transition-colors">Kind</span>
+                    </label>
+                    <label class="slot-gewichtung-label cursor-pointer">
+                      <input type="radio" class="slot-gewichtung-radio sr-only" name="gw-slot-0" value="manuell" />
+                      <span class="slot-gewichtung-badge inline-block border border-slate-200 rounded-md px-2.5 py-1 text-xs text-slate-600 hover:border-green-500 transition-colors">Manuell</span>
+                    </label>
+                    <input
+                      type="number"
+                      class="slot-gewichtung-manuell hidden w-16 border border-slate-300 rounded-md px-2 py-1 text-sm text-center focus:outline-none focus:ring-2 focus:ring-green-600"
+                      min="0.1"
+                      max="2"
+                      step="0.05"
+                      value="1"
+                      placeholder="0,0–2,0"
+                    />
+                  </div>
+                  <input type="hidden" name="gewichtung[]" value="1" />
+                </div>
+                <!-- Plätze -->
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-slate-500">Plätze</span>
+                  <input
+                    type="number"
+                    name="anzahl[]"
+                    value="1"
+                    min="1"
+                    step="1"
+                    required
+                    class="w-16 border border-slate-300 rounded-md px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-green-600"
+                  />
+                </div>
+                <!-- Ausgaben -->
+                <div class="ausgaben-zeile hidden flex items-center gap-2">
+                  <span class="text-xs text-slate-500 shrink-0">Ausgaben (€)</span>
+                  <input
+                    type="number"
+                    name="ausgaben[]"
+                    min="0"
+                    step="0.01"
+                    placeholder="0,00"
+                    class="w-28 border border-slate-300 rounded-md px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-green-600"
+                  />
+                </div>
+                <!-- Standardgebot -->
+                <div class="standardgebot-zeile flex items-center gap-2 flex-wrap">
+                  <label class="flex items-center gap-1 text-xs text-slate-500 cursor-pointer select-none">
+                    <input type="checkbox" class="standardgebot-checkbox accent-green-700" />
+                    Standardgebot festlegen
+                  </label>
+                  <div class="standardgebot-eingabe hidden flex items-center gap-1">
+                    <input
+                      type="number"
+                      name="standardgebot[]"
+                      min="0"
+                      step="0.01"
+                      data-auto="true"
+                      class="w-28 border border-slate-300 rounded-md px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-green-600"
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
+            </details>
           </div>
         </div>
         <p class="text-xs text-slate-400 mt-1">Label ist optional. Ohne Label heißt der Slot „Slot".</p>
@@ -243,6 +267,19 @@ import Layout from '../layouts/Layout.astro';
   </div>
 </Layout>
 
+<style>
+  /* Aktiver Zustand für Gewichtungs-Badges */
+  .slot-gewichtung-radio:checked + .slot-gewichtung-badge {
+    border-color: #3B6D11;
+    background-color: #f0f7eb;
+    color: #27500A;
+  }
+  /* Details-Pfeil drehen wenn offen */
+  details[open] .details-arrow {
+    transform: rotate(90deg);
+  }
+</style>
+
 <script>
   import {
     generatePartKey,
@@ -262,10 +299,19 @@ import Layout from '../layouts/Layout.astro';
   const slotsContainer = document.getElementById('slots-container') as HTMLDivElement;
   const ausgabenToggle = document.getElementById('ausgaben-toggle') as HTMLInputElement;
 
+  // Zähler für eindeutige Radio-Button-Namen
+  let slotCounter = 1;
+
   function setzeAusgabenSichtbarkeit(sichtbar: boolean) {
     slotsContainer.querySelectorAll<HTMLDivElement>('.ausgaben-zeile').forEach((zeile) => {
       zeile.classList.toggle('hidden', !sichtbar);
     });
+    // Erweitert-Panel automatisch öffnen wenn Ausgaben eingeblendet werden
+    if (sichtbar) {
+      slotsContainer.querySelectorAll<HTMLDetailsElement>('.slot-erweitert-details').forEach(d => {
+        d.open = true;
+      });
+    }
   }
 
   ausgabenToggle.addEventListener('change', () => {
@@ -326,20 +372,45 @@ import Layout from '../layouts/Layout.astro';
     const target = e.target as HTMLInputElement;
     if (target.name === 'standardgebot[]') {
       target.dataset.auto = 'false';
-    } else if (target.name === 'gewichtung[]' || target.name === 'anzahl[]') {
+    } else if (target.name === 'anzahl[]') {
       aktualisiereRichtwert();
+    } else if (target.classList.contains('slot-gewichtung-manuell')) {
+      // Manuell-Eingabe → hidden input aktualisieren
+      const eintrag = target.closest('.slot-eintrag') as HTMLDivElement;
+      const hiddenInput = eintrag.querySelector<HTMLInputElement>('[name="gewichtung[]"]');
+      if (hiddenInput && target.value) {
+        hiddenInput.value = target.value;
+        aktualisiereRichtwert();
+      }
     }
   });
 
   slotsContainer.addEventListener('change', (e) => {
     const target = e.target as HTMLInputElement;
+
+    // Gewichtungs-Radio
+    if (target.classList.contains('slot-gewichtung-radio')) {
+      const eintrag = target.closest('.slot-eintrag') as HTMLDivElement;
+      const hiddenInput = eintrag.querySelector<HTMLInputElement>('[name="gewichtung[]"]');
+      const manuellInput = eintrag.querySelector<HTMLInputElement>('.slot-gewichtung-manuell');
+      if (target.value === 'manuell') {
+        manuellInput?.classList.remove('hidden');
+        if (hiddenInput && manuellInput?.value) hiddenInput.value = manuellInput.value;
+      } else {
+        manuellInput?.classList.add('hidden');
+        if (hiddenInput) hiddenInput.value = target.value;
+        aktualisiereRichtwert();
+      }
+      return;
+    }
+
+    // Standardgebot-Checkbox
     if (!target.classList.contains('standardgebot-checkbox')) return;
     const eintrag = target.closest('.slot-eintrag') as HTMLDivElement;
     const eingabe = eintrag.querySelector('.standardgebot-eingabe') as HTMLDivElement;
     const stdInput = eintrag.querySelector<HTMLInputElement>('[name="standardgebot[]"]');
     if (target.checked) {
       eingabe.classList.remove('hidden');
-      // aktualisiereRichtwert hat data-auto-Felder schon befüllt
     } else {
       eingabe.classList.add('hidden');
       if (stdInput) {
@@ -347,6 +418,15 @@ import Layout from '../layouts/Layout.astro';
         stdInput.dataset.auto = 'true';
       }
     }
+  });
+
+  // Slot entfernen (delegiert)
+  slotsContainer.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (!target.classList.contains('slot-entfernen')) return;
+    const eintrag = target.closest('.slot-eintrag') as HTMLDivElement;
+    eintrag.remove();
+    aktualisiereEntfernenButtons();
   });
 
   // ---------------------------------------------------------------------------
@@ -357,7 +437,8 @@ import Layout from '../layouts/Layout.astro';
   const splidErfolgEl = document.getElementById('splid-erfolg') as HTMLDivElement;
   const splidFehlerEl = document.getElementById('splid-fehler') as HTMLDivElement;
 
-  document.getElementById('splid-import-btn')!.addEventListener('click', () => {
+  document.getElementById('splid-import-btn')!.addEventListener('click', (e) => {
+    e.preventDefault();
     splidFileInput.click();
   });
 
@@ -372,14 +453,9 @@ import Layout from '../layouts/Layout.astro';
       const buffer = await file.arrayBuffer();
       const { rundenname, gesamtkosten, personen } = await parseSplid(buffer);
 
-      // Rundenname befüllen
       (form.querySelector('#rundeName') as HTMLInputElement).value = rundenname;
+      (form.querySelector('#gesamtkosten') as HTMLInputElement).value = gesamtkosten.toFixed(2);
 
-      // Gesamtkosten befüllen
-      (form.querySelector('#gesamtkosten') as HTMLInputElement).value =
-        gesamtkosten.toFixed(2);
-
-      // Slots ersetzen: alle außer dem ersten entfernen, dann Felder befüllen
       const alleSlots = slotsContainer.querySelectorAll<HTMLDivElement>('.slot-eintrag');
       alleSlots.forEach((s, i) => { if (i > 0) s.remove(); });
 
@@ -388,8 +464,10 @@ import Layout from '../layouts/Layout.astro';
       function befuelleSlot(slotEl: HTMLDivElement, label: string, ausgaben: number) {
         (slotEl.querySelector('[name="label[]"]') as HTMLInputElement).value = label;
         (slotEl.querySelector('[name="gewichtung[]"]') as HTMLInputElement).value = '1';
-        (slotEl.querySelector('[name="anzahl[]"]') as HTMLInputElement).value = '1';
         (slotEl.querySelector('[name="ausgaben[]"]') as HTMLInputElement).value = ausgaben.toFixed(2);
+        // Erwachsen-Radio als Standard auswählen
+        const erwachsenRadio = slotEl.querySelector<HTMLInputElement>('.slot-gewichtung-radio[value="1.0"]');
+        if (erwachsenRadio) erwachsenRadio.checked = true;
       }
 
       befuelleSlot(ersterSlot, personen[0].name, personen[0].ausgaben);
@@ -397,6 +475,9 @@ import Layout from '../layouts/Layout.astro';
       for (let i = 1; i < personen.length; i++) {
         const vorlage = slotsContainer.querySelector('.slot-eintrag') as HTMLDivElement;
         const klon = vorlage.cloneNode(true) as HTMLDivElement;
+        // Eindeutigen Namen für Radio-Buttons setzen
+        const uid = `gw-slot-${slotCounter++}`;
+        klon.querySelectorAll<HTMLInputElement>('.slot-gewichtung-radio').forEach(r => { r.name = uid; });
         befuelleSlot(klon, personen[i].name, personen[i].ausgaben);
         slotsContainer.appendChild(klon);
       }
@@ -415,7 +496,6 @@ import Layout from '../layouts/Layout.astro';
       splidFehlerEl.classList.remove('hidden');
     }
 
-    // Input zurücksetzen damit dieselbe Datei nochmals gewählt werden kann
     splidFileInput.value = '';
   });
 
@@ -423,16 +503,24 @@ import Layout from '../layouts/Layout.astro';
   // Slot hinzufügen
   // ---------------------------------------------------------------------------
 
-  // Slot hinzufügen
   document.getElementById('slot-hinzufuegen')!.addEventListener('click', () => {
     const vorlage = slotsContainer.querySelector('.slot-eintrag') as HTMLDivElement;
     const klon = vorlage.cloneNode(true) as HTMLDivElement;
+
     // Felder zurücksetzen
-    klon.querySelectorAll('input').forEach((inp) => {
-      if (inp.name === 'gewichtung[]') inp.value = '1';
-      else if (inp.name === 'anzahl[]') inp.value = '1';
-      else inp.value = '';
+    const uid = `gw-slot-${slotCounter++}`;
+    klon.querySelectorAll<HTMLInputElement>('.slot-gewichtung-radio').forEach((r, i) => {
+      r.name = uid;
+      r.checked = i === 0; // Erwachsen vorauswählen
     });
+    klon.querySelectorAll<HTMLInputElement>('input[name="label[]"]').forEach(el => { el.value = ''; });
+    klon.querySelectorAll<HTMLInputElement>('input[name="anzahl[]"]').forEach(el => { el.value = '1'; });
+    klon.querySelectorAll<HTMLInputElement>('input[name="ausgaben[]"]').forEach(el => { el.value = ''; });
+    klon.querySelectorAll<HTMLInputElement>('[name="gewichtung[]"]').forEach(el => { el.value = '1'; });
+    klon.querySelectorAll<HTMLInputElement>('.slot-gewichtung-manuell').forEach(el => {
+      el.value = '1'; el.classList.add('hidden');
+    });
+
     // Standardgebot zurücksetzen
     const stdCheckbox = klon.querySelector<HTMLInputElement>('.standardgebot-checkbox');
     if (stdCheckbox) stdCheckbox.checked = false;
@@ -442,26 +530,45 @@ import Layout from '../layouts/Layout.astro';
     if (stdInput) { stdInput.value = ''; stdInput.dataset.auto = 'true'; }
     const richtwertAnzeige = klon.querySelector<HTMLSpanElement>('.standardgebot-richtwert');
     if (richtwertAnzeige) richtwertAnzeige.textContent = '';
-    // Ausgaben-Zeile entsprechend Toggle-Zustand ein-/ausblenden
+
+    // Ausgaben-Zeile entsprechend Toggle-Zustand
     const ausgabenZeile = klon.querySelector('.ausgaben-zeile') as HTMLDivElement;
     ausgabenZeile.classList.toggle('hidden', !ausgabenToggle.checked);
+
+    // Details schließen für neuen Slot
+    const details = klon.querySelector<HTMLDetailsElement>('.slot-erweitert-details');
+    if (details) details.open = false;
+
     slotsContainer.appendChild(klon);
+    klon.classList.add('animate-slide-down');
     aktualisiereEntfernenButtons();
     aktualisiereRichtwert();
-  });
-
-  // Slot entfernen (delegiert)
-  slotsContainer.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement;
-    if (!target.classList.contains('slot-entfernen')) return;
-    const eintrag = target.closest('.slot-eintrag') as HTMLDivElement;
-    eintrag.remove();
-    aktualisiereEntfernenButtons();
   });
 
   // ---------------------------------------------------------------------------
   // Runde wiederholen (Vorausfüllen aus sessionStorage)
   // ---------------------------------------------------------------------------
+
+  function setzeGewichtungRadio(slotEl: HTMLDivElement, gewichtung: number) {
+    const hiddenInput = slotEl.querySelector<HTMLInputElement>('[name="gewichtung[]"]');
+    if (hiddenInput) hiddenInput.value = String(gewichtung);
+
+    // Passendes Radio auswählen oder Manuell
+    const presets = ['1.0', '0.75', '0.5'];
+    const matchingValue = presets.find(v => Math.abs(parseFloat(v) - gewichtung) < 0.001);
+    if (matchingValue) {
+      const radio = slotEl.querySelector<HTMLInputElement>(`.slot-gewichtung-radio[value="${matchingValue}"]`);
+      if (radio) radio.checked = true;
+    } else {
+      const manuellRadio = slotEl.querySelector<HTMLInputElement>('.slot-gewichtung-radio[value="manuell"]');
+      const manuellInput = slotEl.querySelector<HTMLInputElement>('.slot-gewichtung-manuell');
+      if (manuellRadio) manuellRadio.checked = true;
+      if (manuellInput) {
+        manuellInput.value = String(gewichtung);
+        manuellInput.classList.remove('hidden');
+      }
+    }
+  }
 
   const wiederholenRaw = sessionStorage.getItem('rundeWiederholen');
   if (wiederholenRaw) {
@@ -482,8 +589,8 @@ import Layout from '../layouts/Layout.astro';
       ) {
         (slotEl.querySelector('[name="label[]"]') as HTMLInputElement).value =
           slot.label === 'Slot' ? '' : slot.label;
-        (slotEl.querySelector('[name="gewichtung[]"]') as HTMLInputElement).value = String(slot.gewichtung);
         (slotEl.querySelector('[name="anzahl[]"]') as HTMLInputElement).value = String(slot.anzahl);
+        setzeGewichtungRadio(slotEl, slot.gewichtung);
 
         const checkbox = slotEl.querySelector<HTMLInputElement>('.standardgebot-checkbox')!;
         const eingabe = slotEl.querySelector<HTMLDivElement>('.standardgebot-eingabe')!;
@@ -502,7 +609,6 @@ import Layout from '../layouts/Layout.astro';
         }
       }
 
-      // Alle außer dem ersten Slot entfernen
       slotsContainer.querySelectorAll<HTMLDivElement>('.slot-eintrag').forEach((s, i) => {
         if (i > 0) s.remove();
       });
@@ -512,6 +618,8 @@ import Layout from '../layouts/Layout.astro';
 
       for (let i = 1; i < config.slots.length; i++) {
         const klon = ersterSlot.cloneNode(true) as HTMLDivElement;
+        const uid = `gw-slot-${slotCounter++}`;
+        klon.querySelectorAll<HTMLInputElement>('.slot-gewichtung-radio').forEach(r => { r.name = uid; });
         slotsContainer.appendChild(klon);
         befuelleWiederholSlot(klon, config.slots[i]);
       }
@@ -604,16 +712,13 @@ import Layout from '../layouts/Layout.astro';
 
       const { id, adminToken } = (await res.json()) as { id: string; adminToken: string };
 
-      // Schlüssel exportieren
       const partKeyB64 = await exportKey(partKey);
       const adminPrivKeyB64 = await exportKey(adminPrivKey);
 
-      // Links zusammensetzen
       const origin = window.location.origin;
       const teilnehmerLink = `${origin}/runde/${id}#pk=${partKeyB64}`;
       const adminLink = `${origin}/runde/${id}/admin/${adminToken}#pk=${partKeyB64}&bk=${adminPrivKeyB64}`;
 
-      // Runde im localStorage speichern
       saveRunde({
         id,
         name: rundeName,
@@ -623,13 +728,13 @@ import Layout from '../layouts/Layout.astro';
         slots: slots.map(({ label, gewichtung, anzahl }) => ({ label, gewichtung, anzahl })),
       });
 
-      // Anzeigen
       (document.getElementById('teilnehmer-link') as HTMLInputElement).value = teilnehmerLink;
       (document.getElementById('admin-link') as HTMLInputElement).value = adminLink;
       (document.getElementById('teilnehmer-link-oeffnen') as HTMLAnchorElement).href = teilnehmerLink;
       (document.getElementById('admin-link-oeffnen') as HTMLAnchorElement).href = adminLink;
       formBereich.classList.add('hidden');
       ergebnisBereich.classList.remove('hidden');
+      ergebnisBereich.classList.add('animate-fade-in');
     } catch (err) {
       zeigeFehler('Fehler beim Erstellen der Runde. Bitte versuche es erneut.');
       console.error(err);

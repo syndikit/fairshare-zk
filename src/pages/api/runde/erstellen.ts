@@ -1,11 +1,10 @@
 import type { APIRoute } from 'astro';
-import { writeFile, readdir, readFile, unlink, stat } from 'node:fs/promises';
+import { writeFile, readdir, unlink, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 
 interface RundeJSON {
   id: string;
   adminToken: string;
-  createdAt: string;
   encTeilnehmerBlob: string;
   gebote: Array<{ emojiHmac: string; encGebot: string }>;
 }
@@ -20,13 +19,8 @@ async function cleanupAlteRunden(dataDir: string): Promise<void> {
       if (!file.endsWith('.json')) continue;
       const filePath = join(dataDir, file);
       try {
-        const raw = await readFile(filePath, 'utf-8');
-        const data = JSON.parse(raw) as Partial<RundeJSON>;
-        const createdAt = data.createdAt ? new Date(data.createdAt).getTime() : NaN;
-        const age = isNaN(createdAt)
-          ? now - (await stat(filePath)).mtimeMs
-          : now - createdAt;
-        if (age > SIX_MONTHS_MS) {
+        const { mtimeMs } = await stat(filePath);
+        if (now - mtimeMs > SIX_MONTHS_MS) {
           await unlink(filePath);
         }
       } catch {
@@ -79,7 +73,6 @@ export const POST: APIRoute = async ({ request }) => {
   const runde: RundeJSON = {
     id,
     adminToken,
-    createdAt: new Date().toISOString(),
     encTeilnehmerBlob,
     gebote: [],
   };

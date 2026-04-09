@@ -74,9 +74,14 @@ import Layout from '../layouts/Layout.astro';
       keine E-Mail-Adressen, keine Tracking-Cookies. Runden-IDs sind zufällig generiert
       und enthalten keine personenbezogenen Informationen.
     </p>
-    <p class="text-sm text-slate-600 leading-relaxed">
+    <p class="text-sm text-slate-600 leading-relaxed mb-3">
       Gespeicherte Runden-Links werden ausschließlich in deinem Browser (localStorage)
       gespeichert — nie auf dem Server.
+    </p>
+    <p class="text-sm text-slate-600 leading-relaxed">
+      Runden werden nach <strong>6 Monaten automatisch vom Server gelöscht</strong>.
+      Der Inhalt ist ohnehin verschlüsselt — die automatische Löschung stellt sicher,
+      dass auch die verschlüsselten Rohdaten nicht dauerhaft gespeichert bleiben.
     </p>
   </div>
 </Layout>

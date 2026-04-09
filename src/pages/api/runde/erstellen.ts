@@ -1,12 +1,41 @@
 import type { APIRoute } from 'astro';
-import { writeFile } from 'node:fs/promises';
+import { writeFile, readdir, readFile, unlink, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 
 interface RundeJSON {
   id: string;
   adminToken: string;
+  createdAt: string;
   encTeilnehmerBlob: string;
   gebote: Array<{ emojiHmac: string; encGebot: string }>;
+}
+
+const SIX_MONTHS_MS = 6 * 30 * 24 * 60 * 60 * 1000;
+
+async function cleanupAlteRunden(dataDir: string): Promise<void> {
+  try {
+    const files = await readdir(dataDir);
+    const now = Date.now();
+    for (const file of files) {
+      if (!file.endsWith('.json')) continue;
+      const filePath = join(dataDir, file);
+      try {
+        const raw = await readFile(filePath, 'utf-8');
+        const data = JSON.parse(raw) as Partial<RundeJSON>;
+        const createdAt = data.createdAt ? new Date(data.createdAt).getTime() : NaN;
+        const age = isNaN(createdAt)
+          ? now - (await stat(filePath)).mtimeMs
+          : now - createdAt;
+        if (age > SIX_MONTHS_MS) {
+          await unlink(filePath);
+        }
+      } catch {
+        // Einzelne Datei überspringen bei Fehler
+      }
+    }
+  } catch {
+    // Cleanup-Fehler nicht an den Client weitergeben
+  }
 }
 
 function generateId(length: number): string {
@@ -20,6 +49,7 @@ const BLOB_FORMAT = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
 const DATA_DIR = join(process.cwd(), 'data', 'runden');
 
 export const POST: APIRoute = async ({ request }) => {
+  void cleanupAlteRunden(DATA_DIR);
   let body: unknown;
   try {
     body = await request.json();
@@ -49,6 +79,7 @@ export const POST: APIRoute = async ({ request }) => {
   const runde: RundeJSON = {
     id,
     adminToken,
+    createdAt: new Date().toISOString(),
     encTeilnehmerBlob,
     gebote: [],
   };

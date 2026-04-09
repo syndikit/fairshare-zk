@@ -3,8 +3,9 @@ import '../styles/global.css';
 
 interface Props {
   title: string;
+  fullWidth?: boolean;
 }
-const { title } = Astro.props;
+const { title, fullWidth = false } = Astro.props;
 const pathname = Astro.url.pathname;
 ---
 
@@ -16,22 +17,18 @@ const pathname = Astro.url.pathname;
     <meta name="robots" content="noindex, nofollow" />
     <title>{title} – FairShare</title>
   </head>
-  <body class="min-h-screen bg-slate-50 text-slate-900">
-    <div class="mx-auto max-w-2xl px-4 pt-8 pb-3">
-      <div class="flex items-center justify-between">
-        <a href="/" aria-label="Zurück zur Startseite" class="inline-flex items-center gap-3">
-          <img src="/syndikit-c-icon.svg" alt="" aria-hidden="true" class="h-12 w-auto" />
-          <span class="flex flex-col leading-tight">
-            <span style="font-family: Georgia, serif; font-size: 1.5rem; font-weight: 700; color: #1a1a1a; letter-spacing: -0.02em;">Syndi<span style="font-weight: 300; color: #3B6D11;">Kit</span></span>
-            <span style="font-family: Georgia, serif; font-size: 1rem; font-weight: 400; color: #1a1a1a; letter-spacing: -0.01em;">FairShare</span>
-          </span>
+  <body class="min-h-screen bg-white text-slate-900 antialiased flex flex-col">
+    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
+      <div class="mx-auto max-w-5xl px-4 h-16 flex items-center justify-between">
+        <a href="/" style="font-family: Georgia, serif; font-size: 1.25rem; letter-spacing: -0.02em;">
+          <span style="font-weight: 700; color: #3B6D11;">SyndiKit</span><span style="font-weight: 400; color: #1a1a1a; font-size: 1rem;"> · FairShare</span>
         </a>
         <nav class="flex items-center gap-1">
-          <a href="/neu" class={`px-3 py-1.5 rounded-lg text-sm transition-colors hover:bg-slate-200 ${pathname === '/neu' ? 'text-brand font-semibold' : 'text-slate-600'}`}>Neue Runde</a>
-          <a id="nav-meine-runden" href="/meine-runden" class={`px-3 py-1.5 rounded-lg text-sm transition-colors hover:bg-slate-200 ${pathname === '/meine-runden' ? 'text-brand font-semibold' : 'text-slate-600 hidden'}`}>Meine Runden</a>
+          <a href="/neu" class={`px-3 py-1.5 rounded-lg text-sm transition-colors hover:bg-slate-100 ${pathname === '/neu' ? 'text-brand font-semibold' : 'text-slate-600'}`}>Neue Runde</a>
+          <a id="nav-meine-runden" href="/meine-runden" class={`px-3 py-1.5 rounded-lg text-sm transition-colors hover:bg-slate-100 ${pathname === '/meine-runden' ? 'text-brand font-semibold' : 'text-slate-600 hidden'}`}>Meine Runden</a>
         </nav>
       </div>
-    </div>
+    </header>
     <script>
       try {
         const navLink = document.getElementById('nav-meine-runden');
@@ -47,11 +44,36 @@ const pathname = Astro.url.pathname;
         }
       } catch { /* ignore */ }
     </script>
-    <main class="mx-auto max-w-2xl px-4 py-6">
+    <main class={fullWidth ? 'flex-1' : 'flex-1 mx-auto w-full max-w-2xl px-6 py-24 pb-20'}>
       <slot />
     </main>
-    <footer class="mx-auto max-w-2xl px-4 py-4 text-center">
-      <a href="/ueber" class="text-xs text-slate-400 hover:text-slate-600 transition-colors">Über FairShare</a>
+    <section class="bg-slate-50">
+      <slot name="gray-section">
+        <div class="py-16"></div>
+      </slot>
+    </section>
+    <footer class="border-t border-slate-100 py-12">
+      <div class="mx-auto max-w-5xl px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-400">
+        <span>© 2026 SyndiKit · FairShare</span>
+        <nav class="flex gap-6">
+          <a href="/datenschutz" class="hover:text-slate-600 transition-colors">Datenschutz</a>
+          <a href="/impressum" class="hover:text-slate-600 transition-colors">Impressum</a>
+        </nav>
+      </div>
     </footer>
+    <script>
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) {
+              e.target.classList.add('visible');
+              observer.unobserve(e.target);
+            }
+          });
+        },
+        { threshold: 0.1 }
+      );
+      document.querySelectorAll('[data-animate]').forEach((el) => observer.observe(el));
+    </script>
   </body>
 </html>

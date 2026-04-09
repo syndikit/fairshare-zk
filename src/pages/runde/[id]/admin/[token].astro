@@ -393,22 +393,30 @@ import Layout from '../../../../layouts/Layout.astro';
       }
     }
 
-    // Status-Banner + Statuszeile (nur Gebote für Slots ohne standardgebot zählen)
+    // Status-Banner + Statuszeile
+    // Gesamtbild: alle Slots zählen; Auto-Slots gelten als bereits erledigt
+    const totalAlle = blob.slots.reduce((s, sl) => s + sl.anzahl, 0);
+    const autoAnzahl = blob.slots
+      .filter((s) => s.standardgebot !== undefined)
+      .reduce((s, sl) => s + sl.anzahl, 0);
+    const erledigt = autoAnzahl + geboteOhneStandard.length;
+    const ausstehend = totalAlle - erledigt;
+
     if (hatDuplikate) {
       zeigeBanner('Doppelgebote vorhanden — bitte klären.', 'amber');
       document.getElementById('gebote-anzahl')!.textContent =
-        `${geboteOhneStandard.length} Gebote eingegangen, ${totalErwartet} erwartet`;
+        `${geboteOhneStandard.length} von ${totalErwartet} Geboten eingegangen`;
     } else if (allesDa) {
       const fehlbetragVorhanden = auswertung && auswertung.fehlbetrag > 0.005;
-      if (totalErwartet === 0) {
-        zeigeBanner('Auswertung vollständig (alle Slots mit Standardgebot).', 'green');
-      } else if (fehlbetragVorhanden) {
+      if (fehlbetragVorhanden) {
         zeigeBanner(`Fehlbetrag: ${eur(auswertung!.fehlbetrag)} — Runde muss wiederholt werden.`, 'red');
       } else {
-        zeigeBanner('Alle Gebote eingegangen. Auswertung abgeschlossen.', 'green');
+        zeigeBanner('Alle Beiträge vollständig. Auswertung abgeschlossen.', 'green');
       }
+      document.getElementById('gebote-anzahl')!.textContent = '';
     } else {
-      zeigeBanner(`${geboteOhneStandard.length} von ${totalErwartet} Geboten eingegangen.`, 'amber');
+      zeigeBanner(`${ausstehend} von ${totalAlle} Beiträge ausstehend.`, 'amber');
+      document.getElementById('gebote-anzahl')!.textContent = '';
     }
 
     document.getElementById('zustand-laden')!.classList.add('hidden');

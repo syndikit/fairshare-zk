@@ -67,3 +67,27 @@
     margin-right: 0.5rem;
   }
 }
+
+/* === Print-Styles === */
+@media print {
+  /* Sticky Screen-Header verstecken */
+  header.sticky {
+    display: none !important;
+  }
+
+  /* Animationen deaktivieren */
+  [data-animate] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  
+  /* Fix: min-h-screen verursacht 2. Seite */
+  body {
+    min-height: 0 !important;
+  }
+
+  /* Seitenränder */
+  @page {
+    margin: 1.5cm;
+  }
+}

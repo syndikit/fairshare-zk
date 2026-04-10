@@ -1,5 +1,6 @@
 ---
 import Layout from '../../../../layouts/Layout.astro';
+import FeedbackBox from '../../../../components/FeedbackBox.astro';
 ---
 
 <Layout title="Auswertung">
@@ -403,7 +404,7 @@ import Layout from '../../../../layouts/Layout.astro';
     const ausstehend = totalAlle - erledigt;
 
     if (hatDuplikate) {
-      zeigeBanner('Doppelgebote vorhanden — bitte klären.', 'amber');
+      zeigeBanner('Auswertung pausiert — Doppelgebote bitte klären.', 'amber');
       document.getElementById('gebote-anzahl')!.textContent =
         `${geboteOhneStandard.length} von ${totalErwartet} Geboten eingegangen`;
     } else if (allesDa) {

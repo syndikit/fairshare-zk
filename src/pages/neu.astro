@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import FeedbackBox from '../components/FeedbackBox.astro';
 ---
 
 <Layout title="Neue Runde">
@@ -11,11 +12,11 @@ import Layout from '../layouts/Layout.astro';
     <!-- Import (kompakt) -->
     <p class="mb-6 text-sm text-slate-400">
       <a href="#" id="splid-import-btn" class="underline hover:text-slate-600 transition-colors">Abrechnung importieren →</a>
-      <span class="block text-xs mt-0.5">Derzeit wird Splid (XLSX) unterstützt.</span>
+      <span class="block text-xs mt-0.5">Derzeit wird <a href="https://splid.app/">Splid</a> (XLSX) unterstützt.</span>
     </p>
     <input type="file" id="splid-file" accept=".xlsx,.xls" class="hidden" />
-    <div id="splid-erfolg" class="hidden mb-4 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2"></div>
-    <div id="splid-fehler" class="hidden mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></div>
+    <FeedbackBox id="splid-erfolg" typ="gruen" klasse="mb-3" />
+    <FeedbackBox id="splid-fehler" klasse="mb-3" />
 
     <form id="runde-form" class="space-y-6">
       <!-- Runden-Name -->
@@ -175,7 +176,7 @@ import Layout from '../layouts/Layout.astro';
       </div>
 
       <!-- Fehler -->
-      <div id="fehler" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm"></div>
+      <FeedbackBox id="fehler" klasse="mb-3" />
 
       <!-- Submit -->
       <button
@@ -294,10 +295,10 @@ import Layout from '../layouts/Layout.astro';
   } from '../lib/crypto';
   import { parseSplid } from '../lib/splid';
   import { saveRunde } from '../lib/storage';
+  import { zeigeFeedback, versteckeFeedback } from '../lib/ui';
 
   const form = document.getElementById('runde-form') as HTMLFormElement;
   const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
-  const fehlerEl = document.getElementById('fehler') as HTMLDivElement;
   const formBereich = document.getElementById('form-bereich') as HTMLDivElement;
   const ergebnisBereich = document.getElementById('ergebnis-bereich') as HTMLDivElement;
   const slotsContainer = document.getElementById('slots-container') as HTMLDivElement;
@@ -315,15 +316,6 @@ import Layout from '../layouts/Layout.astro';
   ausgabenToggle.addEventListener('change', () => {
     setzeAusgabenSichtbarkeit(ausgabenToggle.checked);
   });
-
-  function zeigeFehler(msg: string) {
-    fehlerEl.textContent = msg;
-    fehlerEl.classList.remove('hidden');
-  }
-
-  function versteckeFehler() {
-    fehlerEl.classList.add('hidden');
-  }
 
   function aktualisiereEntfernenButtons() {
     const btns = slotsContainer.querySelectorAll<HTMLButtonElement>('.slot-entfernen');
@@ -439,8 +431,6 @@ import Layout from '../layouts/Layout.astro';
   // ---------------------------------------------------------------------------
 
   const splidFileInput = document.getElementById('splid-file') as HTMLInputElement;
-  const splidErfolgEl = document.getElementById('splid-erfolg') as HTMLDivElement;
-  const splidFehlerEl = document.getElementById('splid-fehler') as HTMLDivElement;
 
   document.getElementById('splid-import-btn')!.addEventListener('click', (e) => {
     e.preventDefault();
@@ -450,9 +440,6 @@ import Layout from '../layouts/Layout.astro';
   splidFileInput.addEventListener('change', async () => {
     const file = splidFileInput.files?.[0];
     if (!file) return;
-
-    splidErfolgEl.classList.add('hidden');
-    splidFehlerEl.classList.add('hidden');
 
     try {
       const buffer = await file.arrayBuffer();
@@ -492,13 +479,10 @@ import Layout from '../layouts/Layout.astro';
       setzeAusgabenSichtbarkeit(true);
       aktualisiereRichtwert();
 
-      const namen = personen.map((p) => p.name).join(', ');
-      splidErfolgEl.textContent = `${personen.length} Personen importiert: ${namen}`;
-      splidErfolgEl.classList.remove('hidden');
+      const namen = personen.map(p => p.name).join(', ');
+      zeigeFeedback('splid-erfolg', `${personen.length} Personen importiert: ${namen}`, 'gruen');
     } catch (err) {
-      splidFehlerEl.textContent =
-        err instanceof Error ? err.message : 'Unbekannter Fehler beim Importieren.';
-      splidFehlerEl.classList.remove('hidden');
+      zeigeFeedback('splid-fehler', err.message, 'rot');
     }
 
     splidFileInput.value = '';
@@ -659,7 +643,7 @@ import Layout from '../layouts/Layout.astro';
   // Formular absenden
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    versteckeFehler();
+    versteckeFeedback('fehler');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Verschlüssele…';
 
@@ -730,7 +714,7 @@ import Layout from '../layouts/Layout.astro';
 
       if (!res.ok) {
         const { error } = (await res.json()) as { error: string };
-        zeigeFehler(error ?? 'Unbekannter Fehler');
+        zeigeFeedback('fehler', error ?? 'Unbekannter Fehler', 'rot');
         return;
       }
 
@@ -760,7 +744,7 @@ import Layout from '../layouts/Layout.astro';
       ergebnisBereich.classList.remove('hidden');
       ergebnisBereich.classList.add('animate-fade-in');
     } catch (err) {
-      zeigeFehler('Fehler beim Erstellen der Runde. Bitte versuche es erneut.');
+      zeigeFeedback('fehler', 'Fehler beim Erstellen der Runde. Bitte versuche es erneut.', 'rot');
       console.error(err);
     } finally {
       submitBtn.disabled = false;

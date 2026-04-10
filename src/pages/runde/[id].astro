@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import FeedbackBox from '../../components/FeedbackBox.astro';
 ---
 
 <Layout title="Runde">
@@ -67,7 +68,7 @@ import Layout from '../../layouts/Layout.astro';
         </div>
 
         <!-- Fehler -->
-        <div id="gebot-fehler" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm"></div>
+        <FeedbackBox id="gebot-fehler" />
 
         <!-- Duplikat-Warnung Two-Step (Soft-Warning, kein Hard-Block) -->
         <div id="duplikat-warnung" class="hidden bg-amber-50 border border-amber-300 text-amber-800 rounded-lg p-3 text-sm">
@@ -149,7 +150,7 @@ import Layout from '../../layouts/Layout.astro';
         </div>
 
         <!-- Fehler -->
-        <div id="korrektur-fehler" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm"></div>
+        <FeedbackBox id="korrektur-fehler" />
 
         <button
           type="submit"
@@ -182,6 +183,7 @@ import Layout from '../../layouts/Layout.astro';
   } from '../../lib/crypto';
   import { EMOJIS, generiereEmojiId } from '../../lib/solidarisch';
   import { saveRunde } from '../../lib/storage';
+  import { zeigeFeedback, versteckeFeedback } from '../../lib/ui';
 
   interface TeilnehmerBlob {
     rundeName: string;
@@ -375,7 +377,6 @@ import Layout from '../../layouts/Layout.astro';
     // ── Tab 1: Gebot abgeben ──────────────────────────────────────────────────
     const gebotForm = document.getElementById('gebot-form') as HTMLFormElement;
     const gebotBtn = document.getElementById('gebot-btn') as HTMLButtonElement;
-    const gebotFehler = document.getElementById('gebot-fehler') as HTMLDivElement;
     const duplikatWarnung = document.getElementById('duplikat-warnung') as HTMLDivElement;
     const duplikatAbbrechen = document.getElementById('duplikat-abbrechen') as HTMLButtonElement;
     const duplikatWeiter = document.getElementById('duplikat-weiter') as HTMLButtonElement;
@@ -400,7 +401,7 @@ import Layout from '../../layouts/Layout.astro';
 
     // Kernfunktion: Gebot tatsächlich einreichen (mit Auto-Retry bei Emoji-Kollision)
     async function gebot_einreichen() {
-      gebotFehler.classList.add('hidden');
+      versteckeFeedback('gebot-fehler');
       duplikatWarnung.classList.add('hidden');
       gebotBtn.disabled = true;
       gebotBtn.textContent = 'Verschlüssele…';
@@ -441,8 +442,7 @@ import Layout from '../../layouts/Layout.astro';
 
         if (!res.ok) {
           const { error } = (await res.json()) as { error: string };
-          gebotFehler.textContent = error ?? 'Fehler beim Speichern';
-          gebotFehler.classList.remove('hidden');
+          zeigeFeedback('gebot-fehler', error ?? 'Fehler beim Speichern', 'rot');
           return;
         }
 
@@ -450,8 +450,7 @@ import Layout from '../../layouts/Layout.astro';
         document.getElementById('tab-korrigieren')!.classList.remove('hidden');
         zeigeBestaetigung(emojiId!, false);
       } catch (err) {
-        gebotFehler.textContent = 'Unerwarteter Fehler. Bitte versuche es erneut.';
-        gebotFehler.classList.remove('hidden');
+        zeigeFeedback('gebot-fehler', 'Unerwarteter Fehler. Bitte versuche es erneut.', 'rot');
         console.error(err);
       } finally {
         gebotBtn.disabled = false;
@@ -510,11 +509,10 @@ import Layout from '../../layouts/Layout.astro';
     // ── Tab 2: Gebot korrigieren ──────────────────────────────────────────────
     const korrekturForm = document.getElementById('korrektur-form') as HTMLFormElement;
     const korrekturBtn = document.getElementById('korrektur-btn') as HTMLButtonElement;
-    const korrekturFehler = document.getElementById('korrektur-fehler') as HTMLDivElement;
 
     korrekturForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      korrekturFehler.classList.add('hidden');
+      versteckeFeedback('korrektur-fehler');
       korrekturBtn.disabled = true;
       korrekturBtn.textContent = 'Verschlüssele…';
 
@@ -545,17 +543,17 @@ import Layout from '../../layouts/Layout.astro';
 
         if (!res.ok) {
           const { error } = (await res.json()) as { error: string };
-          korrekturFehler.textContent = res.status === 404
-            ? 'Emoji-ID nicht gefunden — Tippfehler?'
-            : (error ?? 'Fehler beim Speichern');
-          korrekturFehler.classList.remove('hidden');
+          zeigeFeedback(
+            'korrektur-fehler',
+            res.status === 404 ? 'Emoji-ID nicht gefunden — Tippfehler?' : error ?? 'Fehler beim Speichern',
+            'rot'
+          );
           return;
         }
 
         zeigeBestaetigung(emojiId, true);
       } catch (err) {
-        korrekturFehler.textContent = 'Unerwarteter Fehler. Bitte versuche es erneut.';
-        korrekturFehler.classList.remove('hidden');
+        zeigeFeedback('korrektur-fehler', 'Unerwarteter Fehler. Bitte versuche es erneut.', 'rot');
         console.error(err);
       } finally {
         korrekturBtn.disabled = false;

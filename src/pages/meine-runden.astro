@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import FeedbackBox from '../components/FeedbackBox.astro';
 ---
 
 <Layout title="Meine Runden">
@@ -29,7 +30,7 @@ import Layout from '../layouts/Layout.astro';
       <input type="file" id="import-file" accept=".json" class="hidden" />
     </div>
 
-    <div id="import-fehler" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm"></div>
+    <FeedbackBox id="import-fehler" />
 
     <!-- Leer-Zustand -->
     <div id="leer-zustand" class="hidden text-center py-16 text-slate-500">
@@ -57,10 +58,10 @@ import Layout from '../layouts/Layout.astro';
 <script>
   import { getRunden, deleteRunde, exportJson, importJson } from '../lib/storage';
   import type { LocalRunde } from '../lib/storage';
+  import { zeigeFeedback, versteckeFeedback } from '../lib/ui';
 
   const rundenListe = document.getElementById('runden-liste')!;
   const leerZustand = document.getElementById('leer-zustand')!;
-  const importFehler = document.getElementById('import-fehler')!;
   const loeschenDialog = document.getElementById('loeschen-dialog') as HTMLDialogElement;
   let pendingDeleteId: string | null = null;
 
@@ -181,16 +182,14 @@ import Layout from '../layouts/Layout.astro';
   importFileInput.addEventListener('change', async () => {
     const file = importFileInput.files?.[0];
     if (!file) return;
-    importFehler.classList.add('hidden');
+    versteckeFeedback('import-fehler');
 
     try {
       const text = await file.text();
       importJson(text);
       renderRunden();
     } catch (err) {
-      importFehler.textContent =
-        err instanceof Error ? err.message : 'Fehler beim Importieren der Datei.';
-      importFehler.classList.remove('hidden');
+      zeigeFeedback('import-fehler', err.message, 'rot');
     }
 
     importFileInput.value = '';

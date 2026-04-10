@@ -1,0 +1,14 @@
+---
+interface Props {
+  id: string;
+  typ?: 'rot' | 'gruen' | 'amber';
+  klasse?: string;
+}
+const { id, typ = 'rot', klasse = '' } = Astro.props;
+const farben = {
+  rot:   'bg-red-50 border-red-200 text-red-700',
+  gruen: 'bg-green-50 border-green-200 text-green-700',
+  amber: 'bg-amber-50 border-amber-200 text-amber-800',
+};
+---
+<div id={id} class={`hidden ${farben[typ]} border rounded-lg p-3 text-sm ${klasse}`}></div>

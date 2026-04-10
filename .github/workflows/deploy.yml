@@ -45,16 +45,3 @@ jobs:
           sftp_only: true
           ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
           ssh_passphrase: ${{ secrets.SSH_PASSPHRASE }}
-
-      - name: 🔁 Install deps & restart service via SSH
-        uses: appleboy/ssh-action@v1.2.5
-        with:
-          host: ${{ secrets.FTP_SERVER }}
-          port: ${{ secrets.FTP_PORT }}
-          username: ${{ secrets.FTP_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          script: |
-            cd /home/sebastian/websites/fairshare.syndikit.de
-            npm install --omit=dev
-            systemctl --user restart fairshare-zk

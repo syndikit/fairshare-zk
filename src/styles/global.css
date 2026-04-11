@@ -90,4 +90,35 @@
   @page {
     margin: 1.5cm;
   }
+
+  /* Slot-Karten nicht über Seiten aufteilen */
+  #slots-container > div {
+    break-inside: avoid;
+  }
+
+  /* Titel + Kennzahlen-Grid auf erster Seite zusammenhalten */
+  #zustand-auswertung > div:first-child,
+  #zustand-auswertung > .grid {
+    break-after: avoid;
+  }
+
+  /* Flex-Layout aufheben das Content auf neue Seite drückt */
+  body, main, #zustand-auswertung {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  body {
+    min-height: 0 !important;
+    display: block !important;  /* ← neu: flex-col aufheben */
+  }
+
+  main {
+    flex: none !important;      /* ← neu: flex-1 aufheben */
+    display: block !important;
+    padding-top: 0 !important;  /* py-24 ist auf Print sinnlos */
+    padding-bottom: 0 !important;
+  }
+
 }

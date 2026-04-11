@@ -50,24 +50,8 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
     <!-- Status-Banner -->
     <div id="status-banner" class="hidden rounded-xl px-4 py-3 text-sm font-medium print:hidden"></div>
 
-    <!-- Tabelle -->
-    <div class="overflow-x-auto">
-      <table class="results-table w-full text-sm border-collapse">
-        <thead>
-          <tr class="border-b border-slate-200 text-left text-xs text-slate-500">
-            <th class="pb-2 pr-4 font-medium emoji-spalte">Emoji-ID</th>
-            <th class="pb-2 pr-4 font-medium">Slot</th>
-            <th class="pb-2 pr-4 font-medium text-right">Faktor</th>
-            <th class="pb-2 pr-4 font-medium text-right">Richtwert</th>
-            <th class="pb-2 pr-4 font-medium text-right splid-spalte vollstaendig-spalte hidden">Ausgaben</th>
-            <th class="pb-2 pr-4 font-semibold text-right vollstaendig-spalte hidden">Beitrag</th>
-            <th class="pb-2 pr-4 font-semibold text-right splid-spalte vollstaendig-spalte hidden">Noch zu zahlen</th>
-            <th class="pb-2 font-medium">Status</th>
-          </tr>
-        </thead>
-        <tbody id="tabelle-body" class="divide-y divide-slate-100"></tbody>
-      </table>
-    </div>
+    <!-- Container -->
+    <div id="slots-container" class="space-y-3"></div>
 
     <!-- Ausgleichszahlungen -->
     <div id="ausgleich-section" class="hidden space-y-2">
@@ -132,6 +116,7 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
     };
     banner.className = `rounded-xl px-4 py-3 text-sm font-medium print:hidden ${farbenKlassen[farbe]}`;
     banner.textContent = text;
+    banner.classList.remove('hidden');
   }
 
   async function init() {
@@ -152,6 +137,7 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
     // Runden-ID aus URL: /runde/{id}/admin/{token}
     const pathParts = window.location.pathname.split('/').filter(Boolean);
     const rundenId = pathParts[1];
+    const adminToken = pathParts[3]; // /runde/{id}/admin/{token}
 
     // Blob + Gebote laden
     let blobData: { encTeilnehmerBlob: string; gebote: Array<{ emojiHmac: string; encGebot: string }> };
@@ -194,15 +180,14 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
     const dedupGebote = [...latestByHmac.values()];
 
     // Gebote entschlüsseln
-    const gebote: Gebot[] = [];
-    for (const { encGebot } of dedupGebote) {
+    const geboteWithHmac: Array<{ emojiHmac: string; gebot: Gebot }> = [];
+    for (const { emojiHmac, encGebot } of dedupGebote) {
       try {
         const g = JSON.parse(await decryptGebot(adminPrivKey, encGebot)) as Gebot;
-        gebote.push(g);
-      } catch {
-        // Einzelnes korruptes Gebot überspringen
-      }
+        geboteWithHmac.push({ emojiHmac, gebot: g });
+      } catch { /* korruptes Gebot überspringen */ }
     }
+    const gebote = geboteWithHmac.map(({ gebot }) => gebot);
 
     // Nur Slots OHNE standardgebot brauchen echte Gebote
     const totalErwartet = blob.slots
@@ -292,68 +277,141 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
       }
     }
 
-    // Tabelle befüllen — alle Slot-Positionen (geboten / auto / fehlt)
-    const tbody = document.getElementById('tabelle-body')!;
+    // Container befüllen — alle Slot-Positionen (geboten / auto / fehlt)
+    const slotsContainer = document.getElementById('slots-container')!;
+
+    // Beiträge nur anzeigen wenn Runde vollständig, keine Duplikate, kein Fehlbetrag
+    const zeigeBeitraege = allesDa && !hatDuplikate && auswertung !== null && auswertung.fehlbetrag <= 0.005;
+
     for (const slot of blob.slots) {
       const slotErgebnisse = ergebnisseBySlot.get(slot.label) ?? [];
-      const richtwertAnteil = Math.ceil(slot.gewichtung * rawRichtwert * 100) / 100;
+      const richtwertAnteil = Math.ceil((slot.gewichtung * rawRichtwert) / 100) * 100;
       const ausgaben = ausgabenMap.get(slot.label) ?? 0;
 
-      for (let i = 0; i < slot.anzahl; i++) {
-        const e = slotErgebnisse[i];
-        const istStandard = e?.istStandard === true;
-        const hatGebot = !!e && !istStandard;
-        const fehlt = !e;
+      const slotGeboteWithHmac = geboteWithHmac.filter(
+        ({ gebot }) => gebot.slotLabel === slot.label && !gebot.istStandard,
+      );
 
-        const tr = document.createElement('tr');
-        if (!hatGebot) tr.classList.add('text-slate-400');
+      const eingegangen = slotGeboteWithHmac.length;
+      const erwartet = slot.anzahl;
+      const zuViele = eingegangen > erwartet;
+      const vollstaendig = eingegangen === erwartet;
 
-        let statusBadge: string;
-        if (hatGebot) {
-          statusBadge = '<span class="text-xs bg-green-100 text-green-700 rounded px-1.5 py-0.5 font-medium">geboten</span>';
-        } else if (istStandard) {
-          statusBadge = '<span class="text-xs bg-green-100 text-green-700 rounded px-1.5 py-0.5 font-medium">auto</span>';
-        } else {
-          statusBadge = '<span class="text-xs bg-slate-100 text-slate-500 rounded px-1.5 py-0.5">fehlt</span>';
-        }
+      // Slot-Karte
+      const karte = document.createElement('div');
+      karte.className = 'border border-slate-200 rounded-xl overflow-hidden bg-white';
 
-        const emojiZelle = hatGebot
-          ? `<td data-label="Emoji-ID" class="py-2 pr-4 text-lg emoji-spalte">${e.emojiId}</td>`
-          : `<td data-label="Emoji-ID" class="py-2 pr-4 emoji-spalte">—</td>`;
+      // Slot-Header-Farbe
+      const headerBg = zuViele
+        ? 'bg-red-50 border-b border-red-200'
+        : vollstaendig
+          ? 'bg-green-50 border-b border-green-200'
+          : 'bg-amber-50 border-b border-amber-200';
+      const headerTextFarbe = zuViele
+        ? 'text-red-800'
+        : vollstaendig
+          ? 'text-green-800'
+          : 'text-amber-800';
+      const headerIcon = zuViele ? '⚠️' : vollstaendig ? '✓' : '○';
 
-        const ausgabenZelle = hatSplidDaten
-          ? `<td data-label="Ausgaben" class="py-2 pr-4 text-right splid-spalte vollstaendig-spalte hidden">${fehlt ? '—' : eur(ausgaben)}</td>`
-          : '';
+      karte.innerHTML = `
+        <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 px-3 py-2 ${headerBg}">
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 min-w-0">
+            <span class="text-sm font-semibold ${headerTextFarbe} shrink-0">${slot.label}</span>
+            <span class="text-xs text-slate-500 shrink-0">Faktor ${slot.gewichtung}x · ~${eur(richtwertAnteil)}</span>
+          </div>
+          <span class="text-xs font-semibold ${headerTextFarbe} shrink-0">${headerIcon} ${eingegangen}/${erwartet}</span>
+        </div>
+        <div class="slot-zeilen divide-y divide-slate-100"></div>
+      `;
 
-        const beitragZelle = fehlt
-          ? `<td data-label="Beitrag" class="py-2 pr-4 text-right vollstaendig-spalte hidden">—</td>`
-          : `<td data-label="Beitrag" class="py-2 pr-4 text-right font-bold text-slate-900 vollstaendig-spalte hidden">${eur(e.solidarischerBeitrag)}</td>`;
+      const zeilenContainer = karte.querySelector<HTMLDivElement>('.slot-zeilen')!;
 
-        let nochZuZahlenZelle = '';
-        if (hatSplidDaten) {
-          if (fehlt) {
-            nochZuZahlenZelle = `<td data-label="Noch zu zahlen" class="py-2 pr-4 text-right splid-spalte vollstaendig-spalte hidden">—</td>`;
-          } else {
-            const nochZuZahlen = e.solidarischerBeitrag - ausgaben;
-            const nochSign = nochZuZahlen > 0.005 ? '+' : '';
-            const nochClass = istStandard ? '' : (nochZuZahlen > 0.005 ? 'text-red-600' : 'text-green-700');
-            nochZuZahlenZelle = `<td data-label="Noch zu zahlen" class="py-2 pr-4 text-right font-bold splid-spalte vollstaendig-spalte hidden ${nochClass}">${nochSign}${eur(nochZuZahlen)}</td>`;
-          }
-        }
-
-        tr.innerHTML = `
-          ${emojiZelle}
-          <td data-label="Slot" class="py-2 pr-4">${slot.label}</td>
-          <td data-label="Faktor" class="py-2 pr-4 text-right">${slot.gewichtung}</td>
-          <td data-label="Richtwert" class="py-2 pr-4 text-right">${fehlt ? eur(richtwertAnteil) : eur(e.richtwertAnteil)}</td>
-          ${ausgabenZelle}
-          ${beitragZelle}
-          ${nochZuZahlenZelle}
-          <td data-label="Status" class="py-2 pr-4">${statusBadge}</td>
+      // Echte Gebote
+      for (const { emojiHmac, gebot: g } of slotGeboteWithHmac) {
+        const e = zeigeBeitraege ? slotErgebnisse.find((r) => r.emojiId === g.emojiId) : null;
+        console.log('Gebot:', g.emojiId, '| Ergebnisse:', slotErgebnisse.map(r => r.emojiId), '| Match:', e);
+        const zeile = document.createElement('div');
+        zeile.className = 'flex items-center gap-2 px-3 py-1.5';
+        zeile.dataset.emojiHmac = emojiHmac;
+        zeile.innerHTML = `
+          <span class="text-base w-16 shrink-0">${g.emojiId}</span>
+          <span class="text-xs bg-green-100 text-green-700 rounded px-1.5 py-0.5 font-medium shrink-0">geboten</span>
+          ${zeigeBeitraege && e ? `<span class="text-xs text-slate-500 shrink-0">Beitrag</span><span class="text-sm font-semibold text-slate-900 shrink-0">${eur(e.solidarischerBeitrag)}</span>` : ''}
+          ${zeigeBeitraege && e && hatSplidDaten ? `<span class="text-xs font-semibold ${(e.solidarischerBeitrag - ausgaben) > 0.005 ? 'text-red-600' : 'text-green-700'} shrink-0">${(e.solidarischerBeitrag - ausgaben) > 0 ? '+' : ''}${eur(e.solidarischerBeitrag - ausgaben)}</span>` : ''}
+          <span class="ml-auto"><button class="loeschen-btn w-6 h-6 flex items-center justify-center rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors" data-emoji-hmac="${emojiHmac}" data-slot="${slot.label}" aria-label="Gebot löschen">×</button></span>
         `;
-        tbody.appendChild(tr);
+        zeilenContainer.appendChild(zeile);
       }
-    }
+
+      // Auto-Gebote
+      if (slot.standardgebot !== undefined) {
+        const anzahlAuto = Math.max(0, slot.anzahl - slotGeboteWithHmac.length);
+        for (let i = 0; i < anzahlAuto; i++) {
+          const e = zeigeBeitraege ? slotErgebnisse.find((r) => r.istStandard) : null;
+          const zeile = document.createElement('div');
+          zeile.className = 'flex items-center gap-2 px-3 py-1.5';
+          zeile.innerHTML = `
+            <span class="text-base w-16 shrink-0 text-slate-300">—</span>
+            <span class="text-xs bg-slate-100 text-slate-500 rounded px-1.5 py-0.5 font-medium shrink-0">auto</span>
+            ${zeigeBeitraege ? `<span class="text-sm font-semibold text-slate-900 shrink-0 ml-auto">${eur(slot.standardgebot!)}</span>` : ''}
+          `;
+          zeilenContainer.appendChild(zeile);
+        }
+      }
+
+      // Fehlende Gebote
+      const autoAnzahlSlot = slot.standardgebot !== undefined
+        ? Math.max(0, slot.anzahl - slotGeboteWithHmac.length)
+        : 0;
+      const fehlend = Math.max(0, erwartet - slotGeboteWithHmac.length - autoAnzahlSlot);
+      for (let i = 0; i < fehlend; i++) {
+        const zeile = document.createElement('div');
+        zeile.className = 'flex items-center gap-2 px-3 py-1.5';
+        zeile.innerHTML = `
+          <span class="text-base w-16 shrink-0 text-slate-300">—</span>
+          <span class="text-xs bg-slate-100 text-slate-500 rounded px-1.5 py-0.5 shrink-0">fehlt</span>
+        `;
+        zeilenContainer.appendChild(zeile);
+      }
+
+      slotsContainer.appendChild(karte);
+    } // ← schließt for (const slot of blob.slots)
+
+
+    slotsContainer.addEventListener('click', async (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.loeschen-btn');
+      if (!btn) return;
+
+      const emojiHmac = btn.dataset.emojiHmac!;
+
+      btn.disabled = true;
+      btn.textContent = '…';
+
+      const res = await fetch(`/api/runde/${rundenId}/gebot`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emojiHmac, adminToken }),
+      });
+
+      if (res.ok) {
+        const zeile = btn.closest<HTMLDivElement>('[data-emoji-hmac]')!;
+        zeile.style.transition = 'opacity 200ms, transform 200ms';
+        zeile.style.opacity = '0';
+        zeile.style.transform = 'translateX(8px)';
+        setTimeout(async () => {
+          slotsContainer.innerHTML = '';
+          await init();
+        }, 220);
+      } else {
+        btn.disabled = false;
+        btn.textContent = '×';
+        const err = await res.json() as { error?: string };
+        alert(err.error ?? 'Löschen fehlgeschlagen.');
+      }
+    });
+
+    // Ausgleichszahlungen ...
 
     // Ausgleichszahlungen (nur wenn vollständig, kein Fehlbetrag, keine Duplikate, Ausgaben vorhanden)
     if (allesDa && !hatDuplikate && auswertung && auswertung.fehlbetrag <= 0.005 && ausgabenMap.size > 0) {

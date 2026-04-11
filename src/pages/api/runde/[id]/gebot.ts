@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { timingSafeEqual } from 'node:crypto';
 
 interface RundeJSON {
   id: string;
@@ -84,6 +85,89 @@ export const POST: APIRoute = async ({ params, request }) => {
   }
 
   runde.gebote.push({ emojiHmac, encGebot });
+  await writeFile(join(DATA_DIR, `${id}.json`), JSON.stringify(runde, null, 2), 'utf-8');
+
+  return new Response(JSON.stringify({ success: true }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
+};
+
+export const DELETE: APIRoute = async ({ params, request }) => {
+  const { id } = params;
+
+  if (!id || !ID_FORMAT.test(id)) {
+    return new Response(JSON.stringify({ error: 'Ungültige Runden-ID' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return new Response(JSON.stringify({ error: 'Ungültiger JSON-Body' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const b = body as Record<string, unknown>;
+
+  if (typeof b.emojiHmac !== 'string' || b.emojiHmac.length === 0) {
+    return new Response(JSON.stringify({ error: 'emojiHmac fehlt' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (typeof b.adminToken !== 'string' || b.adminToken.length === 0) {
+    return new Response(JSON.stringify({ error: 'adminToken fehlt' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const { emojiHmac, adminToken } = b as { emojiHmac: string; adminToken: string };
+
+  let runde: RundeJSON;
+  try {
+    const raw = await readFile(join(DATA_DIR, `${id}.json`), 'utf-8');
+    runde = JSON.parse(raw) as RundeJSON;
+  } catch (err: unknown) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+      return new Response(JSON.stringify({ error: 'Runde nicht gefunden' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    throw err;
+  }
+
+  // Timing-safe Vergleich gegen Timing-Angriffe
+  const tokenA = Buffer.from(adminToken);
+  const tokenB = Buffer.from(runde.adminToken);
+  const tokenMatch =
+    tokenA.length === tokenB.length && timingSafeEqual(tokenA, tokenB);
+
+  if (!tokenMatch) {
+    return new Response(JSON.stringify({ error: 'Nicht autorisiert' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const vorher = runde.gebote.length;
+  runde.gebote = runde.gebote.filter((g) => g.emojiHmac !== emojiHmac);
+
+  if (runde.gebote.length === vorher) {
+    return new Response(JSON.stringify({ error: 'Gebot nicht gefunden' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   await writeFile(join(DATA_DIR, `${id}.json`), JSON.stringify(runde, null, 2), 'utf-8');
 
   return new Response(JSON.stringify({ success: true }), {

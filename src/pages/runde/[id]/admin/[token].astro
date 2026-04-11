@@ -16,7 +16,7 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
   </div>
 
   <!-- Auswertung -->
-  <div id="zustand-auswertung" class="hidden space-y-6 print:space-y-4">
+  <div id="zustand-auswertung" class="hidden space-y-8 print:space-y-4">
     <div class="print:mb-2">
       <h1 id="runde-name" class="text-2xl font-semibold mb-1 print:text-xl"></h1>
       <p class="text-slate-500 text-sm print:text-xs">
@@ -51,7 +51,7 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
     <div id="status-banner" class="hidden rounded-xl px-4 py-3 text-sm font-medium print:hidden"></div>
 
     <!-- Container -->
-    <div id="slots-container" class="space-y-3"></div>
+    <div id="slots-container" class="space-y-4"></div>
 
     <!-- Ausgleichszahlungen -->
     <div id="ausgleich-section" class="hidden space-y-2">
@@ -315,7 +315,7 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
       const headerIcon = zuViele ? '⚠️' : vollstaendig ? '✓' : '○';
 
       karte.innerHTML = `
-        <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 px-3 py-2 ${headerBg}">
+        <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 px-3 py-1.5 ${headerBg}">
           <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 min-w-0">
             <span class="text-sm font-semibold ${headerTextFarbe} shrink-0">${slot.label}</span>
             <span class="text-xs text-slate-500 shrink-0">Faktor ${slot.gewichtung}x · ~${eur(richtwertAnteil)}</span>
@@ -332,14 +332,32 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
         const e = zeigeBeitraege ? slotErgebnisse.find((r) => r.emojiId === g.emojiId) : null;
         console.log('Gebot:', g.emojiId, '| Ergebnisse:', slotErgebnisse.map(r => r.emojiId), '| Match:', e);
         const zeile = document.createElement('div');
-        zeile.className = 'flex items-center gap-2 px-3 py-1.5';
+        zeile.className = 'flex flex-col px-3 py-1';
         zeile.dataset.emojiHmac = emojiHmac;
         zeile.innerHTML = `
-          <span class="text-base w-16 shrink-0">${g.emojiId}</span>
-          <span class="text-xs bg-green-100 text-green-700 rounded px-1.5 py-0.5 font-medium shrink-0">geboten</span>
-          ${zeigeBeitraege && e ? `<span class="text-xs text-slate-500 shrink-0">Beitrag</span><span class="text-sm font-semibold text-slate-900 shrink-0">${eur(e.solidarischerBeitrag)}</span>` : ''}
-          ${zeigeBeitraege && e && hatSplidDaten ? `<span class="text-xs font-semibold ${(e.solidarischerBeitrag - ausgaben) > 0.005 ? 'text-red-600' : 'text-green-700'} shrink-0">${(e.solidarischerBeitrag - ausgaben) > 0 ? '+' : ''}${eur(e.solidarischerBeitrag - ausgaben)}</span>` : ''}
-          <span class="ml-auto"><button class="loeschen-btn w-6 h-6 flex items-center justify-center rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors" data-emoji-hmac="${emojiHmac}" data-slot="${slot.label}" aria-label="Gebot löschen">×</button></span>
+          <div class="flex items-center gap-2 w-full">
+            <span class="text-base w-16 shrink-0">${g.emojiId}</span>
+            <span class="text-xs bg-green-100 text-green-700 rounded px-1.5 py-0.5 font-medium shrink-0">geboten</span>
+            ${zeigeBeitraege && e ? `
+              <span class="hidden sm:inline text-xs text-slate-400 shrink-0">Beitrag</span>
+              <span class="hidden sm:inline text-sm font-semibold text-slate-900 shrink-0">${eur(e.solidarischerBeitrag)}</span>
+            ` : ''}
+            ${zeigeBeitraege && e && hatSplidDaten ? `
+              <span class="hidden sm:inline text-xs text-slate-400 shrink-0">Noch zu zahlen</span>
+              <span class="hidden sm:inline text-xs font-semibold ${(e.solidarischerBeitrag - ausgaben) > 0.005 ? 'text-red-600' : 'text-green-700'} shrink-0">${(e.solidarischerBeitrag - ausgaben) > 0 ? '+' : ''}${eur(e.solidarischerBeitrag - ausgaben)}</span>
+            ` : ''}
+            <span class="ml-auto"><button class="loeschen-btn w-6 h-6 flex items-center justify-center rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors" data-emoji-hmac="${emojiHmac}" data-slot="${slot.label}" aria-label="Gebot löschen">×</button></span>
+          </div>
+          ${zeigeBeitraege && e ? `
+            <div class="flex items-center gap-3 pl-[4.5rem] sm:hidden pb-1">
+              <span class="text-xs text-slate-400">Beitrag</span>
+              <span class="text-sm font-semibold text-slate-900">${eur(e.solidarischerBeitrag)}</span>
+              ${hatSplidDaten ? `
+                <span class="text-xs text-slate-400">Noch zu zahlen</span>
+                <span class="text-xs font-semibold ${(e.solidarischerBeitrag - ausgaben) > 0.005 ? 'text-red-600' : 'text-green-700'}">${(e.solidarischerBeitrag - ausgaben) > 0 ? '+' : ''}${eur(e.solidarischerBeitrag - ausgaben)}</span>
+              ` : ''}
+            </div>
+          ` : ''}
         `;
         zeilenContainer.appendChild(zeile);
       }
@@ -350,7 +368,7 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
         for (let i = 0; i < anzahlAuto; i++) {
           const e = zeigeBeitraege ? slotErgebnisse.find((r) => r.istStandard) : null;
           const zeile = document.createElement('div');
-          zeile.className = 'flex items-center gap-2 px-3 py-1.5';
+          zeile.className = 'flex items-center gap-2 px-3 py-1';
           zeile.innerHTML = `
             <span class="text-base w-16 shrink-0 text-slate-300">—</span>
             <span class="text-xs bg-slate-100 text-slate-500 rounded px-1.5 py-0.5 font-medium shrink-0">auto</span>
@@ -367,7 +385,7 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
       const fehlend = Math.max(0, erwartet - slotGeboteWithHmac.length - autoAnzahlSlot);
       for (let i = 0; i < fehlend; i++) {
         const zeile = document.createElement('div');
-        zeile.className = 'flex items-center gap-2 px-3 py-1.5';
+        zeile.className = 'flex items-center gap-2 px-3 py-1';
         zeile.innerHTML = `
           <span class="text-base w-16 shrink-0 text-slate-300">—</span>
           <span class="text-xs bg-slate-100 text-slate-500 rounded px-1.5 py-0.5 shrink-0">fehlt</span>

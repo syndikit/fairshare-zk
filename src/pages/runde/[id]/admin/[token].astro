@@ -285,7 +285,7 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
 
     for (const slot of blob.slots) {
       const slotErgebnisse = ergebnisseBySlot.get(slot.label) ?? [];
-      const richtwertAnteil = Math.ceil((slot.gewichtung * rawRichtwert) / 100) * 100;
+      const richtwertAnteil = Math.ceil(slot.gewichtung * rawRichtwert * 100) / 100;
       const ausgaben = ausgabenMap.get(slot.label) ?? 0;
 
       const slotGeboteWithHmac = geboteWithHmac.filter(

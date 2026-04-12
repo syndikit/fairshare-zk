@@ -690,6 +690,32 @@ import FeedbackBox from '../components/FeedbackBox.astro';
         };
       });
 
+      // Slots zusammenführen: gleiche Label + Gewichtung → anzahl aufaddieren
+      const slotMap = new Map<string, typeof slots[0]>();
+      for (const slot of slots) {
+        const key = `${slot.label}__${slot.gewichtung}`;
+        if (slotMap.has(key)) {
+          slotMap.get(key)!.anzahl += slot.anzahl;
+        } else {
+          slotMap.set(key, { ...slot });
+        }
+      }
+
+      // Labels nur umbenennen wenn dasselbe Label mit mehreren Gewichtungen vorkommt
+      const labelGewichtungen = new Map<string, Set<number>>();
+      for (const slot of slotMap.values()) {
+        if (!labelGewichtungen.has(slot.label)) labelGewichtungen.set(slot.label, new Set());
+        labelGewichtungen.get(slot.label)!.add(slot.gewichtung);
+      }
+
+      const finalSlots = [...slotMap.values()].map((slot) => {
+        const hatMehrere = (labelGewichtungen.get(slot.label)?.size ?? 1) > 1;
+        return {
+          ...slot,
+          label: hatMehrere ? `${slot.label} - Faktor ${slot.gewichtung}` : slot.label,
+        };
+      });
+
       // Schlüssel generieren
       const partKey = await generatePartKey();
       const { publicKey: adminPubKey, privateKey: adminPrivKey } = await generateAdminKeyPair();
@@ -701,7 +727,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
         gesamtkosten,
         adminPubKey: await exportKey(adminPubKey),
         hmacKey: await exportKey(hmacKey),
-        slots,
+        slots: finalSlots,
       };
       const encTeilnehmerBlob = await encrypt(partKey, JSON.stringify(blob));
 

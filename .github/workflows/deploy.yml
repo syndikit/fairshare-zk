@@ -22,6 +22,9 @@ jobs:
           npm ci
           npm run build
 
+      - name: 🕐 Update deploy stamp
+        run: echo "$(date -u +%s)" > deploy.stamp
+
       - name: 📤 Deploy /dist
         uses: wlixcc/SFTP-Deploy-Action@v1.2.6
         with:
@@ -45,3 +48,15 @@ jobs:
           sftp_only: true
           ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
           ssh_passphrase: ${{ secrets.SSH_PASSPHRASE }}
+
+      - name: 📤 Deploy deploy.stamp  # ← zuletzt!
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          username: ${{ secrets.FTP_USERNAME }}
+          server: ${{ secrets.FTP_SERVER }}
+          port: ${{ secrets.FTP_PORT }}
+          local_path: "./deploy.stamp"
+          remote_path: "/home/sebastian/websites/fairshare.syndikit.de"
+          sftp_only: true
+          ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh_passphrase: ${{ secrets.SSH_PASSPHRASE }}          

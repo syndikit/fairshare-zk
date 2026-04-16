@@ -84,7 +84,12 @@ export const POST: APIRoute = async ({ params, request }) => {
     }
   }
 
-  runde.gebote.push({ emojiHmac, encGebot });
+  if (isCorrection) {
+    const idx = runde.gebote.findIndex((g) => g.emojiHmac === emojiHmac);
+    runde.gebote[idx] = { emojiHmac, encGebot };
+  } else {
+    runde.gebote.push({ emojiHmac, encGebot });
+  }
   await writeFile(join(DATA_DIR, `${id}.json`), JSON.stringify(runde, null, 2), 'utf-8');
 
   return new Response(JSON.stringify({ success: true }), {

@@ -6,7 +6,7 @@ data/sync/*.json
 .env.*
 !.env.example
 .astro/
-.claude/
+.claude/settings.local.json
 .claire/
 
 # manual input files

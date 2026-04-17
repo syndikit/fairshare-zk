@@ -54,6 +54,7 @@ Encryption formats:
 - TypeScript strict mode throughout.
 - No linter — follow the style of surrounding code.
 - Responsive/mobile-first with Tailwind 4; brand green is `#3B6D11`.
+- Tailwind utility classes only — no inline styles, no custom CSS outside `src/styles/global.css`.
 - Print styles in `src/styles/global.css` optimize the admin view for PDF export.
 
 ## Design-Prinzipien (UX)

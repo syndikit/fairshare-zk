@@ -36,4 +36,3 @@ Konkret und prüfbar — nicht „funktioniert korrekt", sondern messbar:
 - Implementierungsdetails (wie gebaut wird — entscheidet Claude)
 - Infos die bereits in CLAUDE.md, TECH.md oder ANFORDERUNGEN.md stehen
 
-

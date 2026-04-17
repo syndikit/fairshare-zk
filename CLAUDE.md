@@ -1,129 +1,90 @@
-# CLAUDE.md — FairShare (Zero-Knowledge)
+# CLAUDE.md
 
-## Projekt
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Eine Web-App für solidarische Gruppenfinanzierung mit Zero-Knowledge-Prinzip.
-Alle Inhalte werden im Browser verschlüsselt — der Server sieht nie Klartext.
-Details in ANFORDERUNGEN.md und TECH.md.
+## What this app does
 
----
+FairShare is a German-language web app for solidarische (solidarity-based) group cost-sharing. Participants submit anonymous sealed bids for what they can afford. An admin views aggregated results and calculates fair shares via a "Richtwert" (reference value per weighted unit). All sensitive data is encrypted in the browser — the server never sees amounts or identities.
 
-## Setup: Visuelles Design aus dem Vorgängerprojekt
+## Architecture
 
-Das neue Projekt soll visuell identisch mit dem Vorgängerprojekt `syndikit/fairshare`
-aussehen. Im Ordner `input/` liegen alle relevanten Dateien aus dem alten Projekt.
-Übernimm beim initialen Setup folgende Dateien **unverändert**:
+**Framework:** Astro 5 (SSR, Node.js adapter, standalone mode)  
+**Storage:** Filesystem JSON in `data/runden/*.json` — no database  
+**Crypto:** Native WebCrypto API only (no npm crypto packages)  
+**Testing:** Vitest in Node.js environment  
+**Path alias:** `@/*` → `src/*`
 
-| Quelldatei (`input/`) | Ziel im neuen Projekt |
-|---|---|
-| `astro.config.mjs` | `astro.config.mjs` |
-| `src/styles/global.css` | `src/styles/global.css` |
-| `src/layouts/Layout.astro` | `src/layouts/Layout.astro` |
-| `public/syndikit-c-icon.svg` | `public/syndikit-c-icon.svg` |
-| `public/syndikit-c-logo.svg` | `public/syndikit-c-logo.svg` |
+### Key source files
 
-Die TypeScript-Typen aus `input/src/types/` dienen als **Referenz und Orientierung**,
-werden aber nicht direkt kopiert — die Typen ändern sich durch die neue
-Zero-Knowledge-Architektur grundlegend.
+| File | Purpose |
+|------|---------|
+| `src/lib/crypto.ts` | All encryption primitives (AES-GCM, ECDH, HMAC) |
+| `src/lib/solidarisch.ts` | Core Richtwert calculation algorithm |
+| `src/lib/splid.ts` | Splid XLSX import parser |
+| `src/lib/storage.ts` | Browser localStorage management |
+| `src/pages/neu.astro` | Round creation (key generation happens here) |
+| `src/pages/runde/[id].astro` | Participant view (decrypt blob, submit bid) |
+| `src/pages/runde/[id]/admin/[token].astro` | Admin results view |
+| `src/pages/api/runde/` | REST API endpoints (create, blob, gebot) |
 
----
+### Zero-knowledge design
 
-## Arbeitsweise
+Three keys are generated client-side and never sent to the server:
 
-### Allgemein
+- **partKey** (AES-256-GCM): encrypts the round blob (name, costs, slots, admin public key)
+- **adminPrivKey** (ECDH P-256): decrypts individual bids — only the admin link holder can see amounts
+- **hmacKey** (HMAC-SHA256): generates anonymous 3-emoji participant IDs
 
-- Lies zu Beginn jeder Session ANFORDERUNGEN.md und TECH.md
-- Stelle Fragen bevor du Annahmen triffst
-- Baue Schritt für Schritt — nicht alles auf einmal
-- Nach jedem größeren Schritt: kurze Zusammenfassung was gemacht wurde, dann warten
+Keys live only in URL fragments (`#pk=...&bk=...`). The server stores encrypted ciphertext, bid count, and timestamps only.
 
-### Sicherheit hat oberste Priorität
+Encryption formats:
+- Blob: `<iv_b64url>.<ct_b64url>` (AES-GCM)
+- Bids: `<ephemPubKey_b64url>.<iv_b64url>.<ct_b64url>` (ephemeral ECDH + HKDF → AES-GCM)
 
-- **Kein Klartext auf dem Server** — das ist das Kernversprechen der App
-- Niemals sensible Daten (Slots, Gebote, Namen, Beträge) unverschlüsselt
-  an den Server senden
-- Verschlüsselung findet **immer** im Browser statt, **vor** dem API-Aufruf
-- Kein `console.log` mit Schlüsseln oder entschlüsselten Inhalten
-- Nur WebCrypto API für Kryptografie — keine externen Krypto-Pakete
-- HTTPS ist Pflicht
-- Nach dem Laden eines Links: Fragment per `history.replaceState()` entfernen
+### Solidarisch calculation
 
-### Planung
+- `Richtwert = gesamtkosten / Σ(gewichtung × anzahl)` across all slots
+- Per bid: `richtwertAnteil = gewichtung × Richtwert`; `ueberRichtwert = max(0, bid − richtwertAnteil)`
+- Surplus: proportionally refund overpayers. Deficit: no refund.
+- `Ausgleichszahlungen`: greedy debt-settling (schuldner pay gläubiger minimum transfers)
 
-- Beginne jede neue Aufgabe mit einem kurzen Arbeitsplan
-- Warte auf mein OK bevor du anfängst zu bauen
-- Wenn etwas unklar ist: frage, baue nicht drauflos
+## Language & conventions
 
-### Git & Branches
+- All UI copy, validation messages, and variable names are in German (e.g., `Richtwert`, `Gebot`, `Runde`, `Slot`, `Ausgleichszahlung`).
+- TypeScript strict mode throughout.
+- No linter — follow the style of surrounding code.
+- Responsive/mobile-first with Tailwind 4; brand green is `#3B6D11`.
+- Print styles in `src/styles/global.css` optimize the admin view for PDF export.
 
-- MVP 0 und MVP 1 werden auf `main` entwickelt
-- Ab Feature 1: eigener Branch pro Feature
-- Branch-Format: `feature/kurze-beschreibung` (Deutsch)
-- Commits auf Englisch, klein und präzise
-- Beispiele: `add webcrypto aes-gcm wrapper`, `add teilnehmer gebot form`
+## Design-Prinzipien (UX)
 
-### Codequalität
+- **Progressive Disclosure:** Komplexität erscheint erst, wenn sie gebraucht wird. Features werden nicht entfernt — sie werden zum richtigen Moment sichtbar.
+- Kein Feature im primären Sichtbereich, das die meisten Nutzer nie brauchen.
+- Power-Features sind auffindbar, aber nie aufdringlich.
 
-- Code ist sauber, verständlich, wartbar und konsistent
-- Krypto-Logik ausschließlich in `src/lib/crypto.ts` — nie inline
-- Die App speichert keine personenbezogenen Daten — Grundprinzip, kein Nice-to-have
-- DSGVO-Konformität von Anfang an, nicht nachträglich
-- Tailwind Design Tokens statt Inline-Styles
+## Git-Workflow
 
-### Tests
+- Commits: English, Conventional Commits (feat/fix/refactor/chore/docs/test/style)
+- **Separate commit per file** — never bundle multiple file changes into one commit
+- Commit often — at least once per completed task
+- Branch: `feature/issue-{nr}-kurzbeschreibung`
+- PRs klein halten — ein Feature pro PR; immer mit `Closes #Nr`
+- Squash Merge beim Mergen in main
+- Labels: feature, bug, chore, security, test, ready — vom Issue auf den PR übertragen; ready-Label vom Issue entfernen wenn Umsetzung beginnt
 
-- Definiere Tests zuerst und zeige sie mir — bevor du sie ausführst
-- `crypto.ts` bekommt Roundtrip-Tests für jeden Primitive
-- `solidarisch.ts` bekommt Unit-Tests mit bekannten Eingaben und Erwartungen
-- Kein PR ohne grüne Tests
-- Tests prüfen auch Codequalität wo sinnvoll
+## Commands
 
-### Pull Requests
+```bash
+npm run dev          # Start Astro dev server
+npm run build        # Production build
+npm run preview      # Preview production build
+npm run test         # Run Vitest test suite once
+npm run test:watch   # Run tests in watch mode
+```
 
-- PR erst öffnen wenn ich explizit „fertig" oder „PR erstellen" sage
-- PR-Beschreibung auf Deutsch
-- PR enthält: Was wurde gebaut, wie wurde getestet, was kommt als nächstes
+Node.js at `/opt/homebrew/opt/node.js/bin/` — use absolute paths if `node`/`npm` not in PATH.  
+Single test file: `npx vitest run src/lib/solidarisch.test.ts`
 
-### Kommunikation
+## Vor der Umsetzung
 
-- Antworte auf Deutsch
-- Kurze Zusammenfassungen — kein Roman
-- Bei Fehlern: Problem erklären, Lösungsvorschlag machen, auf OK warten
-
----
-
-## Agiler Workflow
-
-### MVP 0 — Crypto-Fundament
-
-1. Ich sage „starte MVP 0"
-2. Du zeigst den Arbeitsplan — ich sage OK
-3. Du baust `crypto.ts`
-4. Du zeigst die Tests — ich sage OK
-5. Du führst Tests aus
-6. Ich gebe frei → Push auf `main`
-
-### MVP 1 — Kern-Workflow
-
-1. Ich sage „starte MVP 1"
-2. Du zeigst den Arbeitsplan — ich sage OK
-3. Du baust Schritt für Schritt (erst API, dann Seiten)
-4. Du zeigst Tests — ich sage OK
-5. Du führst Tests aus
-6. Ich gebe frei → Push auf `main`
-
-### Features (ab Feature 1)
-
-1. Ich beschreibe das Feature
-2. Du erstellst Branch `feature/...`
-3. Arbeitsplan → OK → Bauen → Tests zeigen → OK → Tests ausführen → Freigabe → PR
-
-Für die vollständige Feature-Liste: BACKLOG.md
-
----
-
-## Was ich selbst mache
-
-- PRs reviewen und mergen auf GitHub.com
-- Entscheidungen über Anforderungsänderungen
-- Freigabe von Tests und PRs
+Erstelle zuerst einen Plan und warte auf Bestätigung, bevor du mit dem Coden anfängst.

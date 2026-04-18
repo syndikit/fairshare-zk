@@ -55,10 +55,6 @@ import FeedbackBox from '../components/FeedbackBox.astro';
         <div class="flex items-center justify-between mb-2">
           <label class="block text-sm font-medium text-slate-700">Personen</label>
           <div class="flex items-center gap-3">
-            <label class="flex items-center gap-1.5 text-sm text-slate-500 cursor-pointer select-none">
-              <input type="checkbox" id="ausgaben-toggle" class="accent-green-700" />
-              Ausgaben erfassen
-            </label>
             <button
               type="button"
               id="slot-hinzufuegen"
@@ -171,6 +167,12 @@ import FeedbackBox from '../components/FeedbackBox.astro';
             </details>
           </div>
         </div>
+        <button
+          type="button"
+          id="ausgaben-link"
+          aria-expanded="false"
+          class="text-xs text-slate-400 hover:text-slate-600 mt-1 transition-colors"
+        >+ Ausgaben erfassen</button>
       </div>
 
       <!-- Fehler -->
@@ -300,19 +302,23 @@ import FeedbackBox from '../components/FeedbackBox.astro';
   const formBereich = document.getElementById('form-bereich') as HTMLDivElement;
   const ergebnisBereich = document.getElementById('ergebnis-bereich') as HTMLDivElement;
   const slotsContainer = document.getElementById('slots-container') as HTMLDivElement;
-  const ausgabenToggle = document.getElementById('ausgaben-toggle') as HTMLInputElement;
+  const ausgabenLink = document.getElementById('ausgaben-link') as HTMLButtonElement;
 
   // Zähler für eindeutige Radio-Button-Namen
   let slotCounter = 1;
+  let ausgabenSichtbar = false;
 
   function setzeAusgabenSichtbarkeit(sichtbar: boolean) {
     slotsContainer.querySelectorAll<HTMLDivElement>('.ausgaben-inline').forEach((zeile) => {
       zeile.classList.toggle('hidden', !sichtbar);
     });
+    ausgabenLink.textContent = sichtbar ? 'Ausgaben ausblenden' : '+ Ausgaben erfassen';
+    ausgabenLink.setAttribute('aria-expanded', String(sichtbar));
   }
 
-  ausgabenToggle.addEventListener('change', () => {
-    setzeAusgabenSichtbarkeit(ausgabenToggle.checked);
+  ausgabenLink.addEventListener('click', () => {
+    ausgabenSichtbar = !ausgabenSichtbar;
+    setzeAusgabenSichtbarkeit(ausgabenSichtbar);
   });
 
   function aktualisiereEntfernenButtons() {
@@ -483,7 +489,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
       }
 
       aktualisiereEntfernenButtons();
-      ausgabenToggle.checked = true;
+      ausgabenSichtbar = true;
       setzeAusgabenSichtbarkeit(true);
       aktualisiereRichtwert();
 
@@ -531,9 +537,9 @@ import FeedbackBox from '../components/FeedbackBox.astro';
     const richtwertAnzeige = klon.querySelector<HTMLSpanElement>('.standardgebot-richtwert');
     if (richtwertAnzeige) richtwertAnzeige.textContent = '';
 
-    // Ausgaben-Inline entsprechend Toggle-Zustand
+    // Ausgaben-Inline entsprechend aktuellem Zustand
     const ausgabenInline = klon.querySelector('.ausgaben-inline') as HTMLDivElement;
-    ausgabenInline.classList.toggle('hidden', !ausgabenToggle.checked);
+    ausgabenInline.classList.toggle('hidden', !ausgabenSichtbar);
 
     // Details schließen für neuen Slot
     const details = klon.querySelector<HTMLDetailsElement>('.slot-erweitert-details');
@@ -680,7 +686,9 @@ import FeedbackBox from '../components/FeedbackBox.astro';
 
       const slotEintraege = [...slotsContainer.querySelectorAll<HTMLDivElement>('.slot-eintrag')];
       const slots = labels.map((label, i) => {
-        const ausgabenRaw = (slotEintraege[i]?.querySelector('[name="ausgaben[]"]') as HTMLInputElement)?.value;
+        const ausgabenRaw = ausgabenSichtbar
+          ? (slotEintraege[i]?.querySelector('[name="ausgaben[]"]') as HTMLInputElement)?.value
+          : undefined;
         const ausgaben = ausgabenRaw ? parseFloat(ausgabenRaw) : undefined;
         const stdCheckbox = slotEintraege[i]?.querySelector<HTMLInputElement>('.standardgebot-checkbox');
         const stdRaw = stdCheckbox?.checked

@@ -75,7 +75,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
               <input
                 type="text"
                 name="label[]"
-                placeholder="Label (optional)"
+                placeholder="Erwachsen"
                 class="flex-1 border border-slate-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
               />
               <!-- Ausgaben inline (nur sichtbar wenn Toggle aktiv) -->
@@ -171,7 +171,6 @@ import FeedbackBox from '../components/FeedbackBox.astro';
             </details>
           </div>
         </div>
-        <p class="text-xs text-slate-400 mt-1">Label ist optional. Ohne Label wird der Preset-Name verwendet (z.&nbsp;B. „Erwachsen").</p>
       </div>
 
       <!-- Fehler -->
@@ -357,6 +356,16 @@ import FeedbackBox from '../components/FeedbackBox.astro';
 
   document.getElementById('gesamtkosten')!.addEventListener('input', aktualisiereRichtwert);
 
+  const presetNamenPlaceholder: Record<string, string> = { '1.0': 'Erwachsen', '0.75': 'Ermäßigt', '0.5': 'Kind' };
+  function aktualisierePresetPlaceholder(slotEl: HTMLElement) {
+    const labelInput = slotEl.querySelector<HTMLInputElement>('[name="label[]"]');
+    if (!labelInput) return;
+    const radio = slotEl.querySelector<HTMLInputElement>('.slot-gewichtung-radio:checked');
+    labelInput.placeholder = presetNamenPlaceholder[radio?.value ?? ''] ?? 'Beitrag';
+  }
+
+  document.querySelectorAll<HTMLElement>('.slot-eintrag').forEach(aktualisierePresetPlaceholder);
+
   slotsContainer.addEventListener('input', (e) => {
     const target = e.target as HTMLInputElement;
     if (target.name === 'standardgebot[]') {
@@ -382,6 +391,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
       const eintrag = target.closest('.slot-eintrag') as HTMLDivElement;
       const hiddenInput = eintrag.querySelector<HTMLInputElement>('[name="gewichtung[]"]');
       const manuellInput = eintrag.querySelector<HTMLInputElement>('.slot-gewichtung-manuell');
+      aktualisierePresetPlaceholder(eintrag);
       if (target.value === 'manuell') {
         if (manuellInput) {
           manuellInput.readOnly = false;
@@ -470,6 +480,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
         const uid = `gw-slot-${slotCounter++}`;
         klon.querySelectorAll<HTMLInputElement>('.slot-gewichtung-radio').forEach(r => { r.name = uid; });
         befuelleSlot(klon, personen[i].name, personen[i].ausgaben);
+        aktualisierePresetPlaceholder(klon);
         slotsContainer.appendChild(klon);
       }
 
@@ -501,7 +512,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
       r.name = uid;
       r.checked = i === 0; // Erwachsen vorauswählen
     });
-    klon.querySelectorAll<HTMLInputElement>('input[name="label[]"]').forEach(el => { el.value = ''; });
+    klon.querySelectorAll<HTMLInputElement>('input[name="label[]"]').forEach(el => { el.value = ''; el.placeholder = 'Erwachsen'; });
     klon.querySelectorAll<HTMLInputElement>('input[name="anzahl[]"]').forEach(el => { el.value = '1'; });
     klon.querySelectorAll<HTMLInputElement>('input[name="ausgaben[]"]').forEach(el => { el.value = ''; });
     klon.querySelectorAll<HTMLInputElement>('[name="gewichtung[]"]').forEach(el => { el.value = '1'; });
@@ -652,15 +663,12 @@ import FeedbackBox from '../components/FeedbackBox.astro';
         (form.querySelector('#gesamtkosten') as HTMLInputElement).value,
       );
 
-      const presetNamen: Record<string, string> = { '1.0': 'Erwachsen', '0.75': 'Ermäßigt', '0.5': 'Kind' };
       const labels = [...slotsContainer.querySelectorAll<HTMLDivElement>('.slot-eintrag')].map((slotEl) => {
         const labelEl = slotEl.querySelector<HTMLInputElement>('[name="label[]"]');
         const labelVal = labelEl?.value.trim() ?? '';
         if (labelVal) return labelVal;
-        // Fallback: Preset-Name aus aktivem Radio
         const checkedRadio = slotEl.querySelector<HTMLInputElement>('.slot-gewichtung-radio:checked');
-        const radioVal = checkedRadio?.value ?? '';
-        return presetNamen[radioVal] ?? 'Beitrag';
+        return presetNamenPlaceholder[checkedRadio?.value ?? ''] ?? 'Beitrag';
       });
       const gewichtungen = [...form.querySelectorAll<HTMLInputElement>('[name="gewichtung[]"]')].map(
         (el) => parseFloat(el.value),

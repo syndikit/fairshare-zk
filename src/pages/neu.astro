@@ -170,6 +170,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
         <button
           type="button"
           id="ausgaben-link"
+          aria-expanded="false"
           class="text-xs text-slate-400 hover:text-slate-600 mt-1 transition-colors"
         >+ Ausgaben erfassen</button>
       </div>
@@ -312,6 +313,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
       zeile.classList.toggle('hidden', !sichtbar);
     });
     ausgabenLink.textContent = sichtbar ? 'Ausgaben ausblenden' : '+ Ausgaben erfassen';
+    ausgabenLink.setAttribute('aria-expanded', String(sichtbar));
   }
 
   ausgabenLink.addEventListener('click', () => {

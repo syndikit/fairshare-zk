@@ -371,7 +371,7 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
           zeile.className = 'flex items-center gap-2 px-3 py-1';
           zeile.innerHTML = `
             <span class="text-base w-16 shrink-0 text-slate-300">—</span>
-            <span class="text-xs bg-slate-100 text-slate-500 rounded px-1.5 py-0.5 font-medium shrink-0">auto</span>
+            <span class="text-xs bg-green-100 text-green-700 rounded px-1.5 py-0.5 font-medium shrink-0">auto</span>
             ${zeigeBeitraege ? `<span class="text-sm font-semibold text-slate-900 shrink-0 ml-auto">${eur(slot.standardgebot!)}</span>` : ''}
           `;
           zeilenContainer.appendChild(zeile);

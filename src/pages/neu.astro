@@ -9,7 +9,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
     <div class="flex items-center justify-between mb-4">
       <h1 class="text-2xl font-semibold">Neue Runde erstellen</h1>
       <div class="relative">
-        <button id="power-menu-btn" type="button" aria-label="Weitere Optionen"
+        <button id="power-menu-btn" type="button" aria-label="Weitere Optionen" aria-expanded="false"
           class="text-slate-400 hover:text-slate-600 text-xl leading-none px-2 py-1 rounded hover:bg-slate-100 transition-colors">…</button>
         <div id="power-menu" class="hidden absolute right-0 mt-1 w-52 bg-white border border-slate-200 rounded-lg shadow-lg z-10 py-1">
           <button id="splid-import-btn" type="button"
@@ -450,14 +450,26 @@ import FeedbackBox from '../components/FeedbackBox.astro';
   const powerMenuBtn = document.getElementById('power-menu-btn')!;
   const powerMenu = document.getElementById('power-menu')!;
 
-  powerMenuBtn.addEventListener('click', () => {
-    powerMenu.classList.toggle('hidden');
-  });
+  function openPowerMenu() {
+    powerMenu.classList.remove('hidden');
+    powerMenuBtn.setAttribute('aria-expanded', 'true');
+    document.addEventListener('click', closePowerMenuOnOutsideClick);
+  }
 
-  document.addEventListener('click', (e) => {
+  function closePowerMenu() {
+    powerMenu.classList.add('hidden');
+    powerMenuBtn.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('click', closePowerMenuOnOutsideClick);
+  }
+
+  function closePowerMenuOnOutsideClick(e: MouseEvent) {
     if (!powerMenuBtn.contains(e.target as Node) && !powerMenu.contains(e.target as Node)) {
-      powerMenu.classList.add('hidden');
+      closePowerMenu();
     }
+  }
+
+  powerMenuBtn.addEventListener('click', () => {
+    powerMenu.classList.contains('hidden') ? openPowerMenu() : closePowerMenu();
   });
 
   // ---------------------------------------------------------------------------
@@ -467,7 +479,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
   const splidFileInput = document.getElementById('splid-file') as HTMLInputElement;
 
   document.getElementById('splid-import-btn')!.addEventListener('click', () => {
-    powerMenu.classList.add('hidden');
+    closePowerMenu();
     splidFileInput.click();
   });
 

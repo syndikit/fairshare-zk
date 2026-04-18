@@ -6,13 +6,17 @@ import FeedbackBox from '../components/FeedbackBox.astro';
 <Layout title="Neue Runde">
   <!-- Formular-Bereich -->
   <div id="form-bereich">
-    <h1 class="text-2xl font-semibold mb-1">Neue Runde erstellen</h1>
-
-    <!-- Import (kompakt) -->
-    <p class="mb-6 text-sm text-slate-400">
-      <a href="#" id="splid-import-btn" class="underline hover:text-slate-600 transition-colors">Abrechnung importieren →</a>
-      <span class="block text-xs mt-0.5">Derzeit wird <a href="https://splid.app/">Splid</a> (XLSX) unterstützt.</span>
-    </p>
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="text-2xl font-semibold">Neue Runde erstellen</h1>
+      <div class="relative">
+        <button id="power-menu-btn" type="button" aria-label="Weitere Optionen"
+          class="text-slate-400 hover:text-slate-600 text-xl leading-none px-2 py-1 rounded hover:bg-slate-100 transition-colors">…</button>
+        <div id="power-menu" class="hidden absolute right-0 mt-1 w-52 bg-white border border-slate-200 rounded-lg shadow-lg z-10 py-1">
+          <button id="splid-import-btn" type="button"
+            class="w-full text-left text-sm px-4 py-2 hover:bg-slate-50 transition-colors">Abrechnung importieren</button>
+        </div>
+      </div>
+    </div>
     <input type="file" id="splid-file" accept=".xlsx,.xls" class="hidden" />
     <FeedbackBox id="splid-erfolg" typ="gruen" klasse="mb-3" />
     <FeedbackBox id="splid-fehler" klasse="mb-3" />
@@ -440,13 +444,30 @@ import FeedbackBox from '../components/FeedbackBox.astro';
   });
 
   // ---------------------------------------------------------------------------
+  // Power-Menü
+  // ---------------------------------------------------------------------------
+
+  const powerMenuBtn = document.getElementById('power-menu-btn')!;
+  const powerMenu = document.getElementById('power-menu')!;
+
+  powerMenuBtn.addEventListener('click', () => {
+    powerMenu.classList.toggle('hidden');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!powerMenuBtn.contains(e.target as Node) && !powerMenu.contains(e.target as Node)) {
+      powerMenu.classList.add('hidden');
+    }
+  });
+
+  // ---------------------------------------------------------------------------
   // Splid-Import
   // ---------------------------------------------------------------------------
 
   const splidFileInput = document.getElementById('splid-file') as HTMLInputElement;
 
-  document.getElementById('splid-import-btn')!.addEventListener('click', (e) => {
-    e.preventDefault();
+  document.getElementById('splid-import-btn')!.addEventListener('click', () => {
+    powerMenu.classList.add('hidden');
     splidFileInput.click();
   });
 

@@ -625,6 +625,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
 
       const ersterSlot = slotsContainer.querySelector('.slot-eintrag') as HTMLDivElement;
       befuelleWiederholSlot(ersterSlot, config.slots[0]);
+      aktualisierePresetPlaceholder(ersterSlot);
 
       for (let i = 1; i < config.slots.length; i++) {
         const klon = ersterSlot.cloneNode(true) as HTMLDivElement;
@@ -632,6 +633,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
         klon.querySelectorAll<HTMLInputElement>('.slot-gewichtung-radio').forEach(r => { r.name = uid; });
         slotsContainer.appendChild(klon);
         befuelleWiederholSlot(klon, config.slots[i]);
+        aktualisierePresetPlaceholder(klon);
       }
 
       aktualisiereEntfernenButtons();

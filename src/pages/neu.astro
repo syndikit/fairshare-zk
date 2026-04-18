@@ -356,15 +356,13 @@ import FeedbackBox from '../components/FeedbackBox.astro';
 
   document.getElementById('gesamtkosten')!.addEventListener('input', aktualisiereRichtwert);
 
-  const presetNamenPlaceholder: Record<string, string> = { '1.0': 'Erwachsen', '0.75': 'Ermäßigt', '0.5': 'Kind' };
+  const presetNamen: Record<string, string> = { '1.0': 'Erwachsen', '0.75': 'Ermäßigt', '0.5': 'Kind' };
   function aktualisierePresetPlaceholder(slotEl: HTMLElement) {
     const labelInput = slotEl.querySelector<HTMLInputElement>('[name="label[]"]');
     if (!labelInput) return;
     const radio = slotEl.querySelector<HTMLInputElement>('.slot-gewichtung-radio:checked');
-    labelInput.placeholder = presetNamenPlaceholder[radio?.value ?? ''] ?? 'Beitrag';
+    labelInput.placeholder = presetNamen[radio?.value ?? ''] ?? 'Beitrag';
   }
-
-  document.querySelectorAll<HTMLElement>('.slot-eintrag').forEach(aktualisierePresetPlaceholder);
 
   slotsContainer.addEventListener('input', (e) => {
     const target = e.target as HTMLInputElement;
@@ -512,7 +510,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
       r.name = uid;
       r.checked = i === 0; // Erwachsen vorauswählen
     });
-    klon.querySelectorAll<HTMLInputElement>('input[name="label[]"]').forEach(el => { el.value = ''; el.placeholder = 'Erwachsen'; });
+    klon.querySelectorAll<HTMLInputElement>('input[name="label[]"]').forEach(el => { el.value = ''; });
     klon.querySelectorAll<HTMLInputElement>('input[name="anzahl[]"]').forEach(el => { el.value = '1'; });
     klon.querySelectorAll<HTMLInputElement>('input[name="ausgaben[]"]').forEach(el => { el.value = ''; });
     klon.querySelectorAll<HTMLInputElement>('[name="gewichtung[]"]').forEach(el => { el.value = '1'; });
@@ -541,6 +539,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
     const details = klon.querySelector<HTMLDetailsElement>('.slot-erweitert-details');
     if (details) details.open = false;
 
+    aktualisierePresetPlaceholder(klon);
     slotsContainer.appendChild(klon);
     klon.classList.add('animate-slide-down');
     aktualisiereEntfernenButtons();
@@ -668,7 +667,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
         const labelVal = labelEl?.value.trim() ?? '';
         if (labelVal) return labelVal;
         const checkedRadio = slotEl.querySelector<HTMLInputElement>('.slot-gewichtung-radio:checked');
-        return presetNamenPlaceholder[checkedRadio?.value ?? ''] ?? 'Beitrag';
+        return presetNamen[checkedRadio?.value ?? ''] ?? 'Beitrag';
       });
       const gewichtungen = [...form.querySelectorAll<HTMLInputElement>('[name="gewichtung[]"]')].map(
         (el) => parseFloat(el.value),

@@ -311,11 +311,6 @@ import FeedbackBox from '../components/FeedbackBox.astro';
     slotsContainer.querySelectorAll<HTMLDivElement>('.ausgaben-inline').forEach((zeile) => {
       zeile.classList.toggle('hidden', !sichtbar);
     });
-    if (!sichtbar) {
-      slotsContainer.querySelectorAll<HTMLInputElement>('input[name="ausgaben[]"]').forEach((el) => {
-        el.value = '';
-      });
-    }
     ausgabenLink.textContent = sichtbar ? 'Ausgaben ausblenden' : '+ Ausgaben erfassen';
   }
 
@@ -689,7 +684,9 @@ import FeedbackBox from '../components/FeedbackBox.astro';
 
       const slotEintraege = [...slotsContainer.querySelectorAll<HTMLDivElement>('.slot-eintrag')];
       const slots = labels.map((label, i) => {
-        const ausgabenRaw = (slotEintraege[i]?.querySelector('[name="ausgaben[]"]') as HTMLInputElement)?.value;
+        const ausgabenRaw = ausgabenSichtbar
+          ? (slotEintraege[i]?.querySelector('[name="ausgaben[]"]') as HTMLInputElement)?.value
+          : undefined;
         const ausgaben = ausgabenRaw ? parseFloat(ausgabenRaw) : undefined;
         const stdCheckbox = slotEintraege[i]?.querySelector<HTMLInputElement>('.standardgebot-checkbox');
         const stdRaw = stdCheckbox?.checked

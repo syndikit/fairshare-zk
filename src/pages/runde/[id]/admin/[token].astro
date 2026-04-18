@@ -294,8 +294,10 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
 
       const eingegangen = slotGeboteWithHmac.length;
       const erwartet = slot.anzahl;
+      const autoAnzahl = slot.standardgebot !== undefined ? Math.max(0, erwartet - eingegangen) : 0;
       const zuViele = eingegangen > erwartet;
-      const vollstaendig = eingegangen === erwartet;
+      const vollstaendig = (eingegangen + autoAnzahl) === erwartet;
+      const autoVollstaendig = vollstaendig && autoAnzahl > 0;
 
       // Slot-Karte
       const karte = document.createElement('div');
@@ -320,7 +322,7 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
             <span class="text-sm font-semibold ${headerTextFarbe} shrink-0">${slot.label}</span>
             <span class="text-xs text-slate-500 shrink-0">Faktor ${slot.gewichtung}x · ~${eur(richtwertAnteil)}</span>
           </div>
-          <span class="text-xs font-semibold ${headerTextFarbe} shrink-0">${headerIcon} ${eingegangen}/${erwartet}</span>
+          <span class="text-xs font-semibold ${headerTextFarbe} shrink-0">${headerIcon} ${eingegangen}/${erwartet}${autoVollstaendig ? ' (auto)' : ''}</span>
         </div>
         <div class="slot-zeilen divide-y divide-slate-100"></div>
       `;
@@ -330,7 +332,6 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
       // Echte Gebote
       for (const { emojiHmac, gebot: g } of slotGeboteWithHmac) {
         const e = zeigeBeitraege ? slotErgebnisse.find((r) => r.emojiId === g.emojiId) : null;
-        console.log('Gebot:', g.emojiId, '| Ergebnisse:', slotErgebnisse.map(r => r.emojiId), '| Match:', e);
         const zeile = document.createElement('div');
         zeile.className = 'flex flex-col px-3 py-1';
         zeile.dataset.emojiHmac = emojiHmac;
@@ -364,7 +365,7 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
 
       // Auto-Gebote
       if (slot.standardgebot !== undefined) {
-        const anzahlAuto = Math.max(0, slot.anzahl - slotGeboteWithHmac.length);
+        const anzahlAuto = autoAnzahl;
         for (let i = 0; i < anzahlAuto; i++) {
           const e = zeigeBeitraege ? slotErgebnisse.find((r) => r.istStandard) : null;
           const zeile = document.createElement('div');
@@ -379,10 +380,7 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
       }
 
       // Fehlende Gebote
-      const autoAnzahlSlot = slot.standardgebot !== undefined
-        ? Math.max(0, slot.anzahl - slotGeboteWithHmac.length)
-        : 0;
-      const fehlend = Math.max(0, erwartet - slotGeboteWithHmac.length - autoAnzahlSlot);
+      const fehlend = Math.max(0, erwartet - eingegangen - autoAnzahl);
       for (let i = 0; i < fehlend; i++) {
         const zeile = document.createElement('div');
         zeile.className = 'flex items-center gap-2 px-3 py-1';

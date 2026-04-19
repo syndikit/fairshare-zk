@@ -365,15 +365,35 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
 
       // Auto-Gebote
       if (slot.standardgebot !== undefined) {
-        const anzahlAuto = autoAnzahl;
-        for (let i = 0; i < anzahlAuto; i++) {
-          const e = zeigeBeitraege ? slotErgebnisse.find((r) => r.istStandard) : null;
+        const standardErgebnisse = slotErgebnisse.filter((r) => r.istStandard);
+        for (let i = 0; i < autoAnzahl; i++) {
+          const e = zeigeBeitraege ? (standardErgebnisse[i] ?? null) : null;
+          const nochZuZahlen = e ? runden(e.solidarischerBeitrag - ausgaben) : 0;
           const zeile = document.createElement('div');
-          zeile.className = 'flex items-center gap-2 px-3 py-1';
+          zeile.className = 'flex flex-col px-3 py-1';
           zeile.innerHTML = `
-            <span class="text-base w-16 shrink-0 text-slate-300">—</span>
-            <span class="text-xs bg-green-100 text-green-700 rounded px-1.5 py-0.5 font-medium shrink-0">auto</span>
-            ${zeigeBeitraege ? `<span class="text-sm font-semibold text-slate-900 shrink-0 ml-auto">${eur(slot.standardgebot!)}</span>` : ''}
+            <div class="flex items-center gap-2 w-full">
+              <span class="text-base w-16 shrink-0 text-slate-300">—</span>
+              <span class="text-xs bg-green-100 text-green-700 rounded px-1.5 py-0.5 font-medium shrink-0">auto</span>
+              ${e ? `
+                <span class="hidden sm:inline text-xs text-slate-400 shrink-0">Beitrag</span>
+                <span class="hidden sm:inline text-sm font-semibold text-slate-900 shrink-0">${eur(e.solidarischerBeitrag)}</span>
+              ` : ''}
+              ${e && hatSplidDaten ? `
+                <span class="hidden sm:inline text-xs text-slate-400 shrink-0">Noch zu zahlen</span>
+                <span class="hidden sm:inline text-xs font-semibold ${nochZuZahlen > 0.005 ? 'text-red-600' : 'text-green-700'} shrink-0">${nochZuZahlen > 0 ? '+' : ''}${eur(nochZuZahlen)}</span>
+              ` : ''}
+            </div>
+            ${e ? `
+              <div class="flex items-center gap-3 pl-[4.5rem] sm:hidden pb-1">
+                <span class="text-xs text-slate-400">Beitrag</span>
+                <span class="text-sm font-semibold text-slate-900">${eur(e.solidarischerBeitrag)}</span>
+                ${hatSplidDaten ? `
+                  <span class="text-xs text-slate-400">Noch zu zahlen</span>
+                  <span class="text-xs font-semibold ${nochZuZahlen > 0.005 ? 'text-red-600' : 'text-green-700'}">${nochZuZahlen > 0 ? '+' : ''}${eur(nochZuZahlen)}</span>
+                ` : ''}
+              </div>
+            ` : ''}
           `;
           zeilenContainer.appendChild(zeile);
         }

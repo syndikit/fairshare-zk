@@ -67,6 +67,13 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   const { encTeilnehmerBlob } = body as { encTeilnehmerBlob: string };
+
+  if (encTeilnehmerBlob.length > 10_000) {
+    return new Response(JSON.stringify({ error: 'encTeilnehmerBlob zu lang' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
   const id = generateId(8);
   const adminToken = generateId(16);
 

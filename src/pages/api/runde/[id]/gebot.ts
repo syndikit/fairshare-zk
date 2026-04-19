@@ -11,6 +11,7 @@ interface RundeJSON {
 }
 
 const ID_FORMAT = /^[a-z0-9]{8}$/;
+const EMOJI_HMAC_FORMAT = /^[A-Za-z0-9_-]{43}$/;
 // ECDH-Format: <ephemPubKey>.<iv>.<ciphertext> — drei Base64url-Teile
 const GEBOT_FORMAT = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
 const DATA_DIR = join(process.cwd(), 'data', 'runden');
@@ -47,13 +48,13 @@ export const POST: APIRoute = async ({ params, request }) => {
   }
 
   const b = body as Record<string, unknown>;
-  if (typeof b.emojiHmac !== 'string' || b.emojiHmac.length === 0) {
-    return new Response(JSON.stringify({ error: 'emojiHmac fehlt' }), {
+  if (typeof b.emojiHmac !== 'string' || !EMOJI_HMAC_FORMAT.test(b.emojiHmac)) {
+    return new Response(JSON.stringify({ error: 'emojiHmac fehlt oder hat ungültiges Format' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
   }
-  if (typeof b.encGebot !== 'string' || !GEBOT_FORMAT.test(b.encGebot)) {
+  if (typeof b.encGebot !== 'string' || !GEBOT_FORMAT.test(b.encGebot) || b.encGebot.length > 1_000) {
     return new Response(JSON.stringify({ error: 'encGebot fehlt oder hat ungültiges Format' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
@@ -133,15 +134,15 @@ export const DELETE: APIRoute = async ({ params, request }) => {
 
   const b = body as Record<string, unknown>;
 
-  if (typeof b.emojiHmac !== 'string' || b.emojiHmac.length === 0) {
-    return new Response(JSON.stringify({ error: 'emojiHmac fehlt' }), {
+  if (typeof b.emojiHmac !== 'string' || !EMOJI_HMAC_FORMAT.test(b.emojiHmac)) {
+    return new Response(JSON.stringify({ error: 'emojiHmac fehlt oder hat ungültiges Format' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  if (typeof b.adminToken !== 'string' || b.adminToken.length === 0) {
-    return new Response(JSON.stringify({ error: 'adminToken fehlt' }), {
+  if (typeof b.adminToken !== 'string' || b.adminToken.length !== 16) {
+    return new Response(JSON.stringify({ error: 'adminToken fehlt oder hat ungültiges Format' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });

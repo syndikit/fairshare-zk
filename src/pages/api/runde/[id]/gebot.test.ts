@@ -34,7 +34,8 @@ function makeRunde(gebote: Array<{ emojiHmac: string; encGebot: string }>) {
 }
 
 const VALID_ENC_GEBOT = 'ephemKey.iv123.cipher';
-const EMOJI_HMAC = 'abc123';
+// 43-char base64url string — matches HMAC-SHA256 output length
+const EMOJI_HMAC = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -138,5 +139,34 @@ describe('POST /api/runde/[id]/gebot', () => {
     const afterSecond = JSON.parse(mockWriteFile.mock.calls[1][1]);
     expect(afterSecond.gebote).toHaveLength(1);
     expect(afterSecond.gebote[0].encGebot).toBe(enc3);
+  });
+
+  it('emojiHmac zu kurz gibt 400', async () => {
+    const res = await handler({
+      params: { id: 'abc12345' },
+      request: makeRequest({ emojiHmac: 'zuKurz', encGebot: VALID_ENC_GEBOT }),
+    });
+    expect(res.status).toBe(400);
+    expect(mockWriteFile).not.toHaveBeenCalled();
+  });
+
+  it('emojiHmac mit ungültigem Zeichen gibt 400', async () => {
+    const invalidHmac = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA!';
+    const res = await handler({
+      params: { id: 'abc12345' },
+      request: makeRequest({ emojiHmac: invalidHmac, encGebot: VALID_ENC_GEBOT }),
+    });
+    expect(res.status).toBe(400);
+    expect(mockWriteFile).not.toHaveBeenCalled();
+  });
+
+  it('encGebot über 1000 Zeichen gibt 400', async () => {
+    const longGebot = `${'A'.repeat(500)}.${'B'.repeat(100)}.${'C'.repeat(401)}`;
+    const res = await handler({
+      params: { id: 'abc12345' },
+      request: makeRequest({ emojiHmac: EMOJI_HMAC, encGebot: longGebot }),
+    });
+    expect(res.status).toBe(400);
+    expect(mockWriteFile).not.toHaveBeenCalled();
   });
 });

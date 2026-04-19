@@ -78,10 +78,10 @@
 
 @media (max-width: 639px) and (prefers-color-scheme: dark) {
   .results-table tr {
-    border-color: #334155;
+    border-color: var(--color-slate-700);
   }
   .results-table td::before {
-    color: #64748b;
+    color: var(--color-slate-500);
   }
 }
 

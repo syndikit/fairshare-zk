@@ -368,7 +368,7 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
         const standardErgebnisse = slotErgebnisse.filter((r) => r.istStandard);
         for (let i = 0; i < autoAnzahl; i++) {
           const e = zeigeBeitraege ? (standardErgebnisse[i] ?? null) : null;
-          const nochZuZahlen = e ? runden(e.solidarischerBeitrag - ausgaben) : 0;
+          const nochZuZahlen = e ? e.solidarischerBeitrag - ausgaben : 0;
           const zeile = document.createElement('div');
           zeile.className = 'flex flex-col px-3 py-1';
           zeile.innerHTML = `

@@ -47,13 +47,13 @@ export const POST: APIRoute = async ({ params, request }) => {
   }
 
   const b = body as Record<string, unknown>;
-  if (typeof b.emojiHmac !== 'string' || b.emojiHmac.length === 0) {
-    return new Response(JSON.stringify({ error: 'emojiHmac fehlt' }), {
+  if (typeof b.emojiHmac !== 'string' || b.emojiHmac.length !== 43) {
+    return new Response(JSON.stringify({ error: 'emojiHmac fehlt oder hat ungültiges Format' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
   }
-  if (typeof b.encGebot !== 'string' || !GEBOT_FORMAT.test(b.encGebot)) {
+  if (typeof b.encGebot !== 'string' || !GEBOT_FORMAT.test(b.encGebot) || b.encGebot.length > 1_000) {
     return new Response(JSON.stringify({ error: 'encGebot fehlt oder hat ungültiges Format' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
@@ -133,15 +133,15 @@ export const DELETE: APIRoute = async ({ params, request }) => {
 
   const b = body as Record<string, unknown>;
 
-  if (typeof b.emojiHmac !== 'string' || b.emojiHmac.length === 0) {
-    return new Response(JSON.stringify({ error: 'emojiHmac fehlt' }), {
+  if (typeof b.emojiHmac !== 'string' || b.emojiHmac.length !== 43) {
+    return new Response(JSON.stringify({ error: 'emojiHmac fehlt oder hat ungültiges Format' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  if (typeof b.adminToken !== 'string' || b.adminToken.length === 0) {
-    return new Response(JSON.stringify({ error: 'adminToken fehlt' }), {
+  if (typeof b.adminToken !== 'string' || b.adminToken.length !== 16) {
+    return new Response(JSON.stringify({ error: 'adminToken fehlt oder hat ungültiges Format' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });

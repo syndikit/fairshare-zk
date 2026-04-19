@@ -3,22 +3,19 @@
 @theme {
   --color-brand: #3B6D11;
   --color-brand-dark: #27500A;
-  --color-brand-light: #6AAB23;
 }
 
 @layer base {
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+
   @media (prefers-color-scheme: dark) {
     :root {
       --color-brand: #6AAB23;
       --color-brand-dark: #5a9d18;
       color-scheme: dark;
     }
-  }
-}
-
-@layer base {
-  body {
-    font-family: system-ui, -apple-system, sans-serif;
   }
 }
 

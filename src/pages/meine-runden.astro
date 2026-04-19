@@ -8,10 +8,10 @@ import FeedbackBox from '../components/FeedbackBox.astro';
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-semibold mb-1">Meine Runden</h1>
-        <p class="text-slate-500 text-sm">Gespeichert in deinem Browser.</p>
+        <p class="text-slate-500 dark:text-slate-400 text-sm">Gespeichert in deinem Browser.</p>
       </div>
       <details class="relative">
-        <summary class="cursor-pointer text-slate-400 hover:text-slate-600 transition-colors text-xl select-none list-none px-2 py-1">⋯</summary>
+        <summary class="cursor-pointer text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors text-xl select-none list-none px-2 py-1">⋯</summary>
         <div class="absolute right-0 top-9 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-10 min-w-36 p-1">
           <button
             id="export-btn"
@@ -33,7 +33,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
     <FeedbackBox id="import-fehler" />
 
     <!-- Leer-Zustand -->
-    <div id="leer-zustand" class="hidden text-center py-16 text-slate-500">
+    <div id="leer-zustand" class="hidden text-center py-16 text-slate-500 dark:text-slate-400">
       <p class="mb-4">Noch keine Runden gespeichert.</p>
       <a href="/neu" class="inline-block bg-brand text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-brand-dark transition-colors">
         Neue Runde erstellen
@@ -93,9 +93,9 @@ import FeedbackBox from '../components/FeedbackBox.astro';
           <div class="space-y-1">
             <div class="flex items-center gap-2 flex-wrap">
               ${badge}
-              <span class="text-sm font-medium text-slate-800">${runde.name}</span>
+              <span class="text-sm font-medium text-slate-800 dark:text-slate-200">${runde.name}</span>
             </div>
-            <p class="text-xs text-slate-400">Hinzugefügt am ${formatDatum(runde.hinzugefuegtAm)}</p>
+            <p class="text-xs text-slate-400 dark:text-slate-500">Hinzugefügt am ${formatDatum(runde.hinzugefuegtAm)}</p>
           </div>
         </div>
         <div class="flex flex-wrap items-center gap-2">

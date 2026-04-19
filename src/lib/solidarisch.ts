@@ -217,7 +217,7 @@ export function berechneAusgleich(
   const standardBeitrag = new Map<string, number>();
   for (const e of ergebnisse) {
     if (!e.istStandard) continue;
-    standardBeitrag.set(e.slotLabel, runden((standardBeitrag.get(e.slotLabel) ?? 0) + e.solidarischerBeitrag));
+    standardBeitrag.set(e.slotLabel, (standardBeitrag.get(e.slotLabel) ?? 0) + e.solidarischerBeitrag);
   }
   for (const [label, beitrag] of standardBeitrag) {
     const ausgaben = ausgabenProSlot.get(label) ?? 0;

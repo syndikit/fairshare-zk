@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { timingSafeEqual } from 'node:crypto';
+import { timingSafeEqual, createHash } from 'node:crypto';
 
 interface RundeJSON {
   id: string;
@@ -150,11 +150,10 @@ export const DELETE: APIRoute = async ({ params, request }) => {
     throw err;
   }
 
-  // Timing-safe Vergleich gegen Timing-Angriffe
-  const tokenA = Buffer.from(adminToken);
-  const tokenB = Buffer.from(runde.adminToken);
-  const tokenMatch =
-    tokenA.length === tokenB.length && timingSafeEqual(tokenA, tokenB);
+  const tokenMatch = timingSafeEqual(
+    createHash('sha256').update(adminToken).digest(),
+    createHash('sha256').update(runde.adminToken).digest(),
+  );
 
   if (!tokenMatch) {
     return new Response(JSON.stringify({ error: 'Nicht autorisiert' }), {

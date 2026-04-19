@@ -3,6 +3,17 @@
 @theme {
   --color-brand: #3B6D11;
   --color-brand-dark: #27500A;
+  --color-brand-light: #6AAB23;
+}
+
+@layer base {
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-brand: #6AAB23;
+      --color-brand-dark: #5a9d18;
+      color-scheme: dark;
+    }
+  }
 }
 
 @layer base {
@@ -65,6 +76,15 @@
     font-size: 0.75rem;
     flex-shrink: 0;
     margin-right: 0.5rem;
+  }
+}
+
+@media (max-width: 639px) and (prefers-color-scheme: dark) {
+  .results-table tr {
+    border-color: #334155;
+  }
+  .results-table td::before {
+    color: #64748b;
   }
 }
 

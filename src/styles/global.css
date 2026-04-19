@@ -85,6 +85,25 @@
   }
 }
 
+/* Gewichtungs-Badge: ausgewählter Zustand */
+.slot-gewichtung-radio:checked + .slot-gewichtung-badge {
+  border-color: var(--color-brand);
+  background-color: #f0f7eb;
+  color: var(--color-brand-dark);
+}
+
+@media (prefers-color-scheme: dark) {
+  .slot-gewichtung-radio:checked + .slot-gewichtung-badge {
+    background-color: #1a2e0a;
+    color: #a8d96a;
+  }
+}
+
+/* Details-Pfeil drehen wenn offen */
+details[open] .details-arrow {
+  transform: rotate(90deg);
+}
+
 /* === Print-Styles === */
 @media print {
   /* Sticky Screen-Header verstecken */

@@ -34,8 +34,8 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
         <p class="text-xs text-slate-500 dark:text-slate-400 mb-0.5">Richtwert / Einheit</p>
         <p id="kz-richtwert" class="text-lg font-semibold print:text-base"></p>
       </div>
-      <div class="vollstaendig-spalte hidden bg-white border border-slate-200 rounded-xl p-3 print:rounded-md print:p-2">
-        <p class="text-xs text-slate-500 mb-0.5">Summe Beiträge</p>
+      <div class="vollstaendig-spalte hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 print:rounded-md print:p-2">
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-0.5">Summe Beiträge</p>
         <p id="kz-summe-beitraege" class="text-lg font-semibold print:text-base"></p>
       </div>
     </div>
@@ -386,29 +386,29 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
               <span class="text-base w-16 shrink-0 text-slate-300 dark:text-slate-600">—</span>
               <span class="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 rounded px-1.5 py-0.5 font-medium shrink-0">auto</span>
               ${e ? `
-                <span class="hidden sm:inline text-xs text-slate-400 shrink-0">Beitrag</span>
-                <span class="hidden sm:inline text-sm font-semibold text-slate-900 shrink-0">${eur(e.solidarischerBeitrag)}</span>
+                <span class="hidden sm:inline text-xs text-slate-400 dark:text-slate-500 shrink-0">Beitrag</span>
+                <span class="hidden sm:inline text-sm font-semibold text-slate-900 dark:text-slate-100 shrink-0">${eur(e.solidarischerBeitrag)}</span>
               ` : ''}
               ${e && hatSplidDaten ? `
-                <span class="hidden sm:inline text-xs text-slate-400 shrink-0">Ausgaben</span>
-                <span class="hidden sm:inline text-xs font-semibold text-slate-900 shrink-0">${eur(ausgaben)}</span>
-                <span class="hidden sm:inline text-xs text-slate-400 shrink-0">Noch zu zahlen</span>
+                <span class="hidden sm:inline text-xs text-slate-400 dark:text-slate-500 shrink-0">Ausgaben</span>
+                <span class="hidden sm:inline text-xs font-semibold text-slate-900 dark:text-slate-100 shrink-0">${eur(ausgaben)}</span>
+                <span class="hidden sm:inline text-xs text-slate-400 dark:text-slate-500 shrink-0">Noch zu zahlen</span>
                 <span class="hidden sm:inline text-xs font-semibold ${nochZuZahlen > 0.005 ? 'text-red-600' : 'text-green-700'} shrink-0">${nochZuZahlen > 0 ? '+' : ''}${eur(nochZuZahlen)}</span>
               ` : ''}
             </div>
             ${e ? `
               <div class="flex flex-col gap-0.5 pl-[4.5rem] sm:hidden pb-1">
                 <div class="flex justify-between items-baseline">
-                  <span class="text-xs text-slate-400">Beitrag</span>
-                  <span class="text-sm font-semibold text-slate-900">${eur(e.solidarischerBeitrag)}</span>
+                  <span class="text-xs text-slate-400 dark:text-slate-500">Beitrag</span>
+                  <span class="text-sm font-semibold text-slate-900 dark:text-slate-100">${eur(e.solidarischerBeitrag)}</span>
                 </div>
                 ${hatSplidDaten ? `
                   <div class="flex justify-between items-baseline">
-                    <span class="text-xs text-slate-400">Ausgaben</span>
-                    <span class="text-xs font-semibold text-slate-900">${eur(ausgaben)}</span>
+                    <span class="text-xs text-slate-400 dark:text-slate-500">Ausgaben</span>
+                    <span class="text-xs font-semibold text-slate-900 dark:text-slate-100">${eur(ausgaben)}</span>
                   </div>
                   <div class="flex justify-between items-baseline">
-                    <span class="text-xs text-slate-400">Noch zu zahlen</span>
+                    <span class="text-xs text-slate-400 dark:text-slate-500">Noch zu zahlen</span>
                     <span class="text-xs font-semibold ${nochZuZahlen > 0.005 ? 'text-red-600' : 'text-green-700'}">${nochZuZahlen > 0 ? '+' : ''}${eur(nochZuZahlen)}</span>
                   </div>
                 ` : ''}

@@ -1,12 +1,12 @@
 /**
  * FairShare ZK — Splid-Import
  *
- * Liest eine Splid-XLSX-Exportdatei (Sheet "Zusammenfassung") im Browser
+ * Liest eine Splid-Exportdatei (Sheet "Zusammenfassung") im Browser
  * und extrahiert Rundenname, Gesamtkosten und Teilnehmer mit ihren Ausgaben.
- * Die Datei verlässt dabei das Gerät nicht.
+ * Unterstützt .xlsx und .xls (Excel 97-2003). Die Datei verlässt dabei das Gerät nicht.
  */
 
-import ExcelJS from 'exceljs';
+import * as XLSX from 'xlsx';
 
 export interface SplidPerson {
   name: string;
@@ -20,56 +20,57 @@ export interface SplidImport {
 }
 
 /**
- * Parst einen ArrayBuffer einer Splid-XLSX-Datei.
+ * Parst einen ArrayBuffer einer Splid-Export-Datei (.xlsx oder .xls).
  * Wirft bei ungültigem Format mit einer verständlichen Fehlermeldung.
  */
 export async function parseSplid(buffer: ArrayBuffer): Promise<SplidImport> {
-  const wb = new ExcelJS.Workbook();
-  await wb.xlsx.load(buffer);
+  const wb = XLSX.read(new Uint8Array(buffer), { type: 'array' });
 
   const SHEET = 'Zusammenfassung';
-  const ws = wb.getWorksheet(SHEET);
-  if (!ws) {
+  if (!wb.SheetNames.includes(SHEET)) {
     throw new Error(
       'Datei enthält kein Sheet „Zusammenfassung". Bitte einen Splid-Export verwenden.',
     );
   }
+  const ws = wb.Sheets[SHEET];
 
-  // Rundenname aus A1 (Zeile 1, Spalte 1 — ExcelJS ist 1-indexed)
-  const rundenname = String(ws.getCell(1, 1).value ?? '').trim();
+  // Alle Zeilen als 2D-Array (0-indexed)
+  const rows: unknown[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+  // Rundenname aus Zeile 0, Spalte 0
+  const rundenname = String(rows[0]?.[0] ?? '').trim();
   if (!rundenname) {
     throw new Error('Rundenname nicht gefunden (Zelle A1 ist leer).');
   }
 
   // Kopfzeile finden: erste Zeile mit beiden Spalten "Von" und "Betrag"
-  // row.values ist in ExcelJS 1-indexed (Index 0 = undefined)
-  let headerRowNum = -1;
+  let headerRowIdx = -1;
   let vonIdx = -1;
   let betragIdx = -1;
-  let personenStartCol = 7; // Fallback: Spalte G (1-indexed)
+  let personenStartCol = 6; // Fallback: Spalte G (0-indexed)
 
-  ws.eachRow({ includeEmpty: false }, (row, rowNum) => {
-    if (headerRowNum !== -1) return;
-    const vals = row.values as unknown[];
+  for (let i = 0; i < rows.length; i++) {
+    const vals = rows[i];
     const vonI = vals.findIndex((c) => String(c ?? '').trim() === 'Von');
     const betragI = vals.findIndex((c) => String(c ?? '').trim() === 'Betrag');
-    if (vonI > 0 && betragI > 0) {
-      headerRowNum = rowNum;
+    if (vonI >= 0 && betragI >= 0) {
+      headerRowIdx = i;
       vonIdx = vonI;
       betragIdx = betragI;
       const erstelltAmI = vals.findIndex((c) => String(c ?? '').trim() === 'Erstellt am');
-      personenStartCol = erstelltAmI > 0 ? erstelltAmI + 1 : 7;
+      personenStartCol = erstelltAmI >= 0 ? erstelltAmI + 1 : 6;
+      break;
     }
-  });
+  }
 
-  if (headerRowNum === -1) {
+  if (headerRowIdx === -1) {
     throw new Error(
       'Kopfzeile nicht gefunden. Erwartet werden Spalten „Von" und „Betrag".',
     );
   }
 
   // Personennamen aus Kopfzeile extrahieren (ungerade Spalten ab personenStartCol)
-  const headerVals = ws.getRow(headerRowNum).values as unknown[];
+  const headerVals = rows[headerRowIdx];
   const personenNamen: string[] = [];
   for (let col = personenStartCol; col < headerVals.length; col += 2) {
     const name = String(headerVals[col] ?? '').trim();
@@ -86,17 +87,16 @@ export async function parseSplid(buffer: ArrayBuffer): Promise<SplidImport> {
   const ausgabenMap = new Map<string, number>(personenNamen.map((n) => [n, 0]));
   let gesamtkosten = 0;
 
-  ws.eachRow({ includeEmpty: false }, (row, rowNum) => {
-    if (rowNum <= headerRowNum) return;
-    const vals = row.values as unknown[];
+  for (let i = headerRowIdx + 1; i < rows.length; i++) {
+    const vals = rows[i];
     const betrag = Number(vals[betragIdx]);
     const von = String(vals[vonIdx] ?? '').trim();
-    if (!isFinite(betrag) || betrag <= 0) return;
+    if (!isFinite(betrag) || betrag <= 0) continue;
     gesamtkosten += betrag;
     if (von && ausgabenMap.has(von)) {
       ausgabenMap.set(von, (ausgabenMap.get(von) ?? 0) + betrag);
     }
-  });
+  }
 
   const personen: SplidPerson[] = personenNamen.map((name) => ({
     name,

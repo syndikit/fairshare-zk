@@ -1,53 +1,40 @@
 /**
  * Tests für src/lib/splid.ts
  *
- * Synthetische XLSX-Buffer werden mit ExcelJS erstellt —
+ * Synthetische Buffer werden mit SheetJS erstellt —
  * kein echtes Splid-File als Fixture nötig.
  */
 
 import { describe, it, expect } from 'vitest';
-import ExcelJS from 'exceljs';
+import * as XLSX from 'xlsx';
 import { parseSplid, type SplidImport } from './splid';
 
 // ---------------------------------------------------------------------------
-// Hilfsfunktion: baut einen minimalen Splid-XLSX-Buffer
+// Hilfsfunktion: baut einen minimalen Splid-Buffer
 // ---------------------------------------------------------------------------
 
-async function buildSplidBuffer(opts: {
+function buildSplidBuffer(opts: {
   rundenname?: string;
   personen: string[];
   ausgaben: { von: string; betrag: number }[];
-}): Promise<ArrayBuffer> {
-  const { rundenname = 'Test-Runde', personen, ausgaben } = opts;
+  bookType?: XLSX.BookType;
+}): ArrayBuffer {
+  const { rundenname = 'Test-Runde', personen, ausgaben, bookType = 'xlsx' } = opts;
 
-  const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet('Zusammenfassung');
+  const rows: unknown[][] = [
+    [rundenname],
+    ['Erstellt mit Splid (splid.app)'],
+    [],
+    ['Titel', 'Betrag', 'Währung', 'Von', 'Datum', 'Erstellt am', ...personen.flatMap((p) => [p, ''])],
+    ...ausgaben.map(({ von, betrag }) => ['Einkauf', betrag, 'EUR', von, '01.01.26', '01.01.26']),
+  ];
 
-  // Zeile 1: Rundenname
-  ws.addRow([rundenname]);
-  // Zeile 2: Splid-Hinweis
-  ws.addRow(['Erstellt mit Splid (splid.app)']);
-  // Zeile 3: leer
-  ws.addRow([]);
-  // Zeile 4: Kopfzeile
-  const headerRow = ['Titel', 'Betrag', 'Währung', 'Von', 'Datum', 'Erstellt am'];
-  for (const p of personen) {
-    headerRow.push(p);
-    headerRow.push(''); // Berechnungsspalte
-  }
-  ws.addRow(headerRow);
-  // Zeile 5+: Ausgaben
-  for (const { von, betrag } of ausgaben) {
-    ws.addRow(['Einkauf', betrag, 'EUR', von, '01.01.26', '01.01.26']);
-  }
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Zusammenfassung');
 
-  // writeBuffer() gibt in Node.js einen Buffer zurück
-  const nodeBuf = await wb.xlsx.writeBuffer() as Buffer;
-  // Buffer → eigener ArrayBuffer ohne Pool-Offset
-  return nodeBuf.buffer.slice(
-    nodeBuf.byteOffset,
-    nodeBuf.byteOffset + nodeBuf.byteLength,
-  ) as ArrayBuffer;
+  const buf = XLSX.write(wb, { type: 'buffer', bookType }) as Buffer;
+  return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
 }
 
 // ---------------------------------------------------------------------------
@@ -56,7 +43,7 @@ async function buildSplidBuffer(opts: {
 
 describe('parseSplid', () => {
   it('extrahiert Rundenname, Gesamtkosten und Personenliste', async () => {
-    const buf = await buildSplidBuffer({
+    const buf = buildSplidBuffer({
       rundenname: 'Haushaltskasse Februar',
       personen: ['Anna', 'Ben', 'Cara'],
       ausgaben: [
@@ -74,7 +61,7 @@ describe('parseSplid', () => {
   });
 
   it('berechnet Ausgaben pro Person korrekt', async () => {
-    const buf = await buildSplidBuffer({
+    const buf = buildSplidBuffer({
       personen: ['Anna', 'Ben'],
       ausgaben: [
         { von: 'Anna', betrag: 30 },
@@ -92,7 +79,7 @@ describe('parseSplid', () => {
   });
 
   it('setzt ausgaben auf 0 für Personen ohne eigene Ausgaben (Laura-Fall)', async () => {
-    const buf = await buildSplidBuffer({
+    const buf = buildSplidBuffer({
       personen: ['Laura', 'Stefan'],
       ausgaben: [{ von: 'Stefan', betrag: 80 }],
     });
@@ -104,7 +91,7 @@ describe('parseSplid', () => {
   });
 
   it('rundet Gesamtkosten und Ausgaben auf 2 Dezimalstellen', async () => {
-    const buf = await buildSplidBuffer({
+    const buf = buildSplidBuffer({
       personen: ['Anna'],
       ausgaben: [
         { von: 'Anna', betrag: 1 / 3 },
@@ -118,45 +105,55 @@ describe('parseSplid', () => {
     expect(personen[0].ausgaben).toBe(1);
   });
 
+  it('liest .xls-Buffer (Excel 97-2003)', async () => {
+    const buf = buildSplidBuffer({
+      rundenname: 'XLS-Runde',
+      personen: ['Anna', 'Ben'],
+      ausgaben: [
+        { von: 'Anna', betrag: 60 },
+        { von: 'Ben', betrag: 40 },
+      ],
+      bookType: 'xls',
+    });
+
+    const result = await parseSplid(buf);
+
+    expect(result.rundenname).toBe('XLS-Runde');
+    expect(result.gesamtkosten).toBe(100);
+    expect(result.personen.map((p) => p.name)).toEqual(['Anna', 'Ben']);
+  });
+
   it('wirft wenn Sheet „Zusammenfassung" fehlt', async () => {
-    const wb = new ExcelJS.Workbook();
-    wb.addWorksheet('Anderes Sheet').addRow(['Daten']);
-    const nodeBuf = await wb.xlsx.writeBuffer() as Buffer;
-    const buf = nodeBuf.buffer.slice(
-      nodeBuf.byteOffset,
-      nodeBuf.byteOffset + nodeBuf.byteLength,
-    ) as ArrayBuffer;
+    const ws = XLSX.utils.aoa_to_sheet([['Daten']]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Anderes Sheet');
+    const nodeBuf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+    const buf = nodeBuf.buffer.slice(nodeBuf.byteOffset, nodeBuf.byteOffset + nodeBuf.byteLength) as ArrayBuffer;
 
     await expect(parseSplid(buf)).rejects.toThrow('Zusammenfassung');
   });
 
   it('wirft wenn Kopfzeile fehlt', async () => {
-    const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet('Zusammenfassung');
-    ws.addRow(['Nur ein Titel']);
-    ws.addRow(['Daten ohne Kopfzeile']);
-    const nodeBuf = await wb.xlsx.writeBuffer() as Buffer;
-    const buf = nodeBuf.buffer.slice(
-      nodeBuf.byteOffset,
-      nodeBuf.byteOffset + nodeBuf.byteLength,
-    ) as ArrayBuffer;
+    const ws = XLSX.utils.aoa_to_sheet([['Nur ein Titel'], ['Daten ohne Kopfzeile']]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Zusammenfassung');
+    const nodeBuf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+    const buf = nodeBuf.buffer.slice(nodeBuf.byteOffset, nodeBuf.byteOffset + nodeBuf.byteLength) as ArrayBuffer;
 
     await expect(parseSplid(buf)).rejects.toThrow('Kopfzeile');
   });
 
   it('wirft wenn keine Personen erkannt werden', async () => {
-    const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet('Zusammenfassung');
-    ws.addRow(['Runde']);
-    ws.addRow([]);
-    ws.addRow([]);
-    // Kopfzeile ohne Personenspalten
-    ws.addRow(['Titel', 'Betrag', 'Währung', 'Von', 'Datum', 'Erstellt am']);
-    const nodeBuf = await wb.xlsx.writeBuffer() as Buffer;
-    const buf = nodeBuf.buffer.slice(
-      nodeBuf.byteOffset,
-      nodeBuf.byteOffset + nodeBuf.byteLength,
-    ) as ArrayBuffer;
+    const ws = XLSX.utils.aoa_to_sheet([
+      ['Runde'],
+      [],
+      [],
+      ['Titel', 'Betrag', 'Währung', 'Von', 'Datum', 'Erstellt am'],
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Zusammenfassung');
+    const nodeBuf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+    const buf = nodeBuf.buffer.slice(nodeBuf.byteOffset, nodeBuf.byteOffset + nodeBuf.byteLength) as ArrayBuffer;
 
     await expect(parseSplid(buf)).rejects.toThrow('Teilnehmer');
   });

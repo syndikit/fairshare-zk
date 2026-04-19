@@ -43,6 +43,30 @@ export function deleteRunde(id: string): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(runden));
 }
 
+export function saveGebotLokal(rundenId: string, emojiId: string, slotLabel: string): void {
+  const key = `fairshare-gebot-${rundenId}`;
+  let gebote: Array<{ emojiId: string; slotLabel: string }> = [];
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw) gebote = JSON.parse(raw);
+  } catch { /* ignore */ }
+  if (!gebote.some((g) => g.emojiId === emojiId)) {
+    gebote.push({ emojiId, slotLabel });
+    localStorage.setItem(key, JSON.stringify(gebote));
+  }
+}
+
+export function getGebotSlot(rundenId: string, emojiId: string): string | null {
+  try {
+    const raw = localStorage.getItem(`fairshare-gebot-${rundenId}`);
+    if (!raw) return null;
+    const gebote: Array<{ emojiId: string; slotLabel: string }> = JSON.parse(raw);
+    return gebote.find((g) => g.emojiId === emojiId)?.slotLabel ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function exportJson(): string {
   return JSON.stringify(getRunden(), null, 2);
 }

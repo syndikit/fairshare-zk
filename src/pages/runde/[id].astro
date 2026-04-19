@@ -127,8 +127,9 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
 
         <!-- Slot-Auswahl -->
         <div>
-          <p class="text-sm font-medium text-slate-700 mb-2">Neuer Slot</p>
+          <p class="text-sm font-medium text-slate-700 mb-2">Slot</p>
           <div id="slot-auswahl-korrektur" class="space-y-2"></div>
+          <p id="korrektur-slot-hinweis" class="text-xs mt-1"></p>
         </div>
 
         <!-- Betrag -->
@@ -182,7 +183,7 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
     hmac,
   } from '../../lib/crypto';
   import { EMOJIS, generiereEmojiId } from '../../lib/solidarisch';
-  import { saveRunde } from '../../lib/storage';
+  import { saveRunde, saveGebotLokal, getGebotSlot } from '../../lib/storage';
   import { zeigeFeedback, versteckeFeedback } from '../../lib/ui';
 
   interface TeilnehmerBlob {
@@ -447,6 +448,7 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
         }
 
         slotAlsGebotenMarkieren(selectedSlot.label);
+        saveGebotLokal(rundenId, emojiId!, selectedSlot.label);
         document.getElementById('tab-korrigieren')!.classList.remove('hidden');
         zeigeBestaetigung(emojiId!, false);
       } catch (err) {
@@ -509,6 +511,33 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
     // ── Tab 2: Gebot korrigieren ──────────────────────────────────────────────
     const korrekturForm = document.getElementById('korrektur-form') as HTMLFormElement;
     const korrekturBtn = document.getElementById('korrektur-btn') as HTMLButtonElement;
+    const korrekturEmojiInput = document.getElementById('korrektur-emoji') as HTMLInputElement;
+    const korrekturSlotHinweis = document.getElementById('korrektur-slot-hinweis')!;
+
+    function aktualisiereKorrekturSlot() {
+      const emojiId = korrekturEmojiInput.value.trim();
+      const bekannterSlot = emojiId ? getGebotSlot(rundenId, emojiId) : null;
+      const radios = korrekturForm.querySelectorAll<HTMLInputElement>('input[name="slot-korrektur"]');
+
+      if (bekannterSlot) {
+        const slotIdx = blob.slots.findIndex((s) => s.label === bekannterSlot);
+        radios.forEach((r, i) => {
+          r.checked = i === slotIdx;
+          r.disabled = true;
+        });
+        korrekturSlotHinweis.textContent = `Slot aus deinem ursprünglichen Gebot: ${bekannterSlot}`;
+        korrekturSlotHinweis.className = 'text-xs text-green-700 mt-1';
+        if (slotIdx >= 0) betragFeldAktualisieren(slotIdx, 'korrektur-betrag', 'korrektur-richtwert-hinweis');
+      } else {
+        radios.forEach((r) => { r.disabled = false; });
+        korrekturSlotHinweis.textContent = emojiId
+          ? 'Gebot auf diesem Gerät nicht gefunden — wähle denselben Slot wie beim ursprünglichen Gebot.'
+          : '';
+        korrekturSlotHinweis.className = 'text-xs text-amber-600 mt-1';
+      }
+    }
+
+    korrekturEmojiInput.addEventListener('input', aktualisiereKorrekturSlot);
 
     korrekturForm.addEventListener('submit', async (e) => {
       e.preventDefault();

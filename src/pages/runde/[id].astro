@@ -5,7 +5,7 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
 
 <Layout title="Runde">
   <!-- Laden -->
-  <div id="zustand-laden" class="text-center py-12 text-slate-500 text-sm">
+  <div id="zustand-laden" class="text-center py-12 text-slate-500 dark:text-slate-400 text-sm">
     Lade Runde…
   </div>
 
@@ -64,7 +64,7 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
             placeholder="z.B. 80"
             class="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
           />
-          <p id="betrag-richtwert-hinweis" class="text-xs text-slate-400 mt-1"></p>
+          <p id="betrag-richtwert-hinweis" class="text-xs text-slate-400 dark:text-slate-500 mt-1"></p>
         </div>
 
         <!-- Fehler -->
@@ -99,7 +99,7 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
         </button>
 
         <p class="text-center mt-1">
-          <button type="button" id="korrektur-link-btn" class="text-xs text-slate-400 hover:text-slate-600 underline transition-colors">
+          <button type="button" id="korrektur-link-btn" class="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 underline transition-colors">
             Gebot von anderem Gerät korrigieren →
           </button>
         </p>
@@ -351,12 +351,16 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
       const istAbgeben = tab === 'abgeben';
       tabAbgeben.classList.toggle('border-green-600', istAbgeben);
       tabAbgeben.classList.toggle('text-green-700', istAbgeben);
+      tabAbgeben.classList.toggle('dark:text-green-400', istAbgeben);
       tabAbgeben.classList.toggle('border-transparent', !istAbgeben);
       tabAbgeben.classList.toggle('text-slate-500', !istAbgeben);
+      tabAbgeben.classList.toggle('dark:text-slate-400', !istAbgeben);
       tabKorrigieren.classList.toggle('border-green-600', !istAbgeben);
       tabKorrigieren.classList.toggle('text-green-700', !istAbgeben);
+      tabKorrigieren.classList.toggle('dark:text-green-400', !istAbgeben);
       tabKorrigieren.classList.toggle('border-transparent', istAbgeben);
       tabKorrigieren.classList.toggle('text-slate-500', istAbgeben);
+      tabKorrigieren.classList.toggle('dark:text-slate-400', istAbgeben);
       panelAbgeben.classList.toggle('hidden', !istAbgeben);
       panelKorrigieren.classList.toggle('hidden', istAbgeben);
     }

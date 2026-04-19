@@ -71,28 +71,28 @@ import FeedbackBox from '../components/FeedbackBox.astro';
         <div id="slots-container" class="space-y-2">
           <!-- Initial ein Slot -->
           <div class="slot-eintrag bg-white border border-slate-200 rounded-lg p-3 space-y-2">
-            <div class="flex gap-2 items-center">
+            <div class="flex items-center gap-2 min-w-0">
               <input
                 type="text"
                 name="label[]"
                 placeholder="Erwachsen"
-                class="flex-1 border border-slate-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+                class="min-w-0 flex-1 border border-slate-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
               />
               <!-- Ausgaben inline (nur sichtbar wenn Toggle aktiv) -->
-              <div class="ausgaben-inline hidden flex items-center gap-1">
-                <span class="text-xs text-slate-400 shrink-0">€</span>
+              <div class="ausgaben-inline hidden flex items-center gap-1 shrink-0">
+                <span class="text-xs text-slate-400">€</span>
                 <input
                   type="number"
                   name="ausgaben[]"
                   min="0"
                   step="0.01"
                   placeholder="0,00"
-                  class="w-24 border border-slate-300 rounded-md px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-green-600"
+                  class="w-20 border border-slate-300 rounded-md px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-green-600"
                 />
               </div>
               <button
                 type="button"
-                class="slot-entfernen text-slate-400 hover:text-red-500 text-lg leading-none hidden"
+                class="slot-entfernen shrink-0 text-slate-400 hover:text-red-500 text-lg leading-none hidden"
                 aria-label="Slot entfernen"
               >×</button>
             </div>

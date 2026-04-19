@@ -15,6 +15,17 @@ const ID_FORMAT = /^[a-z0-9]{8}$/;
 const GEBOT_FORMAT = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
 const DATA_DIR = join(process.cwd(), 'data', 'runden');
 
+const locks = new Map<string, Promise<void>>();
+
+function withLock<T>(id: string, fn: () => Promise<T>): Promise<T> {
+  const current = locks.get(id) ?? Promise.resolve();
+  const next = current.then(() => fn(), () => fn());
+  const voidNext = next.then(() => {}, () => {});
+  locks.set(id, voidNext);
+  voidNext.finally(() => { if (locks.get(id) === voidNext) locks.delete(id); });
+  return next;
+}
+
 export const POST: APIRoute = async ({ params, request }) => {
   const { id } = params;
 
@@ -52,49 +63,51 @@ export const POST: APIRoute = async ({ params, request }) => {
   const isCorrection = b.isCorrection === true;
   const { emojiHmac, encGebot } = b as { emojiHmac: string; encGebot: string };
 
-  let runde: RundeJSON;
-  try {
-    const raw = await readFile(join(DATA_DIR, `${id}.json`), 'utf-8');
-    runde = JSON.parse(raw) as RundeJSON;
-  } catch (err: unknown) {
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-      return new Response(JSON.stringify({ error: 'Runde nicht gefunden' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
+  return withLock(id, async () => {
+    let runde: RundeJSON;
+    try {
+      const raw = await readFile(join(DATA_DIR, `${id}.json`), 'utf-8');
+      runde = JSON.parse(raw) as RundeJSON;
+    } catch (err: unknown) {
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+        return new Response(JSON.stringify({ error: 'Runde nicht gefunden' }), {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      throw err;
     }
-    throw err;
-  }
 
-  const exists = runde.gebote.some((g) => g.emojiHmac === emojiHmac);
+    const exists = runde.gebote.some((g) => g.emojiHmac === emojiHmac);
 
-  if (isCorrection) {
-    if (!exists) {
-      return new Response(
-        JSON.stringify({ error: 'Kein Gebot mit dieser Emoji-ID gefunden' }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } },
-      );
+    if (isCorrection) {
+      if (!exists) {
+        return new Response(
+          JSON.stringify({ error: 'Kein Gebot mit dieser Emoji-ID gefunden' }),
+          { status: 404, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+    } else {
+      if (exists) {
+        return new Response(
+          JSON.stringify({ error: 'Gebot mit dieser Emoji-ID bereits vorhanden' }),
+          { status: 409, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
     }
-  } else {
-    if (exists) {
-      return new Response(
-        JSON.stringify({ error: 'Gebot mit dieser Emoji-ID bereits vorhanden' }),
-        { status: 409, headers: { 'Content-Type': 'application/json' } },
-      );
+
+    if (isCorrection) {
+      const idx = runde.gebote.findIndex((g) => g.emojiHmac === emojiHmac);
+      runde.gebote[idx] = { emojiHmac, encGebot };
+    } else {
+      runde.gebote.push({ emojiHmac, encGebot });
     }
-  }
+    await writeFile(join(DATA_DIR, `${id}.json`), JSON.stringify(runde, null, 2), 'utf-8');
 
-  if (isCorrection) {
-    const idx = runde.gebote.findIndex((g) => g.emojiHmac === emojiHmac);
-    runde.gebote[idx] = { emojiHmac, encGebot };
-  } else {
-    runde.gebote.push({ emojiHmac, encGebot });
-  }
-  await writeFile(join(DATA_DIR, `${id}.json`), JSON.stringify(runde, null, 2), 'utf-8');
-
-  return new Response(JSON.stringify({ success: true }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   });
 };
 
@@ -136,46 +149,48 @@ export const DELETE: APIRoute = async ({ params, request }) => {
 
   const { emojiHmac, adminToken } = b as { emojiHmac: string; adminToken: string };
 
-  let runde: RundeJSON;
-  try {
-    const raw = await readFile(join(DATA_DIR, `${id}.json`), 'utf-8');
-    runde = JSON.parse(raw) as RundeJSON;
-  } catch (err: unknown) {
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-      return new Response(JSON.stringify({ error: 'Runde nicht gefunden' }), {
+  return withLock(id, async () => {
+    let runde: RundeJSON;
+    try {
+      const raw = await readFile(join(DATA_DIR, `${id}.json`), 'utf-8');
+      runde = JSON.parse(raw) as RundeJSON;
+    } catch (err: unknown) {
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+        return new Response(JSON.stringify({ error: 'Runde nicht gefunden' }), {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      throw err;
+    }
+
+    const tokenMatch = timingSafeEqual(
+      createHash('sha256').update(adminToken).digest(),
+      createHash('sha256').update(runde.adminToken).digest(),
+    );
+
+    if (!tokenMatch) {
+      return new Response(JSON.stringify({ error: 'Nicht autorisiert' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const vorher = runde.gebote.length;
+    runde.gebote = runde.gebote.filter((g) => g.emojiHmac !== emojiHmac);
+
+    if (runde.gebote.length === vorher) {
+      return new Response(JSON.stringify({ error: 'Gebot nicht gefunden' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' },
       });
     }
-    throw err;
-  }
 
-  const tokenMatch = timingSafeEqual(
-    createHash('sha256').update(adminToken).digest(),
-    createHash('sha256').update(runde.adminToken).digest(),
-  );
+    await writeFile(join(DATA_DIR, `${id}.json`), JSON.stringify(runde, null, 2), 'utf-8');
 
-  if (!tokenMatch) {
-    return new Response(JSON.stringify({ error: 'Nicht autorisiert' }), {
-      status: 403,
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
-  }
-
-  const vorher = runde.gebote.length;
-  runde.gebote = runde.gebote.filter((g) => g.emojiHmac !== emojiHmac);
-
-  if (runde.gebote.length === vorher) {
-    return new Response(JSON.stringify({ error: 'Gebot nicht gefunden' }), {
-      status: 404,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  await writeFile(join(DATA_DIR, `${id}.json`), JSON.stringify(runde, null, 2), 'utf-8');
-
-  return new Response(JSON.stringify({ success: true }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
   });
 };

@@ -103,7 +103,20 @@ export const POST: APIRoute = async ({ params, request }) => {
     } else {
       runde.gebote.push({ emojiHmac, encGebot });
     }
-    await writeFile(join(DATA_DIR, `${id}.json`), JSON.stringify(runde, null, 2), 'utf-8');
+    try {
+      await writeFile(join(DATA_DIR, `${id}.json`), JSON.stringify(runde, null, 2), 'utf-8');
+    } catch (err: unknown) {
+      if ((err as NodeJS.ErrnoException).code === 'ENOSPC') {
+        return new Response(JSON.stringify({ error: 'Kein Speicherplatz verfügbar' }), {
+          status: 507,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ error: 'Fehler beim Speichern' }), {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
@@ -187,7 +200,20 @@ export const DELETE: APIRoute = async ({ params, request }) => {
       });
     }
 
-    await writeFile(join(DATA_DIR, `${id}.json`), JSON.stringify(runde, null, 2), 'utf-8');
+    try {
+      await writeFile(join(DATA_DIR, `${id}.json`), JSON.stringify(runde, null, 2), 'utf-8');
+    } catch (err: unknown) {
+      if ((err as NodeJS.ErrnoException).code === 'ENOSPC') {
+        return new Response(JSON.stringify({ error: 'Kein Speicherplatz verfügbar' }), {
+          status: 507,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ error: 'Fehler beim Speichern' }), {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,

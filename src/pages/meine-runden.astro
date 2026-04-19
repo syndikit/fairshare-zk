@@ -44,15 +44,6 @@ import FeedbackBox from '../components/FeedbackBox.astro';
     <div id="runden-liste" class="space-y-3"></div>
   </div>
 
-  <!-- Löschen-Bestätigung -->
-  <dialog id="loeschen-dialog" class="rounded-xl p-6 shadow-xl max-w-sm w-full backdrop:bg-black/30">
-    <p class="font-medium text-slate-800 mb-1">Runde wirklich löschen?</p>
-    <p class="text-sm text-slate-500 mb-5">Diese Aktion kann nicht rückgängig gemacht werden.</p>
-    <div class="flex gap-3 justify-end">
-      <button id="loeschen-abbrechen" class="border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 transition-colors">Abbrechen</button>
-      <button id="loeschen-bestaetigen" class="bg-red-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-red-700 transition-colors">Ja, löschen</button>
-    </div>
-  </dialog>
 </Layout>
 
 <script>
@@ -62,9 +53,6 @@ import FeedbackBox from '../components/FeedbackBox.astro';
 
   const rundenListe = document.getElementById('runden-liste')!;
   const leerZustand = document.getElementById('leer-zustand')!;
-  const loeschenDialog = document.getElementById('loeschen-dialog') as HTMLDialogElement;
-  let pendingDeleteId: string | null = null;
-
   function formatDatum(iso: string): string {
     return new Date(iso).toLocaleDateString('de-DE', {
       day: '2-digit',
@@ -138,25 +126,10 @@ import FeedbackBox from '../components/FeedbackBox.astro';
     }
   }
 
-  // Löschen (delegiert) — öffnet Bestätigungsdialog
   rundenListe.addEventListener('click', (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.loeschen-btn');
     if (!btn) return;
-    pendingDeleteId = btn.dataset.id!;
-    loeschenDialog.showModal();
-  });
-
-  document.getElementById('loeschen-abbrechen')!.addEventListener('click', () => {
-    pendingDeleteId = null;
-    loeschenDialog.close();
-  });
-
-  document.getElementById('loeschen-bestaetigen')!.addEventListener('click', () => {
-    if (pendingDeleteId) {
-      deleteRunde(pendingDeleteId);
-      pendingDeleteId = null;
-    }
-    loeschenDialog.close();
+    deleteRunde(btn.dataset.id!);
     renderRunden();
   });
 

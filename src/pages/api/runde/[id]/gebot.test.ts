@@ -169,4 +169,96 @@ describe('POST /api/runde/[id]/gebot', () => {
     expect(res.status).toBe(400);
     expect(mockWriteFile).not.toHaveBeenCalled();
   });
+
+  it('writeFile ENOSPC gibt 507', async () => {
+    mockReadFile.mockResolvedValue(makeRunde([]));
+    const enospc = Object.assign(new Error('ENOSPC'), { code: 'ENOSPC' });
+    mockWriteFile.mockRejectedValue(enospc);
+
+    const res = await handler({
+      params: { id: 'abc12345' },
+      request: makeRequest({ emojiHmac: EMOJI_HMAC, encGebot: VALID_ENC_GEBOT }),
+    });
+
+    expect(res.status).toBe(507);
+    const body = await res.json();
+    expect(body.error).toBe('Kein Speicherplatz verfügbar');
+  });
+
+  it('writeFile generischer Fehler gibt 503', async () => {
+    mockReadFile.mockResolvedValue(makeRunde([]));
+    mockWriteFile.mockRejectedValue(new Error('EIO'));
+
+    const res = await handler({
+      params: { id: 'abc12345' },
+      request: makeRequest({ emojiHmac: EMOJI_HMAC, encGebot: VALID_ENC_GEBOT }),
+    });
+
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.error).toBe('Fehler beim Speichern');
+  });
+});
+
+describe('DELETE /api/runde/[id]/gebot', () => {
+  let handler: (ctx: { params: { id: string }; request: Request }) => Promise<Response>;
+
+  const ADMIN_TOKEN = 'abcdef1234567890'; // 16 Zeichen
+
+  function makeRundeWithToken(gebote: Array<{ emojiHmac: string; encGebot: string }>) {
+    return JSON.stringify({
+      id: 'abc12345',
+      adminToken: ADMIN_TOKEN,
+      encTeilnehmerBlob: 'iv.ct',
+      gebote,
+    });
+  }
+
+  function makeDeleteRequest(body: unknown): Request {
+    return new Request('http://localhost/api/runde/abc12345/gebot', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  }
+
+  beforeEach(async () => {
+    vi.resetAllMocks();
+    mockWriteFile.mockResolvedValue(undefined);
+    const mod = await import('./gebot?t=' + Date.now());
+    handler = mod.DELETE as typeof handler;
+  });
+
+  it('writeFile ENOSPC bei DELETE gibt 507', async () => {
+    mockReadFile.mockResolvedValue(
+      makeRundeWithToken([{ emojiHmac: EMOJI_HMAC, encGebot: VALID_ENC_GEBOT }]),
+    );
+    const enospc = Object.assign(new Error('ENOSPC'), { code: 'ENOSPC' });
+    mockWriteFile.mockRejectedValue(enospc);
+
+    const res = await handler({
+      params: { id: 'abc12345' },
+      request: makeDeleteRequest({ emojiHmac: EMOJI_HMAC, adminToken: ADMIN_TOKEN }),
+    });
+
+    expect(res.status).toBe(507);
+    const body = await res.json();
+    expect(body.error).toBe('Kein Speicherplatz verfügbar');
+  });
+
+  it('writeFile generischer Fehler bei DELETE gibt 503', async () => {
+    mockReadFile.mockResolvedValue(
+      makeRundeWithToken([{ emojiHmac: EMOJI_HMAC, encGebot: VALID_ENC_GEBOT }]),
+    );
+    mockWriteFile.mockRejectedValue(new Error('EIO'));
+
+    const res = await handler({
+      params: { id: 'abc12345' },
+      request: makeDeleteRequest({ emojiHmac: EMOJI_HMAC, adminToken: ADMIN_TOKEN }),
+    });
+
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.error).toBe('Fehler beim Speichern');
+  });
 });

@@ -439,17 +439,19 @@ describe('berechneAusgleich', () => {
     expect(zahlungen[0].betrag).toBeCloseTo(60);
   });
 
-  it('Standard-Slot als Gläubiger wenn ausgaben > solidarischerBeitrag', () => {
+  it('Standard-Slot als Gläubiger: Schuldner zahlt an Standard-Slot', () => {
     const ergebnisse: GebotErgebnis[] = [
-      ergebnis('🐼🚀🌈', 'A', 80),
+      ergebnis('🐼🚀🌈', 'A', 50),
       ergebnis('—', 'B', 20, { istStandard: true }),
     ];
-    // A: solidarisch 80, ausgaben 120 → Gläubiger 40
-    // B: solidarisch 20, ausgaben 100 → Gläubiger 80  (ausgaben > beitrag)
-    // kein Schuldner → keine Zahlungen
-    const ausgaben = new Map([['A', 120], ['B', 100]]);
+    // A: solidarisch 50, ausgaben 0 → Schuldner 50
+    // B: solidarisch 20, ausgaben 80 → Gläubiger 60
+    const ausgaben = new Map([['A', 0], ['B', 80]]);
     const zahlungen = berechneAusgleich(ergebnisse, ausgaben);
-    expect(zahlungen).toHaveLength(0);
+    expect(zahlungen).toHaveLength(1);
+    expect(zahlungen[0].von).toBe('🐼🚀🌈');
+    expect(zahlungen[0].an).toBe('B');
+    expect(zahlungen[0].betrag).toBeCloseTo(50);
   });
 });
 

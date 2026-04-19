@@ -408,17 +408,48 @@ describe('berechneAusgleich', () => {
     expect(zahlungen[0].betrag).toBeCloseTo(50);
   });
 
-  it('istStandard-Einträge werden übersprungen', () => {
+  it('Standard-Slot als Schuldner erscheint mit slotLabel in Ausgleichszahlungen', () => {
     const ergebnisse: GebotErgebnis[] = [
       ergebnis('🐼🚀🌈', 'A', 80),
       ergebnis('—', 'B', 40, { istStandard: true }),
-      ergebnis('🦊🌙⭐', 'C', 70),
     ];
-    // A schuldet 50 (zahlt 30), C Gläubiger 30 (zahlt 100)
-    // Standard-Eintrag soll ignoriert werden
-    const ausgaben = new Map([['A', 30], ['B', 0], ['C', 100]]);
+    // A: solidarisch 80, ausgaben 100 → Gläubiger 20
+    // B: solidarisch 40, ausgaben 0 → Schuldner 40
+    const ausgaben = new Map([['A', 100], ['B', 0]]);
     const zahlungen = berechneAusgleich(ergebnisse, ausgaben);
-    expect(zahlungen.every((z) => z.von !== '—' && z.an !== '—')).toBe(true);
+    expect(zahlungen).toHaveLength(1);
+    expect(zahlungen[0].von).toBe('B');
+    expect(zahlungen[0].an).toBe('🐼🚀🌈');
+    expect(zahlungen[0].betrag).toBeCloseTo(20);
+  });
+
+  it('mehrere Standard-Slots im selben Slot werden aggregiert', () => {
+    const ergebnisse: GebotErgebnis[] = [
+      ergebnis('—', 'Kind', 30, { istStandard: true }),
+      ergebnis('—', 'Kind', 30, { istStandard: true }),
+      ergebnis('🌟🎉🦋', 'Erwachsen', 60),
+    ];
+    // Kind: 2×30=60 solidarisch, ausgaben 0 → schuldet 60
+    // Erwachsen: 60 solidarisch, ausgaben 120 → Gläubiger 60
+    const ausgaben = new Map([['Kind', 0], ['Erwachsen', 120]]);
+    const zahlungen = berechneAusgleich(ergebnisse, ausgaben);
+    expect(zahlungen).toHaveLength(1);
+    expect(zahlungen[0].von).toBe('Kind');
+    expect(zahlungen[0].an).toBe('🌟🎉🦋');
+    expect(zahlungen[0].betrag).toBeCloseTo(60);
+  });
+
+  it('Standard-Slot als Gläubiger wenn ausgaben > solidarischerBeitrag', () => {
+    const ergebnisse: GebotErgebnis[] = [
+      ergebnis('🐼🚀🌈', 'A', 80),
+      ergebnis('—', 'B', 20, { istStandard: true }),
+    ];
+    // A: solidarisch 80, ausgaben 120 → Gläubiger 40
+    // B: solidarisch 20, ausgaben 100 → Gläubiger 80  (ausgaben > beitrag)
+    // kein Schuldner → keine Zahlungen
+    const ausgaben = new Map([['A', 120], ['B', 100]]);
+    const zahlungen = berechneAusgleich(ergebnisse, ausgaben);
+    expect(zahlungen).toHaveLength(0);
   });
 });
 

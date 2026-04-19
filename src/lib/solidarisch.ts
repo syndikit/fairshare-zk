@@ -208,10 +208,23 @@ export function berechneAusgleich(
   ergebnisse: GebotErgebnis[],
   ausgabenProSlot: Map<string, number>,
 ): Ausgleichszahlung[] {
-  // Netto-Bilanz pro Person berechnen (synthetische Einträge überspringen)
+  // Netto-Bilanz pro Person/Slot berechnen; Standard-Slots nach slotLabel aggregieren (kein echtes emojiId)
   type Posten = { emojiId: string; betrag: number };
   const schuldner: Posten[] = [];
   const glaeubiger: Posten[] = [];
+
+  // Standard-Slots: solidarischerBeitrag summieren, ausgaben einmal pro Slot abziehen
+  const standardBeitrag = new Map<string, number>();
+  for (const e of ergebnisse) {
+    if (!e.istStandard) continue;
+    standardBeitrag.set(e.slotLabel, runden((standardBeitrag.get(e.slotLabel) ?? 0) + e.solidarischerBeitrag));
+  }
+  for (const [label, beitrag] of standardBeitrag) {
+    const ausgaben = ausgabenProSlot.get(label) ?? 0;
+    const netto = runden(beitrag - ausgaben);
+    if (netto > 0.005) schuldner.push({ emojiId: label, betrag: netto });
+    else if (netto < -0.005) glaeubiger.push({ emojiId: label, betrag: -netto });
+  }
 
   for (const e of ergebnisse) {
     if (e.istStandard) continue;

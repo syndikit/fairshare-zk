@@ -2,6 +2,13 @@ name: 🚀 Deploy to Netzguerilla on push
 on:
   push:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'vendor/**'
+      - 'package*.json'
+      - 'astro.config.*'
+      - 'tsconfig.json'
   workflow_dispatch:
 
 jobs:

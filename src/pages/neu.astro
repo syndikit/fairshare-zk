@@ -366,8 +366,10 @@ import FeedbackBox from '../components/FeedbackBox.astro';
   form.addEventListener('blur', (e) => {
     const t = e.target as HTMLInputElement;
     if (!['gesamtkosten', 'ausgaben[]', 'standardgebot[]'].includes(t.name)) return;
+    if (t.value === '') return;
     const v = parseFloat(t.value.replace(',', '.'));
-    if (!isNaN(v)) t.value = v.toFixed(2);
+    if (isNaN(v) || v < 0) { t.value = ''; return; }
+    t.value = v.toFixed(2);
   }, true);
 
   const presetNamen: Record<string, string> = { '1.0': 'Erwachsen', '0.75': 'Ermäßigt', '0.5': 'Kind' };

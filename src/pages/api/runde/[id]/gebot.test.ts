@@ -34,7 +34,8 @@ function makeRunde(gebote: Array<{ emojiHmac: string; encGebot: string }>) {
 }
 
 const VALID_ENC_GEBOT = 'ephemKey.iv123.cipher';
-const EMOJI_HMAC = 'abc123';
+// 43-char base64url string — matches HMAC-SHA256 output length
+const EMOJI_HMAC = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 
 // ---------------------------------------------------------------------------
 // Tests

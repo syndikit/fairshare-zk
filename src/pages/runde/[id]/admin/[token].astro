@@ -344,18 +344,28 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
               <span class="hidden sm:inline text-sm font-semibold text-slate-900 shrink-0">${eur(e.solidarischerBeitrag)}</span>
             ` : ''}
             ${zeigeBeitraege && e && hatSplidDaten ? `
+              <span class="hidden sm:inline text-xs text-slate-400 shrink-0">Ausgaben</span>
+              <span class="hidden sm:inline text-xs font-semibold text-slate-900 shrink-0">${eur(ausgaben)}</span>
               <span class="hidden sm:inline text-xs text-slate-400 shrink-0">Noch zu zahlen</span>
               <span class="hidden sm:inline text-xs font-semibold ${(e.solidarischerBeitrag - ausgaben) > 0.005 ? 'text-red-600' : 'text-green-700'} shrink-0">${(e.solidarischerBeitrag - ausgaben) > 0 ? '+' : ''}${eur(e.solidarischerBeitrag - ausgaben)}</span>
             ` : ''}
             <span class="ml-auto"><button class="loeschen-btn w-6 h-6 flex items-center justify-center rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors" data-emoji-hmac="${emojiHmac}" data-slot="${slot.label}" aria-label="Gebot löschen">×</button></span>
           </div>
           ${zeigeBeitraege && e ? `
-            <div class="flex items-center gap-3 pl-[4.5rem] sm:hidden pb-1">
-              <span class="text-xs text-slate-400">Beitrag</span>
-              <span class="text-sm font-semibold text-slate-900">${eur(e.solidarischerBeitrag)}</span>
+            <div class="flex flex-col gap-0.5 pl-[4.5rem] sm:hidden pb-1">
+              <div class="flex justify-between items-baseline">
+                <span class="text-xs text-slate-400">Beitrag</span>
+                <span class="text-sm font-semibold text-slate-900">${eur(e.solidarischerBeitrag)}</span>
+              </div>
               ${hatSplidDaten ? `
-                <span class="text-xs text-slate-400">Noch zu zahlen</span>
-                <span class="text-xs font-semibold ${(e.solidarischerBeitrag - ausgaben) > 0.005 ? 'text-red-600' : 'text-green-700'}">${(e.solidarischerBeitrag - ausgaben) > 0 ? '+' : ''}${eur(e.solidarischerBeitrag - ausgaben)}</span>
+                <div class="flex justify-between items-baseline">
+                  <span class="text-xs text-slate-400">Ausgaben</span>
+                  <span class="text-xs font-semibold text-slate-900">${eur(ausgaben)}</span>
+                </div>
+                <div class="flex justify-between items-baseline">
+                  <span class="text-xs text-slate-400">Noch zu zahlen</span>
+                  <span class="text-xs font-semibold ${(e.solidarischerBeitrag - ausgaben) > 0.005 ? 'text-red-600' : 'text-green-700'}">${(e.solidarischerBeitrag - ausgaben) > 0 ? '+' : ''}${eur(e.solidarischerBeitrag - ausgaben)}</span>
+                </div>
               ` : ''}
             </div>
           ` : ''}
@@ -380,17 +390,27 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
                 <span class="hidden sm:inline text-sm font-semibold text-slate-900 shrink-0">${eur(e.solidarischerBeitrag)}</span>
               ` : ''}
               ${e && hatSplidDaten ? `
+                <span class="hidden sm:inline text-xs text-slate-400 shrink-0">Ausgaben</span>
+                <span class="hidden sm:inline text-xs font-semibold text-slate-900 shrink-0">${eur(ausgaben)}</span>
                 <span class="hidden sm:inline text-xs text-slate-400 shrink-0">Noch zu zahlen</span>
                 <span class="hidden sm:inline text-xs font-semibold ${nochZuZahlen > 0.005 ? 'text-red-600' : 'text-green-700'} shrink-0">${nochZuZahlen > 0 ? '+' : ''}${eur(nochZuZahlen)}</span>
               ` : ''}
             </div>
             ${e ? `
-              <div class="flex items-center gap-3 pl-[4.5rem] sm:hidden pb-1">
-                <span class="text-xs text-slate-400">Beitrag</span>
-                <span class="text-sm font-semibold text-slate-900">${eur(e.solidarischerBeitrag)}</span>
+              <div class="flex flex-col gap-0.5 pl-[4.5rem] sm:hidden pb-1">
+                <div class="flex justify-between items-baseline">
+                  <span class="text-xs text-slate-400">Beitrag</span>
+                  <span class="text-sm font-semibold text-slate-900">${eur(e.solidarischerBeitrag)}</span>
+                </div>
                 ${hatSplidDaten ? `
-                  <span class="text-xs text-slate-400">Noch zu zahlen</span>
-                  <span class="text-xs font-semibold ${nochZuZahlen > 0.005 ? 'text-red-600' : 'text-green-700'}">${nochZuZahlen > 0 ? '+' : ''}${eur(nochZuZahlen)}</span>
+                  <div class="flex justify-between items-baseline">
+                    <span class="text-xs text-slate-400">Ausgaben</span>
+                    <span class="text-xs font-semibold text-slate-900">${eur(ausgaben)}</span>
+                  </div>
+                  <div class="flex justify-between items-baseline">
+                    <span class="text-xs text-slate-400">Noch zu zahlen</span>
+                    <span class="text-xs font-semibold ${nochZuZahlen > 0.005 ? 'text-red-600' : 'text-green-700'}">${nochZuZahlen > 0 ? '+' : ''}${eur(nochZuZahlen)}</span>
+                  </div>
                 ` : ''}
               </div>
             ` : ''}

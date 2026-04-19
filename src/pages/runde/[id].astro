@@ -521,19 +521,28 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
 
       if (bekannterSlot) {
         const slotIdx = blob.slots.findIndex((s) => s.label === bekannterSlot);
+        if (slotIdx < 0) {
+          radios.forEach((r) => { r.disabled = false; });
+          korrekturSlotHinweis.textContent = 'Dein ursprünglicher Slot existiert nicht mehr — bitte wähle einen Slot.';
+          korrekturSlotHinweis.className = 'text-xs text-amber-600 mt-1';
+          return;
+        }
         radios.forEach((r, i) => {
           r.checked = i === slotIdx;
           r.disabled = true;
         });
         korrekturSlotHinweis.textContent = `Slot aus deinem ursprünglichen Gebot: ${bekannterSlot}`;
         korrekturSlotHinweis.className = 'text-xs text-green-700 mt-1';
-        if (slotIdx >= 0) betragFeldAktualisieren(slotIdx, 'korrektur-betrag', 'korrektur-richtwert-hinweis');
+        betragFeldAktualisieren(slotIdx, 'korrektur-betrag', 'korrektur-richtwert-hinweis');
       } else {
         radios.forEach((r) => { r.disabled = false; });
-        korrekturSlotHinweis.textContent = emojiId
-          ? 'Gebot auf diesem Gerät nicht gefunden — wähle denselben Slot wie beim ursprünglichen Gebot.'
-          : '';
-        korrekturSlotHinweis.className = 'text-xs text-amber-600 mt-1';
+        if (emojiId) {
+          korrekturSlotHinweis.textContent = 'Gebot auf diesem Gerät nicht gefunden — wähle denselben Slot wie beim ursprünglichen Gebot.';
+          korrekturSlotHinweis.className = 'text-xs text-amber-600 mt-1';
+        } else {
+          korrekturSlotHinweis.textContent = '';
+          korrekturSlotHinweis.className = '';
+        }
       }
     }
 

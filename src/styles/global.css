@@ -9,6 +9,14 @@
   body {
     font-family: system-ui, -apple-system, sans-serif;
   }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-brand: #6AAB23;
+      --color-brand-dark: #5a9d18;
+      color-scheme: dark;
+    }
+  }
 }
 
 /* Scroll-triggered fade-up animation */
@@ -65,6 +73,15 @@
     font-size: 0.75rem;
     flex-shrink: 0;
     margin-right: 0.5rem;
+  }
+}
+
+@media (max-width: 639px) and (prefers-color-scheme: dark) {
+  .results-table tr {
+    border-color: var(--color-slate-700);
+  }
+  .results-table td::before {
+    color: var(--color-slate-500);
   }
 }
 

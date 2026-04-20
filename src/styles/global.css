@@ -41,6 +41,14 @@
   --color-warning-fg:      #92400e;
   --color-warning-outline: #fde68a;
   --color-warning-subtle:  #fffbeb;
+
+  /* Amber (Admin-Card, Duplikat-Warnung) */
+  --color-amber-fg:      #92400e;
+  --color-amber-strong:  #78350f;
+  --color-amber-tinted:  #fef3c7;
+  --color-amber-outline: #fde68a;
+  --color-amber-border:  #f59e0b;
+  --color-amber-subtle:  #fffbeb;
 }
 
 @layer base {
@@ -91,6 +99,14 @@
       --color-warning-fg:      #fcd34d;
       --color-warning-outline: #b45309;
       --color-warning-subtle:  #431407;
+
+      /* Amber (Admin-Card, Duplikat-Warnung) */
+      --color-amber-fg:      #fbbf24;
+      --color-amber-strong:  #fde68a;
+      --color-amber-tinted:  #1c1004;
+      --color-amber-outline: #b45309;
+      --color-amber-border:  #d97706;
+      --color-amber-subtle:  #2d1a05;
     }
   }
 }

@@ -14,7 +14,7 @@ const ID_FORMAT = /^[a-z0-9]{8}$/;
 const EMOJI_HMAC_FORMAT = /^[A-Za-z0-9_-]{43}$/;
 // ECDH-Format: <ephemPubKey>.<iv>.<ciphertext> — drei Base64url-Teile
 const GEBOT_FORMAT = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
-const DATA_DIR = join(process.cwd(), 'data', 'runden');
+const DATA_DIR = process.env.DATA_DIR ?? join(process.cwd(), 'data', 'runden');
 
 const locks = new Map<string, Promise<void>>();
 

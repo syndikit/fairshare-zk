@@ -40,7 +40,7 @@ function generateId(length: number): string {
 }
 
 const BLOB_FORMAT = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
-const DATA_DIR = join(process.cwd(), 'data', 'runden');
+const DATA_DIR = process.env.DATA_DIR ?? join(process.cwd(), 'data', 'runden');
 
 export const POST: APIRoute = async ({ request }) => {
   void cleanupAlteRunden(DATA_DIR);

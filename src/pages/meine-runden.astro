@@ -70,12 +70,14 @@ import FeedbackBox from '../components/FeedbackBox.astro';
   }
 
   function renderRunden() {
+    versteckeFeedback('storage-fehler');
     let runden: LocalRunde[];
     try {
       runden = getRunden().sort(
         (a, b) => new Date(b.hinzugefuegtAm).getTime() - new Date(a.hinzugefuegtAm).getTime(),
       );
     } catch (err) {
+      rundenListe.innerHTML = '';
       const meldung = err instanceof SyntaxError
         ? 'Deine gespeicherten Runden konnten nicht geladen werden — die Daten im Browser sind beschädigt. Du kannst sie über das ⋯-Menü zurücksetzen.'
         : 'Deine gespeicherten Runden konnten nicht geladen werden.';

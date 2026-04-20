@@ -9,6 +9,7 @@
   --color-surface-raised:   #ffffff;
   --color-surface-hover:    #f1f5f9;
   --color-surface-elevated: #f1f5f9;
+  --color-surface-tinted:   #f8fafc;
 
   /* Foreground (Text) */
   --color-fg:           #0f172a;
@@ -54,6 +55,7 @@
       --color-surface-raised:   #1e293b;
       --color-surface-hover:    #1e293b;
       --color-surface-elevated: #334155;
+      --color-surface-tinted:   #141c2f;
 
       /* Foreground (Text) */
       --color-fg:           #f1f5f9;

@@ -5,12 +5,12 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
 
 <Layout title="Runde">
   <!-- Laden -->
-  <div id="zustand-laden" class="text-center py-12 text-slate-500 dark:text-slate-400 text-sm">
+  <div id="zustand-laden" class="text-center py-12 text-text-muted text-sm">
     Lade Runde…
   </div>
 
   <!-- Fehler -->
-  <div id="zustand-fehler" class="hidden bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-xl p-5">
+  <div id="zustand-fehler" class="hidden bg-danger-bg border border-danger-border text-danger-text rounded-xl p-5">
     <p class="font-medium mb-1">Fehler</p>
     <p id="fehler-text" class="text-sm"></p>
   </div>
@@ -19,22 +19,22 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
   <div id="zustand-formular" class="hidden space-y-6">
     <div>
       <h1 id="runde-name" class="text-2xl font-semibold mb-1"></h1>
-      <p class="text-slate-500 dark:text-slate-400 text-sm">
-        Gesamtkosten: <span id="gesamtkosten" class="font-medium text-slate-700 dark:text-slate-200"></span>
+      <p class="text-text-muted text-sm">
+        Gesamtkosten: <span id="gesamtkosten" class="font-medium text-text-strong"></span>
       </p>
     </div>
 
     <!-- Tab-Navigation -->
-    <div class="flex border-b border-slate-200 dark:border-slate-700">
+    <div class="flex border-b border-border">
       <button
         id="tab-abgeben"
-        class="px-4 py-2 text-sm font-medium border-b-2 border-green-600 text-green-700 dark:text-green-400 -mb-px transition-colors"
+        class="px-4 py-2 text-sm font-medium border-b-2 border-green-600 text-success-text -mb-px transition-colors"
       >
         Gebot abgeben
       </button>
       <button
         id="tab-korrigieren"
-        class="hidden px-4 py-2 text-sm font-medium border-b-2 border-transparent text-slate-500 dark:text-slate-400 -mb-px hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+        class="hidden px-4 py-2 text-sm font-medium border-b-2 border-transparent text-text-muted -mb-px hover:text-text-strong transition-colors"
       >
         Gebot korrigieren
       </button>
@@ -45,13 +45,13 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
       <form id="gebot-form" class="space-y-5">
         <!-- Slot-Auswahl -->
         <div>
-          <p class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Wähle deinen Slot</p>
+          <p class="text-sm font-medium text-text-secondary mb-2">Wähle deinen Slot</p>
           <div id="slot-auswahl" class="space-y-2"></div>
         </div>
 
         <!-- Betrag -->
         <div>
-          <label for="betrag" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+          <label for="betrag" class="block text-sm font-medium text-text-secondary mb-1">
             Dein Gebot (€)
           </label>
           <input
@@ -62,9 +62,9 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
             min="0.01"
             step="0.01"
             placeholder="z.B. 80"
-            class="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+            class="w-full border border-border-strong bg-surface-raised text-text rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
           />
-          <p id="betrag-richtwert-hinweis" class="text-xs text-slate-400 dark:text-slate-500 mt-1"></p>
+          <p id="betrag-richtwert-hinweis" class="text-xs text-text-faint mt-1"></p>
         </div>
 
         <!-- Fehler -->
@@ -99,7 +99,7 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
         </button>
 
         <p class="text-center mt-1">
-          <button type="button" id="korrektur-link-btn" class="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 underline transition-colors">
+          <button type="button" id="korrektur-link-btn" class="text-xs text-text-faint hover:text-text-secondary underline transition-colors">
             Gebot korrigieren →
           </button>
         </p>
@@ -111,7 +111,7 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
       <form id="korrektur-form" class="space-y-5">
         <!-- Emoji-ID -->
         <div>
-          <label for="korrektur-emoji" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+          <label for="korrektur-emoji" class="block text-sm font-medium text-text-secondary mb-1">
             Deine Emoji-ID
           </label>
           <input
@@ -120,21 +120,21 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
             name="emojiId"
             required
             placeholder="z.B. 🦊🌙⭐"
-            class="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+            class="w-full border border-border-strong bg-surface-raised text-text rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
           />
-          <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Die 3 Emojis, die dir beim Abgeben angezeigt wurden.</p>
+          <p class="text-xs text-text-faint mt-1">Die 3 Emojis, die dir beim Abgeben angezeigt wurden.</p>
         </div>
 
         <!-- Slot-Auswahl -->
         <div>
-          <p class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Slot</p>
+          <p class="text-sm font-medium text-text-secondary mb-2">Slot</p>
           <div id="slot-auswahl-korrektur" class="space-y-2"></div>
           <p id="korrektur-slot-hinweis" class="text-xs mt-1"></p>
         </div>
 
         <!-- Betrag -->
         <div>
-          <label for="korrektur-betrag" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+          <label for="korrektur-betrag" class="block text-sm font-medium text-text-secondary mb-1">
             Neues Gebot (€)
           </label>
           <input
@@ -145,7 +145,7 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
             min="0.01"
             step="0.01"
             placeholder="z.B. 80"
-            class="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+            class="w-full border border-border-strong bg-surface-raised text-text rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
           />
           <p id="korrektur-richtwert-hinweis" class="text-xs text-slate-400 mt-1"></p>
         </div>
@@ -167,9 +167,9 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
   <!-- Bestätigung -->
   <div id="zustand-bestaetigung" class="hidden text-center space-y-4 py-8">
     <h2 id="bestaetigung-titel" class="text-xl font-semibold">Gebot abgegeben</h2>
-    <p id="bestaetigung-text" class="text-slate-500 dark:text-slate-400 text-sm max-w-sm mx-auto"></p>
+    <p id="bestaetigung-text" class="text-text-muted text-sm max-w-sm mx-auto"></p>
     <div id="emoji-anzeige" class="text-6xl tracking-widest mb-2"></div>
-    <p class="text-xs text-slate-500 dark:text-slate-400">Deine Emoji-ID</p>
+    <p class="text-xs text-text-muted">Deine Emoji-ID</p>
   </div>
 </Layout>
 
@@ -288,12 +288,12 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
         const bereitsGeboten = slotBereitsGeboten(slot.label);
         const label = document.createElement('label');
         label.className =
-          'flex items-center gap-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 cursor-pointer hover:border-green-500 has-[:checked]:border-green-600 has-[:checked]:bg-green-50 dark:has-[:checked]:bg-green-950/40 transition-colors';
+          'flex items-center gap-3 bg-surface-raised border border-border rounded-lg p-3 cursor-pointer hover:border-green-500 has-[:checked]:border-green-600 has-[:checked]:bg-green-50 dark:has-[:checked]:bg-green-950/40 transition-colors';
         label.innerHTML = `
           <input type="radio" name="${nameAttr}" value="${idx}" class="accent-green-700" ${idx === 0 ? 'checked' : ''} />
           <span class="flex-1">
-            <span class="text-sm font-medium text-slate-800 dark:text-slate-200">${slot.label}</span>
-            <span class="text-xs text-slate-500 dark:text-slate-400 ml-2">Richtwert: ${formatEur(richtwertSlot)}</span>
+            <span class="text-sm font-medium text-text-strong">${slot.label}</span>
+            <span class="text-xs text-text-muted ml-2">Richtwert: ${formatEur(richtwertSlot)}</span>
             ${bereitsGeboten && nameAttr === 'slot' ? '<span class="text-green-600 ml-1 text-xs">✓ abgegeben</span>' : ''}
           </span>
         `;
@@ -350,17 +350,13 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
     function zeigeTab(tab: 'abgeben' | 'korrigieren') {
       const istAbgeben = tab === 'abgeben';
       tabAbgeben.classList.toggle('border-green-600', istAbgeben);
-      tabAbgeben.classList.toggle('text-green-700', istAbgeben);
-      tabAbgeben.classList.toggle('dark:text-green-400', istAbgeben);
+      tabAbgeben.classList.toggle('text-success-text', istAbgeben);
       tabAbgeben.classList.toggle('border-transparent', !istAbgeben);
-      tabAbgeben.classList.toggle('text-slate-500', !istAbgeben);
-      tabAbgeben.classList.toggle('dark:text-slate-400', !istAbgeben);
+      tabAbgeben.classList.toggle('text-text-muted', !istAbgeben);
       tabKorrigieren.classList.toggle('border-green-600', !istAbgeben);
-      tabKorrigieren.classList.toggle('text-green-700', !istAbgeben);
-      tabKorrigieren.classList.toggle('dark:text-green-400', !istAbgeben);
+      tabKorrigieren.classList.toggle('text-success-text', !istAbgeben);
       tabKorrigieren.classList.toggle('border-transparent', istAbgeben);
-      tabKorrigieren.classList.toggle('text-slate-500', istAbgeben);
-      tabKorrigieren.classList.toggle('dark:text-slate-400', istAbgeben);
+      tabKorrigieren.classList.toggle('text-text-muted', istAbgeben);
       panelAbgeben.classList.toggle('hidden', !istAbgeben);
       panelKorrigieren.classList.toggle('hidden', istAbgeben);
     }

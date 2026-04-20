@@ -71,21 +71,21 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
         <FeedbackBox id="gebot-fehler" />
 
         <!-- Duplikat-Warnung Two-Step (Soft-Warning, kein Hard-Block) -->
-        <div id="duplikat-warnung" class="hidden bg-warning-subtle dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300 rounded-lg p-3 text-sm">
+        <div id="duplikat-warnung" class="hidden bg-amber-subtle border border-amber-outline text-amber-fg rounded-lg p-3 text-sm">
           <!-- Schritt 1 -->
           <div id="duplikat-schritt1">
             <p class="font-medium">Du hast für diesen Slot bereits geboten.</p>
             <div class="flex gap-2 pt-2">
-              <button type="button" id="duplikat-abbrechen" class="border border-amber-400 dark:border-amber-700 text-amber-800 dark:text-amber-300 rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors">Abbrechen</button>
-              <button type="button" id="duplikat-weiter" class="border border-amber-500 dark:border-amber-600 bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-amber-200 dark:hover:bg-amber-900/60 transition-colors">Fortfahren →</button>
+              <button type="button" id="duplikat-abbrechen" class="border border-amber-outline text-amber-fg rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-amber-tinted transition-colors">Abbrechen</button>
+              <button type="button" id="duplikat-weiter" class="border border-amber-border bg-amber-tinted text-amber-strong rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-amber-outline transition-colors">Fortfahren →</button>
             </div>
           </div>
           <!-- Schritt 2 -->
           <div id="duplikat-schritt2" class="hidden">
-            <p class="text-sm text-amber-800">Was möchtest du tun?</p>
+            <p class="text-sm text-amber-fg">Was möchtest du tun?</p>
             <div class="flex gap-2 pt-2 flex-wrap">
-              <button type="button" id="duplikat-korrigieren" class="border border-amber-500 dark:border-amber-600 bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-amber-200 dark:hover:bg-amber-900/60 transition-colors">Gebot korrigieren</button>
-              <button type="button" id="duplikat-bestaetigen" class="bg-amber-600 text-white rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-amber-700 transition-colors">Zweites Gebot abgeben</button>
+              <button type="button" id="duplikat-korrigieren" class="border border-amber-border bg-amber-tinted text-amber-strong rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-amber-outline transition-colors">Gebot korrigieren</button>
+              <button type="button" id="duplikat-bestaetigen" class="bg-amber-border text-white rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-amber-border/80 transition-colors">Zweites Gebot abgeben</button>
             </div>
           </div>
         </div>

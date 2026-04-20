@@ -28,7 +28,7 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
     <div class="flex border-b border-border">
       <button
         id="tab-abgeben"
-        class="px-4 py-2 text-sm font-medium border-b-2 border-green-600 text-success-fg -mb-px transition-colors"
+        class="px-4 py-2 text-sm font-medium border-b-2 border-green-600 text-brand -mb-px transition-colors"
       >
         Gebot abgeben
       </button>
@@ -350,11 +350,11 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
     function zeigeTab(tab: 'abgeben' | 'korrigieren') {
       const istAbgeben = tab === 'abgeben';
       tabAbgeben.classList.toggle('border-green-600', istAbgeben);
-      tabAbgeben.classList.toggle('text-success-fg', istAbgeben);
+      tabAbgeben.classList.toggle('text-brand', istAbgeben);
       tabAbgeben.classList.toggle('border-transparent', !istAbgeben);
       tabAbgeben.classList.toggle('text-fg-muted', !istAbgeben);
       tabKorrigieren.classList.toggle('border-green-600', !istAbgeben);
-      tabKorrigieren.classList.toggle('text-success-fg', !istAbgeben);
+      tabKorrigieren.classList.toggle('text-brand', !istAbgeben);
       tabKorrigieren.classList.toggle('border-transparent', istAbgeben);
       tabKorrigieren.classList.toggle('text-fg-muted', istAbgeben);
       panelAbgeben.classList.toggle('hidden', !istAbgeben);
@@ -532,7 +532,7 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
           r.disabled = true;
         });
         korrekturSlotHinweis.textContent = `Slot aus deinem ursprünglichen Gebot: ${bekannterSlot}`;
-        korrekturSlotHinweis.className = 'text-xs text-success-fg mt-1';
+        korrekturSlotHinweis.className = 'text-xs text-brand mt-1';
         betragFeldAktualisieren(slotIdx, 'korrektur-betrag', 'korrektur-richtwert-hinweis');
       } else {
         radios.forEach((r) => { r.disabled = false; });

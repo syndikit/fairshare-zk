@@ -10,14 +10,11 @@ export interface LocalRunde {
 }
 
 export function getRunden(): LocalRunde[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return [];
+  const parsed = JSON.parse(raw);
+  if (!Array.isArray(parsed)) throw new Error('Ungültiges Format in localStorage');
+  return parsed;
 }
 
 export function saveRunde(runde: LocalRunde): void {
@@ -41,6 +38,10 @@ export function saveRunde(runde: LocalRunde): void {
 export function deleteRunde(id: string): void {
   const runden = getRunden().filter((r) => r.id !== id);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(runden));
+}
+
+export function clearRunden(): void {
+  localStorage.removeItem(STORAGE_KEY);
 }
 
 export function saveGebotLokal(rundenId: string, emojiId: string, slotLabel: string): void {

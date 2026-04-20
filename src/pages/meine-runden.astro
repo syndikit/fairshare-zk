@@ -25,11 +25,19 @@ import FeedbackBox from '../components/FeedbackBox.astro';
           >
             Importieren
           </button>
+          <hr class="my-1 border-slate-100 dark:border-slate-700" />
+          <button
+            id="zuruecksetzen-btn"
+            class="w-full text-left px-3 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+          >
+            Zurücksetzen
+          </button>
         </div>
       </details>
       <input type="file" id="import-file" accept=".json" class="hidden" />
     </div>
 
+    <FeedbackBox id="storage-fehler" />
     <FeedbackBox id="import-fehler" />
 
     <!-- Leer-Zustand -->
@@ -47,7 +55,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
 </Layout>
 
 <script>
-  import { getRunden, deleteRunde, exportJson, importJson } from '../lib/storage';
+  import { getRunden, deleteRunde, clearRunden, exportJson, importJson } from '../lib/storage';
   import type { LocalRunde } from '../lib/storage';
   import { zeigeFeedback, versteckeFeedback } from '../lib/ui';
 
@@ -62,9 +70,20 @@ import FeedbackBox from '../components/FeedbackBox.astro';
   }
 
   function renderRunden() {
-    const runden = getRunden().sort(
-      (a, b) => new Date(b.hinzugefuegtAm).getTime() - new Date(a.hinzugefuegtAm).getTime(),
-    );
+    versteckeFeedback('storage-fehler');
+    let runden: LocalRunde[];
+    try {
+      runden = getRunden().sort(
+        (a, b) => new Date(b.hinzugefuegtAm).getTime() - new Date(a.hinzugefuegtAm).getTime(),
+      );
+    } catch (err) {
+      rundenListe.innerHTML = '';
+      const meldung = err instanceof SyntaxError
+        ? 'Deine gespeicherten Runden konnten nicht geladen werden — die Daten im Browser sind beschädigt. Du kannst sie über das ⋯-Menü zurücksetzen.'
+        : 'Deine gespeicherten Runden konnten nicht geladen werden.';
+      zeigeFeedback('storage-fehler', meldung, 'rot');
+      return;
+    }
 
     rundenListe.innerHTML = '';
 
@@ -166,6 +185,14 @@ import FeedbackBox from '../components/FeedbackBox.astro';
     }
 
     importFileInput.value = '';
+  });
+
+  // Zurücksetzen
+  document.getElementById('zuruecksetzen-btn')!.addEventListener('click', () => {
+    if (!confirm('Alle gespeicherten Runden aus diesem Browser löschen?')) return;
+    clearRunden();
+    versteckeFeedback('storage-fehler');
+    renderRunden();
   });
 
   renderRunden();

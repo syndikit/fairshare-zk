@@ -456,6 +456,49 @@ describe('berechneAusgleich', () => {
 });
 
 // ---------------------------------------------------------------------------
+// berechneAusgleich — Epsilon-Toleranz
+// ---------------------------------------------------------------------------
+
+describe('berechneAusgleich — Epsilon-Toleranz', () => {
+  // runden() snap to 2 decimal places, so nochZuZahlen is always a multiple of 0.01.
+  // Epsilon 0.005 filters exactly 0.00; anything ≥ 0.01 or ≤ -0.01 passes through.
+
+  it('nochZuZahlen = 0.00 (innerhalb Epsilon) → nicht in Ausgleichszahlungen', () => {
+    const ergebnisse: GebotErgebnis[] = [ergebnis('🐼🚀🌈', 'A', 100)];
+    const ausgaben = new Map([['A', 100]]);
+    expect(berechneAusgleich(ergebnisse, ausgaben)).toHaveLength(0);
+  });
+
+  it('nochZuZahlen = -0.01 (außerhalb Epsilon) → erscheint als Gläubiger', () => {
+    const ergebnisse: GebotErgebnis[] = [
+      ergebnis('🐼🚀🌈', 'A', 100),
+      ergebnis('🦊🌙⭐', 'B', 50),
+    ];
+    const ausgaben = new Map([['A', 100.01], ['B', 0]]);
+    const zahlungen = berechneAusgleich(ergebnisse, ausgaben);
+    expect(zahlungen).toHaveLength(1);
+    expect(zahlungen[0].an).toBe('🐼🚀🌈');
+  });
+
+  it('nochZuZahlen = 0.00 (innerhalb Epsilon, Schuldner-Seite) → nicht in Ausgleichszahlungen', () => {
+    const ergebnisse: GebotErgebnis[] = [ergebnis('🐼🚀🌈', 'A', 100)];
+    const ausgaben = new Map([['A', 100]]);
+    expect(berechneAusgleich(ergebnisse, ausgaben)).toHaveLength(0);
+  });
+
+  it('nochZuZahlen = 0.01 (außerhalb Epsilon) → erscheint als Schuldner', () => {
+    const ergebnisse: GebotErgebnis[] = [
+      ergebnis('🐼🚀🌈', 'A', 100),
+      ergebnis('🦊🌙⭐', 'B', 50),
+    ];
+    const ausgaben = new Map([['A', 99.99], ['B', 100]]);
+    const zahlungen = berechneAusgleich(ergebnisse, ausgaben);
+    expect(zahlungen).toHaveLength(1);
+    expect(zahlungen[0].von).toBe('🐼🚀🌈');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Fehlerfälle
 // ---------------------------------------------------------------------------
 

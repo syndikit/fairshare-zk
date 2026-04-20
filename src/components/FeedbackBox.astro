@@ -6,9 +6,9 @@ interface Props {
 }
 const { id, typ = 'rot', klasse = '' } = Astro.props;
 const farben = {
-  rot:   'bg-danger-bg border-danger-border text-danger-text',
-  gruen: 'bg-success-bg border-success-border text-success-text',
-  amber: 'bg-warning-bg border-warning-border text-warning-text',
+  rot:   'bg-danger-subtle border-danger-outline text-danger-fg',
+  gruen: 'bg-success-subtle border-success-outline text-success-fg',
+  amber: 'bg-warning-subtle border-warning-outline text-warning-fg',
 };
 ---
 <div id={id} class={`hidden ${farben[typ]} border rounded-lg p-3 text-sm ${klasse}`}></div>

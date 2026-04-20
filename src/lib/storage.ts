@@ -10,14 +10,11 @@ export interface LocalRunde {
 }
 
 export function getRunden(): LocalRunde[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return [];
+  const parsed = JSON.parse(raw);
+  if (!Array.isArray(parsed)) throw new Error('Ungültiges Format in localStorage');
+  return parsed;
 }
 
 export function saveRunde(runde: LocalRunde): void {

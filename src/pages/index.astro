@@ -5,10 +5,10 @@ import Layout from '../layouts/Layout.astro';
 <Layout title="Solidarische Gruppenfinanzierung" fullWidth>
   <section class="w-full min-h-[80vh] flex items-center justify-center px-6 py-32">
     <div class="max-w-3xl mx-auto text-center space-y-8">
-      <h1 class="text-[clamp(2rem,8vw,3.75rem)] font-bold leading-tight tracking-tight text-text">
+      <h1 class="text-[clamp(2rem,8vw,3.75rem)] font-bold leading-tight tracking-tight text-fg">
         Teile Kosten solidarisch. Zahle, was du kannst.
       </h1>
-      <p class="text-xl text-text-muted max-w-xl mx-auto leading-relaxed">
+      <p class="text-xl text-fg-muted max-w-xl mx-auto leading-relaxed">
         FairShare hilft Gruppen, Kosten fair aufzuteilen. Jede Person gibt ihr Gebot ab — anonym und verschlüsselt.
       </p>
       <div class="flex flex-col items-center gap-3">
@@ -21,7 +21,7 @@ import Layout from '../layouts/Layout.astro';
         <a
           id="cta-meine-runden"
           href="/meine-runden"
-          class="hidden items-center gap-2 text-sm text-text-muted hover:text-text-strong transition-colors px-4 py-2"
+          class="hidden items-center gap-2 text-sm text-fg-muted hover:text-fg-strong transition-colors px-4 py-2"
         >
           Meine gespeicherten Runden →
         </a>
@@ -31,13 +31,13 @@ import Layout from '../layouts/Layout.astro';
 
   <section slot="gray-section" id="wie-es-funktioniert" class="py-24">
     <div class="mx-auto max-w-2xl px-6 space-y-6">
-      <p data-animate class="text-sm font-semibold text-slate-400 tracking-widest uppercase">Wie es funktioniert</p>
+      <p data-animate class="text-sm font-semibold text-fg-faint tracking-widest uppercase">Wie es funktioniert</p>
 
       <div class="rounded-xl border border-border bg-surface-raised p-6">
-        <h2 class="text-lg font-semibold text-text mb-2">Zero-Knowledge-Prinzip</h2>
-        <p class="text-sm text-text-muted leading-relaxed mb-4">
+        <h2 class="text-lg font-semibold text-fg mb-2">Zero-Knowledge-Prinzip</h2>
+        <p class="text-sm text-fg-muted leading-relaxed mb-4">
           Alle Inhalte werden im Browser verschlüsselt, bevor sie den Server erreichen.
-          Schlüssel stecken im Link-Fragment (<code class="font-mono text-xs bg-surface-elevated text-text-secondary px-1 py-0.5 rounded">#…</code>)
+          Schlüssel stecken im Link-Fragment (<code class="font-mono text-xs bg-surface-elevated text-fg-secondary px-1 py-0.5 rounded">#…</code>)
           — diesen Teil schickt der Browser laut RFC&nbsp;3986 nie ans Backend.
           Die App folgt dem <strong>Zero-Knowledge-Prinzip</strong>: mit einigen
           bewussten Einschränkungen, die wir transparent machen.
@@ -47,21 +47,21 @@ import Layout from '../layouts/Layout.astro';
             <span class="transition-transform group-open:rotate-90 inline-block">›</span>
             Was der Server theoretisch inferieren kann (Threat Model)
           </summary>
-          <div class="mt-3 text-sm text-text-muted space-y-3 pl-4 border-l-2 border-border">
+          <div class="mt-3 text-sm text-fg-muted space-y-3 pl-4 border-l-2 border-border">
             <div>
-              <p class="font-medium text-text-strong">Anzahl der Teilnehmer:innen</p>
+              <p class="font-medium text-fg-strong">Anzahl der Teilnehmer:innen</p>
               <p class="mt-0.5">Jedes Gebot ist ein separater verschlüsselter Eintrag im Server-Store — der Server kann Einträge zählen und so die ungefähre Teilnehmerzahl inferieren.</p>
             </div>
             <div>
-              <p class="font-medium text-text-strong">Zeitpunkte der Gebots-Einreichung</p>
+              <p class="font-medium text-fg-strong">Zeitpunkte der Gebots-Einreichung</p>
               <p class="mt-0.5">Der Server sieht, wann ein Gebot einging. Muster (z.&nbsp;B. alle binnen 5 Minuten) können auf Gruppenverhalten hindeuten.</p>
             </div>
             <div>
-              <p class="font-medium text-text-strong">Existenz einer Runde</p>
+              <p class="font-medium text-fg-strong">Existenz einer Runde</p>
               <p class="mt-0.5">Eine Runden-ID existiert auf dem Server und ist aktiv oder nicht — ohne Klartext-Bezug zum Inhalt.</p>
             </div>
             <div class="pt-1">
-              <p class="font-medium text-text-strong">Was der Server <em>nicht</em> sieht</p>
+              <p class="font-medium text-fg-strong">Was der Server <em>nicht</em> sieht</p>
               <p class="mt-0.5">Namen, Gebotsbeträge, Typen-Auswahl, Emoji-IDs, Admin-Schlüssel — all das bleibt verschlüsselt.</p>
             </div>
           </div>
@@ -69,19 +69,19 @@ import Layout from '../layouts/Layout.astro';
       </div>
 
       <div class="rounded-xl border border-border bg-surface-raised p-6">
-        <h2 class="text-lg font-semibold text-text mb-2">Vertrauen in die Organisator:in</h2>
-        <p class="text-sm text-text-muted leading-relaxed mb-3">
+        <h2 class="text-lg font-semibold text-fg mb-2">Vertrauen in die Organisator:in</h2>
+        <p class="text-sm text-fg-muted leading-relaxed mb-3">
           Die App ist <strong>kein Zero-Trust-System</strong>. Die Organisator:in hat den
           privaten Admin-Schlüssel und kann damit technisch alle Gebote entschlüsseln —
           das Frontend zeigt ihr nur die Auswertungstabelle, aber der Zugriff auf Rohwerte
           wäre im Code möglich.
         </p>
-        <p class="text-sm text-text-muted leading-relaxed mb-3">
+        <p class="text-sm text-fg-muted leading-relaxed mb-3">
           Teilnehmer:innen hingegen können <strong>keine</strong> Gebote anderer sehen:
           Gebote sind mit dem öffentlichen Admin-Schlüssel verschlüsselt und nur mit dem
           privaten Schlüssel der Organisator:in lesbar.
         </p>
-        <p class="text-sm text-text-muted leading-relaxed">
+        <p class="text-sm text-fg-muted leading-relaxed">
           Vertrauen in die Organisator:in ist Teil des Modells — vergleichbar mit einer
           Kassenprüfer:in in einer Genossenschaft: Kontrolle durch Transparenz, nicht durch
           technische Sperre.

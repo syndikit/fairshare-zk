@@ -40,6 +40,10 @@ export function deleteRunde(id: string): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(runden));
 }
 
+export function clearRunden(): void {
+  localStorage.removeItem(STORAGE_KEY);
+}
+
 export function saveGebotLokal(rundenId: string, emojiId: string, slotLabel: string): void {
   const key = `fairshare-gebot-${rundenId}`;
   let gebote: Array<{ emojiId: string; slotLabel: string }> = [];

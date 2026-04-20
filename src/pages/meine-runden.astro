@@ -68,8 +68,11 @@ import FeedbackBox from '../components/FeedbackBox.astro';
       runden = getRunden().sort(
         (a, b) => new Date(b.hinzugefuegtAm).getTime() - new Date(a.hinzugefuegtAm).getTime(),
       );
-    } catch {
-      zeigeFeedback('storage-fehler', 'Deine gespeicherten Runden konnten nicht geladen werden — die Daten im Browser sind beschädigt. Du kannst die Daten unter Einstellungen → Anwendung → Local Storage manuell löschen.', 'rot');
+    } catch (err) {
+      const meldung = err instanceof SyntaxError
+        ? 'Deine gespeicherten Runden konnten nicht geladen werden — die Daten im Browser sind beschädigt. Du kannst sie über die Entwicklertools deines Browsers löschen.'
+        : 'Deine gespeicherten Runden konnten nicht geladen werden.';
+      zeigeFeedback('storage-fehler', meldung, 'rot');
       return;
     }
 

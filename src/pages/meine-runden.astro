@@ -28,7 +28,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
           <hr class="my-1 border-border" />
           <button
             id="zuruecksetzen-btn"
-            class="w-full text-left px-3 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+            class="w-full text-left px-3 py-2 text-sm text-danger-fg hover:bg-danger-subtle dark:hover:bg-red-900/20 rounded-lg transition-colors"
           >
             Zurücksetzen
           </button>
@@ -134,7 +134,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
           ` : ''}
           <button
             data-id="${runde.id}"
-            class="loeschen-btn ml-auto text-xs text-red-400 hover:text-red-600 transition-colors"
+            class="loeschen-btn ml-auto text-xs text-fg-muted hover:text-danger-fg transition-colors"
           >
             Löschen
           </button>

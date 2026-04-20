@@ -3,6 +3,39 @@
 @theme {
   --color-brand: #3B6D11;
   --color-brand-dark: #27500A;
+
+  /* Surface */
+  --color-surface:          #ffffff;
+  --color-surface-raised:   #ffffff;
+  --color-surface-hover:    #f1f5f9;
+  --color-surface-elevated: #f1f5f9;
+
+  /* Text */
+  --color-text:           #0f172a;
+  --color-text-strong:    #1e293b;
+  --color-text-secondary: #475569;
+  --color-text-muted:     #64748b;
+  --color-text-faint:     #94a3b8;
+
+  /* Border */
+  --color-border-subtle: #f1f5f9;
+  --color-border:        #e2e8f0;
+  --color-border-strong: #cbd5e1;
+
+  /* Status: Danger */
+  --color-danger-text:   #b91c1c;
+  --color-danger-border: #fecaca;
+  --color-danger-bg:     #fef2f2;
+
+  /* Status: Success */
+  --color-success-text:   #15803d;
+  --color-success-border: #bbf7d0;
+  --color-success-bg:     #f0fdf4;
+
+  /* Status: Warning */
+  --color-warning-text:   #92400e;
+  --color-warning-border: #fde68a;
+  --color-warning-bg:     #fffbeb;
 }
 
 @layer base {
@@ -15,6 +48,39 @@
       --color-brand: #6AAB23;
       --color-brand-dark: #5a9d18;
       color-scheme: dark;
+
+      /* Surface */
+      --color-surface:          #0f172a;
+      --color-surface-raised:   #1e293b;
+      --color-surface-hover:    #1e293b;
+      --color-surface-elevated: #334155;
+
+      /* Text */
+      --color-text:           #f1f5f9;
+      --color-text-strong:    #e2e8f0;
+      --color-text-secondary: #cbd5e1;
+      --color-text-muted:     #94a3b8;
+      --color-text-faint:     #64748b;
+
+      /* Border */
+      --color-border-subtle: #1e293b;
+      --color-border:        #334155;
+      --color-border-strong: #475569;
+
+      /* Status: Danger */
+      --color-danger-text:   #fca5a5;
+      --color-danger-border: #991b1b;
+      --color-danger-bg:     #450a0a;
+
+      /* Status: Success */
+      --color-success-text:   #4ade80;
+      --color-success-border: #166534;
+      --color-success-bg:     #052e16;
+
+      /* Status: Warning */
+      --color-warning-text:   #fcd34d;
+      --color-warning-border: #b45309;
+      --color-warning-bg:     #431407;
     }
   }
 }
@@ -78,10 +144,10 @@
 
 @media (max-width: 639px) and (prefers-color-scheme: dark) {
   .results-table tr {
-    border-color: var(--color-slate-700);
+    border-color: var(--color-border);
   }
   .results-table td::before {
-    color: var(--color-slate-500);
+    color: var(--color-text-faint);
   }
 }
 

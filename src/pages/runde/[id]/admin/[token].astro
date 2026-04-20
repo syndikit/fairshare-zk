@@ -5,12 +5,12 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
 
 <Layout title="Auswertung">
   <!-- Laden -->
-  <div id="zustand-laden" class="text-center py-12 text-slate-500 text-sm">
+  <div id="zustand-laden" class="text-center py-12 text-fg-muted text-sm">
     Lade und entschlüssele…
   </div>
 
   <!-- Fehler -->
-  <div id="zustand-fehler" class="hidden bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-xl p-5">
+  <div id="zustand-fehler" class="hidden bg-danger-subtle border border-danger-outline text-danger-fg rounded-xl p-5">
     <p class="font-medium mb-1">Fehler</p>
     <p id="fehler-text" class="text-sm"></p>
   </div>
@@ -19,32 +19,32 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
   <div id="zustand-auswertung" class="hidden space-y-8 print:space-y-4">
     <div class="print:mb-2">
       <h1 id="runde-name" class="text-2xl font-semibold mb-1 print:text-xl"></h1>
-      <p class="text-slate-500 dark:text-slate-400 text-sm print:text-xs">
+      <p class="text-fg-muted text-sm print:text-xs">
         Admin-Auswertung · alle Daten wurden lokal entschlüsselt
       </p>
     </div>
 
     <!-- Kennzahlen -->
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 print:grid-cols-3 print:gap-2">
-      <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 print:rounded-md print:p-2">
-        <p class="text-xs text-slate-500 dark:text-slate-400 mb-0.5">Gesamtkosten</p>
+      <div class="bg-surface-raised border border-border rounded-xl p-3 print:rounded-md print:p-2">
+        <p class="text-xs text-fg-muted mb-0.5">Gesamtkosten</p>
         <p id="kz-gesamtkosten" class="text-lg font-semibold print:text-base"></p>
       </div>
-      <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 print:rounded-md print:p-2">
-        <p class="text-xs text-slate-500 dark:text-slate-400 mb-0.5">Richtwert / Einheit</p>
+      <div class="bg-surface-raised border border-border rounded-xl p-3 print:rounded-md print:p-2">
+        <p class="text-xs text-fg-muted mb-0.5">Richtwert / Einheit</p>
         <p id="kz-richtwert" class="text-lg font-semibold print:text-base"></p>
       </div>
-      <div class="vollstaendig-spalte hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 print:rounded-md print:p-2">
-        <p class="text-xs text-slate-500 dark:text-slate-400 mb-0.5">Summe Beiträge</p>
+      <div class="vollstaendig-spalte hidden bg-surface-raised border border-border rounded-xl p-3 print:rounded-md print:p-2">
+        <p class="text-xs text-fg-muted mb-0.5">Summe Beiträge</p>
         <p id="kz-summe-beitraege" class="text-lg font-semibold print:text-base"></p>
       </div>
     </div>
 
     <!-- Duplikat-Warnung -->
-    <div id="duplikat-box" class="hidden bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl p-4 print:rounded-md print:p-3">
-      <p class="text-sm font-medium text-red-800 dark:text-red-300">⚠️ Zu viele Gebote — Auswertung nicht möglich</p>
-      <p class="text-xs text-red-700 dark:text-red-400 mt-1 mb-2">Für folgende Slots sind mehr Gebote eingegangen als erwartet. Bitte kläre die Doppeleinreichung und bitte die betroffene Person, nicht nochmals zu bieten.</p>
-      <ul id="duplikat-liste" class="text-xs text-red-700 dark:text-red-400 space-y-0.5 list-disc list-inside"></ul>
+    <div id="duplikat-box" class="hidden bg-danger-subtle border border-danger-outline rounded-xl p-4 print:rounded-md print:p-3">
+      <p class="text-sm font-medium text-danger-fg">⚠️ Zu viele Gebote — Auswertung nicht möglich</p>
+      <p class="text-xs text-danger-fg mt-1 mb-2">Für folgende Slots sind mehr Gebote eingegangen als erwartet. Bitte kläre die Doppeleinreichung und bitte die betroffene Person, nicht nochmals zu bieten.</p>
+      <ul id="duplikat-liste" class="text-xs text-danger-fg space-y-0.5 list-disc list-inside"></ul>
     </div>
 
     <!-- Status-Banner -->
@@ -55,12 +55,12 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
 
     <!-- Ausgleichszahlungen -->
     <div id="ausgleich-section" class="hidden space-y-2">
-      <h2 class="text-sm font-medium text-slate-700 dark:text-slate-300 print:text-xs">Ausgleichszahlungen</h2>
-      <div id="ausgleich-liste" class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 space-y-2 print:text-xs"></div>
+      <h2 class="text-sm font-medium text-fg-secondary print:text-xs">Ausgleichszahlungen</h2>
+      <div id="ausgleich-liste" class="rounded-xl border border-border bg-surface-raised px-4 py-3 space-y-2 print:text-xs"></div>
     </div>
 
     <!-- Status (klein, ergänzend zum Banner) -->
-    <p id="gebote-anzahl" class="text-xs text-slate-400 print:hidden"></p>
+    <p id="gebote-anzahl" class="text-xs text-fg-faint print:hidden"></p>
 
     <!-- Drucken / Wiederholen -->
     <div class="flex gap-3 print:hidden">
@@ -72,7 +72,7 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
       </button>
       <button
         id="wiederholen-btn"
-        class="border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+        class="border border-border-strong rounded-lg px-4 py-2 text-sm text-fg-secondary hover:bg-surface-hover transition-colors"
       >
         Runde wiederholen
       </button>
@@ -108,9 +108,9 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
   function zeigeBanner(text: string, farbe: 'green' | 'amber' | 'red') {
     const banner = document.getElementById('status-banner')!;
     const farbenKlassen: Record<string, string> = {
-      green: 'bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300',
-      amber: 'bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300',
-      red:   'bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300',
+      green: 'bg-success-subtle border border-success-outline text-success-fg',
+      amber: 'bg-warning-subtle dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300',
+      red:   'bg-danger-subtle border border-danger-outline text-danger-fg',
     };
     banner.className = `rounded-xl px-4 py-3 text-sm font-medium print:hidden ${farbenKlassen[farbe]}`;
     banner.textContent = text;
@@ -299,30 +299,30 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
 
       // Slot-Karte
       const karte = document.createElement('div');
-      karte.className = 'border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-800';
+      karte.className = 'border border-border rounded-xl overflow-hidden bg-surface-raised';
 
       // Slot-Header-Farbe
       const headerBg = zuViele
-        ? 'bg-red-50 dark:bg-red-950/50 border-b border-red-200 dark:border-red-800'
+        ? 'bg-danger-subtle dark:bg-red-950/50 border-b border-danger-outline dark:border-red-800'
         : vollstaendig
-          ? 'bg-green-50 dark:bg-green-950/50 border-b border-green-200 dark:border-green-800'
-          : 'bg-amber-50 dark:bg-amber-950/50 border-b border-amber-200 dark:border-amber-800';
+          ? 'bg-success-subtle dark:bg-green-950/50 border-b border-success-outline dark:border-green-800'
+          : 'bg-warning-subtle dark:bg-amber-950/50 border-b border-warning-outline dark:border-amber-800';
       const headerTextFarbe = zuViele
-        ? 'text-red-800 dark:text-red-300'
+        ? 'text-danger-fg'
         : vollstaendig
-          ? 'text-green-800 dark:text-green-300'
-          : 'text-amber-800 dark:text-amber-300';
+          ? 'text-success-fg'
+          : 'text-warning-fg';
       const headerIcon = zuViele ? '⚠️' : vollstaendig ? '✓' : '○';
 
       karte.innerHTML = `
         <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 px-3 py-1.5 ${headerBg}">
           <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 min-w-0">
             <span class="text-sm font-semibold ${headerTextFarbe} shrink-0">${slot.label}</span>
-            <span class="text-xs text-slate-500 dark:text-slate-400 shrink-0">Faktor ${slot.gewichtung}x · ~${formatEur(richtwertAnteil)}</span>
+            <span class="text-xs text-fg-muted shrink-0">Faktor ${slot.gewichtung}x · ~${formatEur(richtwertAnteil)}</span>
           </div>
           <span class="text-xs font-semibold ${headerTextFarbe} shrink-0">${headerIcon} ${eingegangen}/${erwartet}${autoVollstaendig ? ' (auto)' : ''}</span>
         </div>
-        <div class="slot-zeilen divide-y divide-slate-100 dark:divide-slate-700"></div>
+        <div class="slot-zeilen divide-y divide-border"></div>
       `;
 
       const zeilenContainer = karte.querySelector<HTMLDivElement>('.slot-zeilen')!;
@@ -336,33 +336,33 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
         zeile.innerHTML = `
           <div class="flex items-center gap-2 w-full">
             <span class="text-base w-16 shrink-0">${g.emojiId}</span>
-            <span class="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 rounded px-1.5 py-0.5 font-medium shrink-0">geboten</span>
+            <span class="text-xs bg-success-tinted text-success-fg rounded px-1.5 py-0.5 font-medium shrink-0">geboten</span>
             ${zeigeBeitraege && e ? `
-              <span class="hidden sm:inline text-xs text-slate-400 dark:text-slate-500 shrink-0">Beitrag</span>
-              <span class="hidden sm:inline text-sm font-semibold text-slate-900 dark:text-slate-100 shrink-0">${formatEur(e.solidarischerBeitrag)}</span>
+              <span class="hidden sm:inline text-xs text-fg-faint shrink-0">Beitrag</span>
+              <span class="hidden sm:inline text-sm font-semibold text-fg shrink-0">${formatEur(e.solidarischerBeitrag)}</span>
             ` : ''}
             ${zeigeBeitraege && e && hatSplidDaten ? `
-              <span class="hidden sm:inline text-xs text-slate-400 dark:text-slate-500 shrink-0">Ausgaben</span>
-              <span class="hidden sm:inline text-xs font-semibold text-slate-900 dark:text-slate-100 shrink-0">${formatEur(ausgaben)}</span>
-              <span class="hidden sm:inline text-xs text-slate-400 dark:text-slate-500 shrink-0">Noch zu zahlen</span>
-              <span class="hidden sm:inline text-xs font-semibold ${(e.solidarischerBeitrag - ausgaben) > 0.005 ? 'text-red-600' : 'text-green-700'} shrink-0">${(e.solidarischerBeitrag - ausgaben) > 0 ? '+' : ''}${formatEur(e.solidarischerBeitrag - ausgaben)}</span>
+              <span class="hidden sm:inline text-xs text-fg-faint shrink-0">Ausgaben</span>
+              <span class="hidden sm:inline text-xs font-semibold text-fg shrink-0">${formatEur(ausgaben)}</span>
+              <span class="hidden sm:inline text-xs text-fg-faint shrink-0">Noch zu zahlen</span>
+              <span class="hidden sm:inline text-xs font-semibold ${(e.solidarischerBeitrag - ausgaben) > 0.005 ? 'text-danger-fg' : 'text-success-fg'} shrink-0">${(e.solidarischerBeitrag - ausgaben) > 0 ? '+' : ''}${formatEur(e.solidarischerBeitrag - ausgaben)}</span>
             ` : ''}
-            <span class="ml-auto"><button class="loeschen-btn w-6 h-6 flex items-center justify-center rounded-full text-slate-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors" data-emoji-hmac="${emojiHmac}" data-slot="${slot.label}" aria-label="Gebot löschen">×</button></span>
+            <span class="ml-auto"><button class="loeschen-btn w-6 h-6 flex items-center justify-center rounded-full text-fg-ghost hover:text-danger-fg hover:bg-danger-subtle dark:hover:bg-red-950/50 transition-colors" data-emoji-hmac="${emojiHmac}" data-slot="${slot.label}" aria-label="Gebot löschen">×</button></span>
           </div>
           ${zeigeBeitraege && e ? `
             <div class="flex flex-col gap-0.5 pl-[4.5rem] sm:hidden pb-1">
               <div class="flex justify-between items-baseline">
-                <span class="text-xs text-slate-400 dark:text-slate-500">Beitrag</span>
-                <span class="text-sm font-semibold text-slate-900 dark:text-slate-100">${formatEur(e.solidarischerBeitrag)}</span>
+                <span class="text-xs text-fg-faint">Beitrag</span>
+                <span class="text-sm font-semibold text-fg">${formatEur(e.solidarischerBeitrag)}</span>
               </div>
               ${hatSplidDaten ? `
                 <div class="flex justify-between items-baseline">
-                  <span class="text-xs text-slate-400 dark:text-slate-500">Ausgaben</span>
-                  <span class="text-xs font-semibold text-slate-900 dark:text-slate-100">${formatEur(ausgaben)}</span>
+                  <span class="text-xs text-fg-faint">Ausgaben</span>
+                  <span class="text-xs font-semibold text-fg">${formatEur(ausgaben)}</span>
                 </div>
                 <div class="flex justify-between items-baseline">
-                  <span class="text-xs text-slate-400 dark:text-slate-500">Noch zu zahlen</span>
-                  <span class="text-xs font-semibold ${(e.solidarischerBeitrag - ausgaben) > 0.005 ? 'text-red-600' : 'text-green-700'}">${(e.solidarischerBeitrag - ausgaben) > 0 ? '+' : ''}${formatEur(e.solidarischerBeitrag - ausgaben)}</span>
+                  <span class="text-xs text-fg-faint">Noch zu zahlen</span>
+                  <span class="text-xs font-semibold ${(e.solidarischerBeitrag - ausgaben) > 0.005 ? 'text-danger-fg' : 'text-success-fg'}">${(e.solidarischerBeitrag - ausgaben) > 0 ? '+' : ''}${formatEur(e.solidarischerBeitrag - ausgaben)}</span>
                 </div>
               ` : ''}
             </div>
@@ -382,32 +382,32 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
           zeile.innerHTML = `
             <div class="flex items-center gap-2 w-full">
               <span class="text-base w-16 shrink-0 text-slate-300 dark:text-slate-600">—</span>
-              <span class="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 rounded px-1.5 py-0.5 font-medium shrink-0">auto</span>
+              <span class="text-xs bg-success-tinted text-success-fg rounded px-1.5 py-0.5 font-medium shrink-0">auto</span>
               ${e ? `
-                <span class="hidden sm:inline text-xs text-slate-400 dark:text-slate-500 shrink-0">Beitrag</span>
-                <span class="hidden sm:inline text-sm font-semibold text-slate-900 dark:text-slate-100 shrink-0">${formatEur(e.solidarischerBeitrag)}</span>
+                <span class="hidden sm:inline text-xs text-fg-faint shrink-0">Beitrag</span>
+                <span class="hidden sm:inline text-sm font-semibold text-fg shrink-0">${formatEur(e.solidarischerBeitrag)}</span>
               ` : ''}
               ${e && hatSplidDaten ? `
-                <span class="hidden sm:inline text-xs text-slate-400 dark:text-slate-500 shrink-0">Ausgaben</span>
-                <span class="hidden sm:inline text-xs font-semibold text-slate-900 dark:text-slate-100 shrink-0">${formatEur(ausgaben)}</span>
-                <span class="hidden sm:inline text-xs text-slate-400 dark:text-slate-500 shrink-0">Noch zu zahlen</span>
-                <span class="hidden sm:inline text-xs font-semibold ${nochZuZahlen > 0.005 ? 'text-red-600' : 'text-green-700'} shrink-0">${nochZuZahlen > 0 ? '+' : ''}${formatEur(nochZuZahlen)}</span>
+                <span class="hidden sm:inline text-xs text-fg-faint shrink-0">Ausgaben</span>
+                <span class="hidden sm:inline text-xs font-semibold text-fg shrink-0">${formatEur(ausgaben)}</span>
+                <span class="hidden sm:inline text-xs text-fg-faint shrink-0">Noch zu zahlen</span>
+                <span class="hidden sm:inline text-xs font-semibold ${nochZuZahlen > 0.005 ? 'text-danger-fg' : 'text-success-fg'} shrink-0">${nochZuZahlen > 0 ? '+' : ''}${formatEur(nochZuZahlen)}</span>
               ` : ''}
             </div>
             ${e ? `
               <div class="flex flex-col gap-0.5 pl-[4.5rem] sm:hidden pb-1">
                 <div class="flex justify-between items-baseline">
-                  <span class="text-xs text-slate-400 dark:text-slate-500">Beitrag</span>
-                  <span class="text-sm font-semibold text-slate-900 dark:text-slate-100">${formatEur(e.solidarischerBeitrag)}</span>
+                  <span class="text-xs text-fg-faint">Beitrag</span>
+                  <span class="text-sm font-semibold text-fg">${formatEur(e.solidarischerBeitrag)}</span>
                 </div>
                 ${hatSplidDaten ? `
                   <div class="flex justify-between items-baseline">
-                    <span class="text-xs text-slate-400 dark:text-slate-500">Ausgaben</span>
-                    <span class="text-xs font-semibold text-slate-900 dark:text-slate-100">${formatEur(ausgaben)}</span>
+                    <span class="text-xs text-fg-faint">Ausgaben</span>
+                    <span class="text-xs font-semibold text-fg">${formatEur(ausgaben)}</span>
                   </div>
                   <div class="flex justify-between items-baseline">
-                    <span class="text-xs text-slate-400 dark:text-slate-500">Noch zu zahlen</span>
-                    <span class="text-xs font-semibold ${nochZuZahlen > 0.005 ? 'text-red-600' : 'text-green-700'}">${nochZuZahlen > 0 ? '+' : ''}${formatEur(nochZuZahlen)}</span>
+                    <span class="text-xs text-fg-faint">Noch zu zahlen</span>
+                    <span class="text-xs font-semibold ${nochZuZahlen > 0.005 ? 'text-danger-fg' : 'text-success-fg'}">${nochZuZahlen > 0 ? '+' : ''}${formatEur(nochZuZahlen)}</span>
                   </div>
                 ` : ''}
               </div>
@@ -424,7 +424,7 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
         zeile.className = 'flex items-center gap-2 px-3 py-1';
         zeile.innerHTML = `
           <span class="text-base w-16 shrink-0 text-slate-300 dark:text-slate-600">—</span>
-          <span class="text-xs bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded px-1.5 py-0.5 shrink-0">fehlt</span>
+          <span class="text-xs bg-surface-elevated text-fg-muted rounded px-1.5 py-0.5 shrink-0">fehlt</span>
         `;
         zeilenContainer.appendChild(zeile);
       }
@@ -481,13 +481,13 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
           const zeile = document.createElement('div');
           const vonLabel = emojiZuLabel.get(z.von) ?? z.von;
           const anLabel = emojiZuLabel.get(z.an) ?? z.an;
-          zeile.className = `grid items-center gap-x-3 text-sm${idx < zahlungen.length - 1 ? ' pb-2 border-b border-slate-100 dark:border-slate-700' : ''}`;
+          zeile.className = `grid items-center gap-x-3 text-sm${idx < zahlungen.length - 1 ? ' pb-2 border-b border-border' : ''}`;
           zeile.style.gridTemplateColumns = '1fr auto 1fr auto';
           zeile.innerHTML = `
-            <span class="text-slate-700 dark:text-slate-300 text-right">${vonLabel}</span>
-            <span class="text-slate-400 dark:text-slate-500">→</span>
-            <span class="text-slate-700 dark:text-slate-300">${anLabel}</span>
-            <span class="font-semibold text-slate-900 dark:text-slate-100 text-right">${formatEur(z.betrag)}</span>
+            <span class="text-fg-secondary text-right">${vonLabel}</span>
+            <span class="text-fg-faint">→</span>
+            <span class="text-fg-secondary">${anLabel}</span>
+            <span class="font-semibold text-fg text-right">${formatEur(z.betrag)}</span>
           `;
           liste.appendChild(zeile);
         });

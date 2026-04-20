@@ -3,6 +3,44 @@
 @theme {
   --color-brand: #3B6D11;
   --color-brand-dark: #27500A;
+
+  /* Surface */
+  --color-surface:          #ffffff;
+  --color-surface-raised:   #ffffff;
+  --color-surface-hover:    #f1f5f9;
+  --color-surface-elevated: #f1f5f9;
+  --color-surface-tinted:   #f8fafc;
+
+  /* Foreground (Text) */
+  --color-fg:           #0f172a;
+  --color-fg-strong:    #1e293b;
+  --color-fg-secondary: #475569;
+  --color-fg-muted:     #64748b;
+  --color-fg-faint:     #94a3b8;
+  --color-fg-ghost:     #cbd5e1;
+
+  /* Status: Success (extended) */
+  --color-success-tinted: #dcfce7;
+
+  /* Border */
+  --color-border-subtle: #f1f5f9;
+  --color-border:        #e2e8f0;
+  --color-border-strong: #cbd5e1;
+
+  /* Status: Danger */
+  --color-danger-fg:      #b91c1c;
+  --color-danger-outline: #fecaca;
+  --color-danger-subtle:  #fef2f2;
+
+  /* Status: Success */
+  --color-success-fg:      #15803d;
+  --color-success-outline: #bbf7d0;
+  --color-success-subtle:  #f0fdf4;
+
+  /* Status: Warning */
+  --color-warning-fg:      #92400e;
+  --color-warning-outline: #fde68a;
+  --color-warning-subtle:  #fffbeb;
 }
 
 @layer base {
@@ -15,6 +53,44 @@
       --color-brand: #6AAB23;
       --color-brand-dark: #5a9d18;
       color-scheme: dark;
+
+      /* Surface */
+      --color-surface:          #0f172a;
+      --color-surface-raised:   #1e293b;
+      --color-surface-hover:    #1e293b;
+      --color-surface-elevated: #334155;
+      --color-surface-tinted:   #141c2f;
+
+      /* Foreground (Text) */
+      --color-fg:           #f1f5f9;
+      --color-fg-strong:    #e2e8f0;
+      --color-fg-secondary: #cbd5e1;
+      --color-fg-muted:     #94a3b8;
+      --color-fg-faint:     #64748b;
+      --color-fg-ghost:     #475569;
+
+      /* Status: Success (extended) */
+      --color-success-tinted: #0a2318;
+
+      /* Border */
+      --color-border-subtle: #1e293b;
+      --color-border:        #334155;
+      --color-border-strong: #475569;
+
+      /* Status: Danger */
+      --color-danger-fg:      #fca5a5;
+      --color-danger-outline: #991b1b;
+      --color-danger-subtle:  #450a0a;
+
+      /* Status: Success */
+      --color-success-fg:      #4ade80;
+      --color-success-outline: #166534;
+      --color-success-subtle:  #052e16;
+
+      /* Status: Warning */
+      --color-warning-fg:      #fcd34d;
+      --color-warning-outline: #b45309;
+      --color-warning-subtle:  #431407;
     }
   }
 }
@@ -55,7 +131,7 @@
   .results-table thead { display: none; }
   .results-table tr {
     display: block;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--color-border);
     border-radius: 0.75rem;
     margin-bottom: 0.75rem;
     padding: 0.75rem;
@@ -69,19 +145,10 @@
   }
   .results-table td::before {
     content: attr(data-label);
-    color: #94a3b8;
+    color: var(--color-fg-faint);
     font-size: 0.75rem;
     flex-shrink: 0;
     margin-right: 0.5rem;
-  }
-}
-
-@media (max-width: 639px) and (prefers-color-scheme: dark) {
-  .results-table tr {
-    border-color: var(--color-slate-700);
-  }
-  .results-table td::before {
-    color: var(--color-slate-500);
   }
 }
 

@@ -8,27 +8,27 @@ import FeedbackBox from '../components/FeedbackBox.astro';
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-semibold mb-1">Meine Runden</h1>
-        <p class="text-slate-500 dark:text-slate-400 text-sm">Gespeichert in deinem Browser.</p>
+        <p class="text-fg-muted text-sm">Gespeichert in deinem Browser.</p>
       </div>
       <details class="relative">
-        <summary class="cursor-pointer text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors text-xl select-none list-none px-2 py-1">⋯</summary>
-        <div class="absolute right-0 top-9 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-10 min-w-36 p-1">
+        <summary class="cursor-pointer text-fg-faint hover:text-fg-secondary transition-colors text-xl select-none list-none px-2 py-1">⋯</summary>
+        <div class="absolute right-0 top-9 bg-surface-raised border border-border rounded-xl shadow-lg z-10 min-w-36 p-1">
           <button
             id="export-btn"
-            class="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"
+            class="w-full text-left px-3 py-2 text-sm text-fg-secondary hover:bg-surface-elevated rounded-lg transition-colors"
           >
             Exportieren
           </button>
           <button
             id="import-btn"
-            class="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"
+            class="w-full text-left px-3 py-2 text-sm text-fg-secondary hover:bg-surface-elevated rounded-lg transition-colors"
           >
             Importieren
           </button>
-          <hr class="my-1 border-slate-100 dark:border-slate-700" />
+          <hr class="my-1 border-border" />
           <button
             id="zuruecksetzen-btn"
-            class="w-full text-left px-3 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+            class="w-full text-left px-3 py-2 text-sm text-danger-fg hover:bg-danger-subtle dark:hover:bg-red-900/20 rounded-lg transition-colors"
           >
             Zurücksetzen
           </button>
@@ -41,7 +41,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
     <FeedbackBox id="import-fehler" />
 
     <!-- Leer-Zustand -->
-    <div id="leer-zustand" class="hidden text-center py-16 text-slate-500 dark:text-slate-400">
+    <div id="leer-zustand" class="hidden text-center py-16 text-fg-muted">
       <p class="mb-4">Noch keine Runden gespeichert.</p>
       <a href="/neu" class="inline-block bg-brand text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-brand-dark transition-colors">
         Neue Runde erstellen
@@ -101,26 +101,26 @@ import FeedbackBox from '../components/FeedbackBox.astro';
     for (const runde of runden) {
       const istAdmin = !!runde.adminLink;
       const karte = document.createElement('div');
-      karte.className = 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3';
+      karte.className = 'bg-surface-raised border border-border rounded-xl p-4 space-y-3';
 
       const badge = istAdmin
         ? '<span class="text-xs font-medium text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded-full">Admin</span>'
-        : '<span class="text-xs font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">Teilnehmer:in</span>';
+        : '<span class="text-xs font-medium text-fg-muted bg-surface-elevated px-2 py-0.5 rounded-full">Teilnehmer:in</span>';
 
       karte.innerHTML = `
         <div class="flex items-start justify-between gap-2">
           <div class="space-y-1">
             <div class="flex items-center gap-2 flex-wrap">
               ${badge}
-              <span class="text-sm font-medium text-slate-800 dark:text-slate-200">${runde.name}</span>
+              <span class="text-sm font-medium text-fg-strong">${runde.name}</span>
             </div>
-            <p class="text-xs text-slate-400 dark:text-slate-500">Hinzugefügt am ${formatDatum(runde.hinzugefuegtAm)}</p>
+            <p class="text-xs text-fg-faint">Hinzugefügt am ${formatDatum(runde.hinzugefuegtAm)}</p>
           </div>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <a
             href="${runde.teilnehmerLink}"
-            class="inline-flex items-center gap-1 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-1.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+            class="inline-flex items-center gap-1 border border-border-strong rounded-lg px-3 py-1.5 text-sm text-fg-secondary hover:bg-surface-elevated transition-colors"
           >
             Runde öffnen ↗
           </a>
@@ -134,7 +134,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
           ` : ''}
           <button
             data-id="${runde.id}"
-            class="loeschen-btn ml-auto text-xs text-red-400 hover:text-red-600 transition-colors"
+            class="loeschen-btn ml-auto text-xs text-fg-muted hover:text-danger-fg transition-colors"
           >
             Löschen
           </button>

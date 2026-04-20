@@ -17,6 +17,10 @@
   --color-fg-secondary: #475569;
   --color-fg-muted:     #64748b;
   --color-fg-faint:     #94a3b8;
+  --color-fg-ghost:     #cbd5e1;
+
+  /* Status: Success (extended) */
+  --color-success-tinted: #dcfce7;
 
   /* Border */
   --color-border-subtle: #f1f5f9;
@@ -63,6 +67,10 @@
       --color-fg-secondary: #cbd5e1;
       --color-fg-muted:     #94a3b8;
       --color-fg-faint:     #64748b;
+      --color-fg-ghost:     #475569;
+
+      /* Status: Success (extended) */
+      --color-success-tinted: #0a2318;
 
       /* Border */
       --color-border-subtle: #1e293b;

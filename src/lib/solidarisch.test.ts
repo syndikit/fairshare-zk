@@ -456,6 +456,50 @@ describe('berechneAusgleich', () => {
 });
 
 // ---------------------------------------------------------------------------
+// berechneAusgleich — Epsilon-Toleranz
+// ---------------------------------------------------------------------------
+
+describe('berechneAusgleich — Epsilon-Toleranz', () => {
+  it('nochZuZahlen = -0.004 (innerhalb Epsilon) → nicht in Ausgleichszahlungen', () => {
+    // solidarischerBeitrag 100, ausgaben 100.004 → nochZuZahlen = -0.004
+    const ergebnisse: GebotErgebnis[] = [ergebnis('🐼🚀🌈', 'A', 100)];
+    const ausgaben = new Map([['A', 100.004]]);
+    expect(berechneAusgleich(ergebnisse, ausgaben)).toHaveLength(0);
+  });
+
+  it('nochZuZahlen = -0.006 (außerhalb Epsilon) → erscheint als Gläubiger', () => {
+    // solidarischerBeitrag 100, ausgaben 100.006 → nochZuZahlen = -0.006
+    const ergebnisse: GebotErgebnis[] = [
+      ergebnis('🐼🚀🌈', 'A', 100),
+      ergebnis('🦊🌙⭐', 'B', 50),
+    ];
+    const ausgaben = new Map([['A', 100.006], ['B', 0]]);
+    const zahlungen = berechneAusgleich(ergebnisse, ausgaben);
+    expect(zahlungen).toHaveLength(1);
+    expect(zahlungen[0].an).toBe('🐼🚀🌈');
+  });
+
+  it('nochZuZahlen = 0.004 (innerhalb Epsilon) → nicht in Ausgleichszahlungen', () => {
+    // solidarischerBeitrag 100, ausgaben 99.996 → nochZuZahlen = 0.004
+    const ergebnisse: GebotErgebnis[] = [ergebnis('🐼🚀🌈', 'A', 100)];
+    const ausgaben = new Map([['A', 99.996]]);
+    expect(berechneAusgleich(ergebnisse, ausgaben)).toHaveLength(0);
+  });
+
+  it('nochZuZahlen = 0.006 (außerhalb Epsilon) → erscheint als Schuldner', () => {
+    // solidarischerBeitrag 100, ausgaben 99.994 → nochZuZahlen = 0.006
+    const ergebnisse: GebotErgebnis[] = [
+      ergebnis('🐼🚀🌈', 'A', 100),
+      ergebnis('🦊🌙⭐', 'B', 50),
+    ];
+    const ausgaben = new Map([['A', 99.994], ['B', 100]]);
+    const zahlungen = berechneAusgleich(ergebnisse, ausgaben);
+    expect(zahlungen).toHaveLength(1);
+    expect(zahlungen[0].von).toBe('🐼🚀🌈');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Fehlerfälle
 // ---------------------------------------------------------------------------
 

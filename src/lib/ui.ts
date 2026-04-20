@@ -1,3 +1,7 @@
+export function formatEur(n: number): string {
+  return n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+}
+
 export function zeigeFeedback(
   elId: string,
   text: string,

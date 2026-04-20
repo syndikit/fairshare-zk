@@ -184,7 +184,7 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
   } from '../../lib/crypto';
   import { EMOJIS, generiereEmojiId } from '../../lib/solidarisch';
   import { saveRunde, saveGebotLokal, getGebotSlot } from '../../lib/storage';
-  import { zeigeFeedback, versteckeFeedback } from '../../lib/ui';
+  import { zeigeFeedback, versteckeFeedback, formatEur } from '../../lib/ui';
 
   interface TeilnehmerBlob {
     rundeName: string;
@@ -267,7 +267,7 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
 
     // Seite befüllen
     document.getElementById('runde-name')!.textContent = blob.rundeName;
-    document.getElementById('gesamtkosten')!.textContent = `${blob.gesamtkosten.toLocaleString('de-DE')} €`;
+    document.getElementById('gesamtkosten')!.textContent = formatEur(blob.gesamtkosten);
 
     // localStorage-Helfer: speichert welche Slots von diesem Gerät bereits geboten wurden
     function lsKey(label: string) {
@@ -293,7 +293,7 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
           <input type="radio" name="${nameAttr}" value="${idx}" class="accent-green-700" ${idx === 0 ? 'checked' : ''} />
           <span class="flex-1">
             <span class="text-sm font-medium text-slate-800 dark:text-slate-200">${slot.label}</span>
-            <span class="text-xs text-slate-500 dark:text-slate-400 ml-2">Richtwert: ${richtwertSlot.toFixed(2).replace('.', ',')} €</span>
+            <span class="text-xs text-slate-500 dark:text-slate-400 ml-2">Richtwert: ${formatEur(richtwertSlot)}</span>
             ${bereitsGeboten && nameAttr === 'slot' ? '<span class="text-green-600 ml-1 text-xs">✓ abgegeben</span>' : ''}
           </span>
         `;
@@ -313,10 +313,10 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
       const hinweis = document.getElementById(hinweisId)!;
       if (slot.standardgebot !== undefined) {
         betragInput.value = slot.standardgebot.toFixed(2);
-        hinweis.textContent = `Standardgebot: ${slot.standardgebot.toFixed(2).replace('.', ',')} € · Richtwert: ${richtwertSlot.toFixed(2).replace('.', ',')} €`;
+        hinweis.textContent = `Standardgebot: ${formatEur(slot.standardgebot)} · Richtwert: ${formatEur(richtwertSlot)}`;
       } else {
         betragInput.value = '';
-        hinweis.textContent = `Richtwert für diesen Slot: ${richtwertSlot.toFixed(2).replace('.', ',')} €`;
+        hinweis.textContent = `Richtwert für diesen Slot: ${formatEur(richtwertSlot)}`;
       }
     }
 

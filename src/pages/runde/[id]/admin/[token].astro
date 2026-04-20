@@ -109,7 +109,7 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
     const banner = document.getElementById('status-banner')!;
     const farbenKlassen: Record<string, string> = {
       green: 'bg-success-subtle border border-success-outline text-success-fg',
-      amber: 'bg-warning-subtle dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300',
+      amber: 'bg-amber-subtle border border-amber-outline text-amber-fg',
       red:   'bg-danger-subtle border border-danger-outline text-danger-fg',
     };
     banner.className = `rounded-xl px-4 py-3 text-sm font-medium print:hidden ${farbenKlassen[farbe]}`;
@@ -303,10 +303,10 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
 
       // Slot-Header-Farbe
       const headerBg = zuViele
-        ? 'bg-danger-subtle dark:bg-red-950/50 border-b border-danger-outline dark:border-red-800'
+        ? 'bg-danger-subtle border-b border-danger-outline'
         : vollstaendig
-          ? 'bg-success-subtle dark:bg-green-950/50 border-b border-success-outline dark:border-green-800'
-          : 'bg-warning-subtle dark:bg-amber-950/50 border-b border-warning-outline dark:border-amber-800';
+          ? 'bg-success-subtle border-b border-success-outline'
+          : 'bg-warning-subtle border-b border-warning-outline';
       const headerTextFarbe = zuViele
         ? 'text-danger-fg'
         : vollstaendig
@@ -347,7 +347,7 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
               <span class="hidden sm:inline text-xs text-fg-faint shrink-0">Noch zu zahlen</span>
               <span class="hidden sm:inline text-xs font-semibold ${(e.solidarischerBeitrag - ausgaben) > 0.005 ? 'text-danger-fg' : 'text-success-fg'} shrink-0">${(e.solidarischerBeitrag - ausgaben) > 0 ? '+' : ''}${formatEur(e.solidarischerBeitrag - ausgaben)}</span>
             ` : ''}
-            <span class="ml-auto"><button class="loeschen-btn w-6 h-6 flex items-center justify-center rounded-full text-fg-ghost hover:text-danger-fg hover:bg-danger-subtle dark:hover:bg-red-950/50 transition-colors" data-emoji-hmac="${emojiHmac}" data-slot="${slot.label}" aria-label="Gebot löschen">×</button></span>
+            <span class="ml-auto"><button class="loeschen-btn w-6 h-6 flex items-center justify-center rounded-full text-fg-ghost hover:text-danger-fg hover:bg-danger-subtle transition-colors" data-emoji-hmac="${emojiHmac}" data-slot="${slot.label}" aria-label="Gebot löschen">×</button></span>
           </div>
           ${zeigeBeitraege && e ? `
             <div class="flex flex-col gap-0.5 pl-[4.5rem] sm:hidden pb-1">
@@ -381,7 +381,7 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
           zeile.className = 'flex flex-col px-3 py-1';
           zeile.innerHTML = `
             <div class="flex items-center gap-2 w-full">
-              <span class="text-base w-16 shrink-0 text-slate-300 dark:text-slate-600">—</span>
+              <span class="text-base w-16 shrink-0 text-fg-ghost">—</span>
               <span class="text-xs bg-success-tinted text-success-fg rounded px-1.5 py-0.5 font-medium shrink-0">auto</span>
               ${e ? `
                 <span class="hidden sm:inline text-xs text-fg-faint shrink-0">Beitrag</span>
@@ -423,7 +423,7 @@ import FeedbackBox from '../../../../components/FeedbackBox.astro';
         const zeile = document.createElement('div');
         zeile.className = 'flex items-center gap-2 px-3 py-1';
         zeile.innerHTML = `
-          <span class="text-base w-16 shrink-0 text-slate-300 dark:text-slate-600">—</span>
+          <span class="text-base w-16 shrink-0 text-fg-ghost">—</span>
           <span class="text-xs bg-surface-elevated text-fg-muted rounded px-1.5 py-0.5 shrink-0">fehlt</span>
         `;
         zeilenContainer.appendChild(zeile);

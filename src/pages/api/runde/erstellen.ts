@@ -23,12 +23,12 @@ async function cleanupAlteRunden(dataDir: string): Promise<void> {
         if (now - mtimeMs > SIX_MONTHS_MS) {
           await unlink(filePath);
         }
-      } catch {
-        // Einzelne Datei überspringen bei Fehler
+      } catch (err) {
+        console.error('[cleanup] Datei übersprungen:', filePath, err);
       }
     }
-  } catch {
-    // Cleanup-Fehler nicht an den Client weitergeben
+  } catch (err) {
+    console.error('[cleanup] readdir fehlgeschlagen:', dataDir, err);
   }
 }
 

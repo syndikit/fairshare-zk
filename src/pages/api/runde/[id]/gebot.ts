@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { timingSafeEqual, createHash } from 'node:crypto';
+import { logError } from '@/lib/log';
 
 interface RundeJSON {
   id: string;
@@ -107,11 +108,13 @@ export const POST: APIRoute = async ({ params, request }) => {
       await writeFile(join(DATA_DIR, `${id}.json`), JSON.stringify(runde, null, 2), 'utf-8');
     } catch (err: unknown) {
       if ((err as NodeJS.ErrnoException).code === 'ENOSPC') {
+        logError('gebot POST: writeFile fehlgeschlagen – kein Speicherplatz', { id, err });
         return new Response(JSON.stringify({ error: 'Kein Speicherplatz verfügbar' }), {
           status: 507,
           headers: { 'Content-Type': 'application/json' },
         });
       }
+      logError('gebot POST: writeFile fehlgeschlagen', { id, err });
       return new Response(JSON.stringify({ error: 'Fehler beim Speichern' }), {
         status: 503,
         headers: { 'Content-Type': 'application/json' },
@@ -204,11 +207,13 @@ export const DELETE: APIRoute = async ({ params, request }) => {
       await writeFile(join(DATA_DIR, `${id}.json`), JSON.stringify(runde, null, 2), 'utf-8');
     } catch (err: unknown) {
       if ((err as NodeJS.ErrnoException).code === 'ENOSPC') {
+        logError('gebot DELETE: writeFile fehlgeschlagen – kein Speicherplatz', { id, err });
         return new Response(JSON.stringify({ error: 'Kein Speicherplatz verfügbar' }), {
           status: 507,
           headers: { 'Content-Type': 'application/json' },
         });
       }
+      logError('gebot DELETE: writeFile fehlgeschlagen', { id, err });
       return new Response(JSON.stringify({ error: 'Fehler beim Speichern' }), {
         status: 503,
         headers: { 'Content-Type': 'application/json' },

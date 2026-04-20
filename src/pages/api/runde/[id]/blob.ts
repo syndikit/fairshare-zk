@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { logError } from '@/lib/log';
 
 const ID_FORMAT = /^[a-z0-9]{8}$/;
 const DATA_DIR = process.env.DATA_DIR ?? join(process.cwd(), 'data', 'runden');
@@ -25,6 +26,7 @@ export const GET: APIRoute = async ({ params }) => {
         headers: { 'Content-Type': 'application/json' },
       });
     }
+    logError('blob: readFile fehlgeschlagen', { id, err });
     throw err;
   }
 

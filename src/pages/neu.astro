@@ -284,7 +284,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
   } from '../lib/crypto';
   import { parseSplid } from '../lib/splid';
   import { saveRunde } from '../lib/storage';
-  import { zeigeFeedback, versteckeFeedback } from '../lib/ui';
+  import { zeigeFeedback, versteckeFeedback, formatEur } from '../lib/ui';
 
   function formatBetrag(n: number): string {
     return n.toFixed(2).replace('.', ',');
@@ -351,7 +351,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
 
       const richtwertAnzeige = el.querySelector<HTMLSpanElement>('.standardgebot-richtwert');
       if (richtwertAnzeige) {
-        richtwertAnzeige.textContent = `Richtwert: ${richtwertSlot.toFixed(2).replace('.', ',')} €`;
+        richtwertAnzeige.textContent = `Richtwert: ${formatEur(richtwertSlot)}`;
       }
     });
   }

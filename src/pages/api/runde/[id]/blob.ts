@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const ID_FORMAT = /^[a-z0-9]{8}$/;
-const DATA_DIR = join(process.cwd(), 'data', 'runden');
+const DATA_DIR = process.env.DATA_DIR ?? join(process.cwd(), 'data', 'runden');
 
 export const GET: APIRoute = async ({ params }) => {
   const { id } = params;

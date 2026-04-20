@@ -418,7 +418,7 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
         );
         const selectedSlot = blob.slots[selectedIdx];
         const betrag = parseFloat(
-          (gebotForm.querySelector('#betrag') as HTMLInputElement).value,
+          (gebotForm.querySelector('#betrag') as HTMLInputElement).value.replace(',', '.'),
         );
 
         let emojiId: string;
@@ -566,7 +566,7 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
         );
         const selectedSlot = blob.slots[selectedIdx];
         const betrag = parseFloat(
-          (document.getElementById('korrektur-betrag') as HTMLInputElement).value,
+          (document.getElementById('korrektur-betrag') as HTMLInputElement).value.replace(',', '.'),
         );
 
         const emojiHmac = await hmac(hmacKey, emojiId);

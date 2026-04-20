@@ -33,7 +33,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
           name="rundeName"
           required
           placeholder="z.B. Haushaltskasse Oktober"
-          class="w-full border border-border-strong bg-surface-raised text-fg rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+          class="w-full border border-border-strong bg-surface-raised text-fg rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
         />
       </div>
 
@@ -49,7 +49,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
           name="gesamtkosten"
           required
           placeholder="z.B. 1200"
-          class="w-full border border-border-strong bg-surface-raised text-fg rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+          class="w-full border border-border-strong bg-surface-raised text-fg rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
         />
       </div>
 
@@ -61,7 +61,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
             <button
               type="button"
               id="slot-hinzufuegen"
-              class="text-sm text-green-700 hover:text-green-900 font-medium"
+              class="text-sm text-brand hover:text-brand-dark font-medium"
             >
               + Person hinzufügen
             </button>
@@ -75,7 +75,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
                 type="text"
                 name="label[]"
                 placeholder="Erwachsen"
-                class="min-w-0 flex-1 border border-border-strong bg-surface-elevated text-fg rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+                class="min-w-0 flex-1 border border-border-strong bg-surface-elevated text-fg rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               />
               <!-- Ausgaben inline (nur sichtbar wenn Toggle aktiv) -->
               <div class="ausgaben-inline hidden flex items-center gap-1 shrink-0">
@@ -85,12 +85,12 @@ import FeedbackBox from '../components/FeedbackBox.astro';
                   inputmode="decimal"
                   name="ausgaben[]"
                   placeholder="0,00"
-                  class="w-20 border border-border-strong bg-surface-elevated text-fg rounded-md px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-green-600"
+                  class="w-20 border border-border-strong bg-surface-elevated text-fg rounded-md px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               <button
                 type="button"
-                class="slot-entfernen shrink-0 text-fg-faint hover:text-red-500 text-lg leading-none hidden"
+                class="slot-entfernen shrink-0 text-fg-faint hover:text-danger-fg text-lg leading-none hidden"
                 aria-label="Slot entfernen"
               >×</button>
             </div>
@@ -108,23 +108,23 @@ import FeedbackBox from '../components/FeedbackBox.astro';
                   <div class="flex flex-wrap gap-1.5">
                     <label class="slot-gewichtung-label cursor-pointer">
                       <input type="radio" class="slot-gewichtung-radio sr-only" name="gw-slot-0" value="1.0" checked />
-                      <span class="slot-gewichtung-badge inline-block border border-border-strong rounded-md px-2.5 py-1 text-xs text-fg-secondary hover:border-green-500 transition-colors">Erwachsen</span>
+                      <span class="slot-gewichtung-badge inline-block border border-border-strong rounded-md px-2.5 py-1 text-xs text-fg-secondary hover:border-brand transition-colors">Erwachsen</span>
                     </label>
                     <label class="slot-gewichtung-label cursor-pointer">
                       <input type="radio" class="slot-gewichtung-radio sr-only" name="gw-slot-0" value="0.75" />
-                      <span class="slot-gewichtung-badge inline-block border border-border-strong rounded-md px-2.5 py-1 text-xs text-fg-secondary hover:border-green-500 transition-colors">Ermäßigt</span>
+                      <span class="slot-gewichtung-badge inline-block border border-border-strong rounded-md px-2.5 py-1 text-xs text-fg-secondary hover:border-brand transition-colors">Ermäßigt</span>
                     </label>
                     <label class="slot-gewichtung-label cursor-pointer">
                       <input type="radio" class="slot-gewichtung-radio sr-only" name="gw-slot-0" value="0.5" />
-                      <span class="slot-gewichtung-badge inline-block border border-border-strong rounded-md px-2.5 py-1 text-xs text-fg-secondary hover:border-green-500 transition-colors">Kind</span>
+                      <span class="slot-gewichtung-badge inline-block border border-border-strong rounded-md px-2.5 py-1 text-xs text-fg-secondary hover:border-brand transition-colors">Kind</span>
                     </label>
                     <label class="slot-gewichtung-label cursor-pointer">
                       <input type="radio" class="slot-gewichtung-radio sr-only" name="gw-slot-0" value="manuell" />
-                      <span class="slot-gewichtung-badge inline-block border border-border-strong rounded-md px-2.5 py-1 text-xs text-fg-secondary hover:border-green-500 transition-colors">Manuell</span>
+                      <span class="slot-gewichtung-badge inline-block border border-border-strong rounded-md px-2.5 py-1 text-xs text-fg-secondary hover:border-brand transition-colors">Manuell</span>
                     </label>
                     <input
                       type="number"
-                      class="slot-gewichtung-manuell w-16 border border-border-strong bg-surface-elevated text-fg rounded-md px-2 py-1 text-sm text-center opacity-50 cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-green-600"
+                      class="slot-gewichtung-manuell w-16 border border-border-strong bg-surface-elevated text-fg rounded-md px-2 py-1 text-sm text-center opacity-50 cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand"
                       min="0.1"
                       max="2"
                       step="0.05"
@@ -145,13 +145,13 @@ import FeedbackBox from '../components/FeedbackBox.astro';
                     min="1"
                     step="1"
                     required
-                    class="w-16 border border-border-strong bg-surface-elevated text-fg rounded-md px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-green-600"
+                    class="w-16 border border-border-strong bg-surface-elevated text-fg rounded-md px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
                 <!-- Standardgebot -->
                 <div class="standardgebot-zeile flex items-center gap-2 flex-wrap">
                   <label class="flex items-center gap-1 text-xs text-fg-muted cursor-pointer select-none">
-                    <input type="checkbox" class="standardgebot-checkbox accent-green-700" />
+                    <input type="checkbox" class="standardgebot-checkbox accent-brand" />
                     Standardgebot festlegen
                   </label>
                   <div class="standardgebot-eingabe hidden flex items-center gap-1">
@@ -160,7 +160,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
                       inputmode="decimal"
                       name="standardgebot[]"
                       data-auto="true"
-                      class="w-28 border border-border-strong bg-surface-elevated text-fg rounded-md px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-green-600"
+                      class="w-28 border border-border-strong bg-surface-elevated text-fg rounded-md px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-brand"
                     />
                   </div>
                 </div>
@@ -183,7 +183,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
       <button
         type="submit"
         id="submit-btn"
-        class="w-full bg-green-700 text-white rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        class="w-full bg-brand text-white rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-brand-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Runde erstellen
       </button>

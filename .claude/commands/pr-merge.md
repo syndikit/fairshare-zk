@@ -12,10 +12,13 @@ Falls keine PR-Nummer angegeben, zeige zuerst die offenen PRs:
 
 Dann:
 
-1. PR squash-mergen und Remote-Branch löschen:
+1. Lokalen Feature-Branch pushen, damit alle Commits auf GitHub sind:
+   `git push`
+
+2. PR squash-mergen und Remote-Branch löschen:
    `gh pr merge <nr> --squash --delete-branch`
 
-2. Lokalen main auschecken und pullen:
+3. Lokalen main auschecken und pullen:
    `git checkout main && git pull`
 
-3. Kurze Bestätigung: welcher PR gemergt wurde, aktueller HEAD-Commit.
+4. Kurze Bestätigung: welcher PR gemergt wurde, aktueller HEAD-Commit.

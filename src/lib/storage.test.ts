@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   getRunden,
   saveRunde,
@@ -6,6 +6,7 @@ import {
   clearRunden,
   saveGebotLokal,
   getGebotSlot,
+  exportJson,
   importJson,
   type LocalRunde,
 } from './storage';
@@ -30,6 +31,10 @@ let ls: ReturnType<typeof makeLocalStorageStub>;
 beforeEach(() => {
   ls = makeLocalStorageStub();
   vi.stubGlobal('localStorage', ls);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 // ---------------------------------------------------------------------------
@@ -106,6 +111,14 @@ describe('saveRunde', () => {
     saveRunde(r2);
     expect(getRunden()[0].name).toBe('Original');
   });
+
+  it('überschreibt nicht wenn beide adminLink haben', () => {
+    const r1 = runde({ name: 'Original', adminLink: 'https://example.com/admin1' });
+    saveRunde(r1);
+    const r2 = runde({ name: 'Update', adminLink: 'https://example.com/admin2' });
+    saveRunde(r2);
+    expect(getRunden()[0].adminLink).toBe('https://example.com/admin1');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -168,6 +181,23 @@ describe('saveGebotLokal / getGebotSlot', () => {
     saveGebotLokal('runde2', '🐼🚀🌈', 'SlotB');
     expect(getGebotSlot('runde1', '🐼🚀🌈')).toBe('SlotA');
     expect(getGebotSlot('runde2', '🐼🚀🌈')).toBe('SlotB');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// exportJson
+// ---------------------------------------------------------------------------
+
+describe('exportJson', () => {
+  it('gibt leeres Array als JSON zurück wenn keine Runden vorhanden', () => {
+    expect(exportJson()).toBe('[]');
+  });
+
+  it('serialisiert vorhandene Runden als formatiertes JSON', () => {
+    const r = runde();
+    saveRunde(r);
+    const parsed = JSON.parse(exportJson());
+    expect(parsed).toEqual([r]);
   });
 });
 

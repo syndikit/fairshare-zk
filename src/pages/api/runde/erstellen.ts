@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { writeFile, readdir, unlink, stat } from 'node:fs/promises';
 import { join } from 'node:path';
+import { logError } from '@/lib/log';
 
 interface RundeJSON {
   id: string;
@@ -24,11 +25,11 @@ async function cleanupAlteRunden(dataDir: string): Promise<void> {
           await unlink(filePath);
         }
       } catch (err) {
-        console.error('[cleanup] Datei übersprungen:', filePath, err);
+        logError('cleanup: Datei übersprungen', { filePath, err });
       }
     }
   } catch (err) {
-    console.error('[cleanup] readdir fehlgeschlagen:', dataDir, err);
+    logError('cleanup: readdir fehlgeschlagen', { dataDir, err });
   }
 }
 
@@ -84,7 +85,22 @@ export const POST: APIRoute = async ({ request }) => {
     gebote: [],
   };
 
-  await writeFile(join(DATA_DIR, `${id}.json`), JSON.stringify(runde, null, 2), 'utf-8');
+  try {
+    await writeFile(join(DATA_DIR, `${id}.json`), JSON.stringify(runde, null, 2), 'utf-8');
+  } catch (err: unknown) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOSPC') {
+      logError('erstellen: writeFile fehlgeschlagen – kein Speicherplatz', { id, err });
+      return new Response(JSON.stringify({ error: 'Kein Speicherplatz verfügbar' }), {
+        status: 507,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    logError('erstellen: writeFile fehlgeschlagen', { id, err });
+    return new Response(JSON.stringify({ error: 'Fehler beim Speichern' }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
   return new Response(JSON.stringify({ id, adminToken }), {
     status: 200,

@@ -30,6 +30,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
       <input type="file" id="import-file" accept=".json" class="hidden" />
     </div>
 
+    <FeedbackBox id="storage-fehler" />
     <FeedbackBox id="import-fehler" />
 
     <!-- Leer-Zustand -->
@@ -62,9 +63,15 @@ import FeedbackBox from '../components/FeedbackBox.astro';
   }
 
   function renderRunden() {
-    const runden = getRunden().sort(
-      (a, b) => new Date(b.hinzugefuegtAm).getTime() - new Date(a.hinzugefuegtAm).getTime(),
-    );
+    let runden: LocalRunde[];
+    try {
+      runden = getRunden().sort(
+        (a, b) => new Date(b.hinzugefuegtAm).getTime() - new Date(a.hinzugefuegtAm).getTime(),
+      );
+    } catch {
+      zeigeFeedback('storage-fehler', 'Deine gespeicherten Runden konnten nicht geladen werden — die Daten im Browser sind beschädigt. Du kannst die Daten unter Einstellungen → Anwendung → Local Storage manuell löschen.', 'rot');
+      return;
+    }
 
     rundenListe.innerHTML = '';
 

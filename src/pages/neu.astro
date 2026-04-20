@@ -231,21 +231,21 @@ import FeedbackBox from '../components/FeedbackBox.astro';
     </div>
 
     <!-- Admin-Link (sekundär) -->
-    <div class="bg-warning-subtle dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 rounded-xl p-5 space-y-3">
+    <div class="bg-amber-subtle border border-amber-outline rounded-xl p-5 space-y-3">
       <div>
-        <p class="text-sm font-semibold text-amber-900 dark:text-amber-300">⚠ Admin-Link</p>
-        <p class="text-xs text-amber-700 dark:text-amber-400 mt-0.5">Nur für dich — sicher aufbewahren</p>
+        <p class="text-sm font-semibold text-amber-strong">⚠ Admin-Link</p>
+        <p class="text-xs text-amber-fg mt-0.5">Nur für dich — sicher aufbewahren</p>
       </div>
       <input
         id="admin-link"
         type="text"
         readonly
-        class="w-full border border-amber-300 dark:border-amber-700 rounded-md px-2 py-1.5 text-xs text-amber-900 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/40 font-mono"
+        class="w-full border border-amber-outline rounded-md px-2 py-1.5 text-xs text-amber-strong bg-amber-tinted font-mono"
       />
       <div class="flex gap-2">
         <button
           id="copy-admin"
-          class="flex-1 border border-amber-300 dark:border-amber-700 rounded-lg px-4 py-2 text-sm text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/60 transition-colors"
+          class="flex-1 border border-amber-outline rounded-lg px-4 py-2 text-sm text-amber-fg hover:bg-amber-outline transition-colors"
         >
           Link kopieren
         </button>
@@ -254,12 +254,12 @@ import FeedbackBox from '../components/FeedbackBox.astro';
           href="#"
           target="_blank"
           rel="noopener"
-          class="border border-amber-300 dark:border-amber-700 rounded-lg px-4 py-2 text-sm text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/60 transition-colors whitespace-nowrap"
+          class="border border-amber-outline rounded-lg px-4 py-2 text-sm text-amber-fg hover:bg-amber-outline transition-colors whitespace-nowrap"
         >
           Öffnen ↗
         </a>
       </div>
-      <p class="text-xs text-amber-700 dark:text-amber-400">
+      <p class="text-xs text-amber-fg">
         Dieser Link enthält deinen privaten Schlüssel. Wer ihn hat, kann alle Gebote einsehen.
       </p>
     </div>

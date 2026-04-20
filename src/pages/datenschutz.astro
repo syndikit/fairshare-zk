@@ -5,10 +5,10 @@ import Layout from '../layouts/Layout.astro';
 <Layout title="Datenschutz">
   <h1 class="text-3xl font-bold mb-10">Datenschutzerklärung</h1>
 
-  <div class="space-y-8 text-text-secondary leading-relaxed">
+  <div class="space-y-8 text-fg-secondary leading-relaxed">
 
     <div>
-      <h2 class="text-sm font-semibold text-text-faint tracking-widest uppercase mb-3">1. Verantwortlicher</h2>
+      <h2 class="text-sm font-semibold text-fg-faint tracking-widest uppercase mb-3">1. Verantwortlicher</h2>
       <p>
         Sebastian Tran<br />
         c/o Raumkante<br />
@@ -19,8 +19,8 @@ import Layout from '../layouts/Layout.astro';
     </div>
 
     <div>
-      <h2 class="text-sm font-semibold text-text-faint tracking-widest uppercase mb-3">2. Hosting</h2>
-      <p class="text-text-muted text-sm">
+      <h2 class="text-sm font-semibold text-fg-faint tracking-widest uppercase mb-3">2. Hosting</h2>
+      <p class="text-fg-muted text-sm">
         Diese Website wird gehostet bei netzguerilla.net. Dabei werden technisch notwendige
         Verbindungsdaten verarbeitet (IP-Adresse, Zeitstempel, aufgerufene URL).
         Rechtsgrundlage ist Art.&nbsp;6 Abs.&nbsp;1 lit.&nbsp;f DSGVO (berechtigtes Interesse am Betrieb der Website).
@@ -28,48 +28,48 @@ import Layout from '../layouts/Layout.astro';
     </div>
 
     <div>
-      <h2 class="text-sm font-semibold text-text-faint tracking-widest uppercase mb-3">3. Zero-Knowledge-Prinzip</h2>
-      <p class="text-text-muted text-sm mb-3">
-        Alle Inhalte einer Runde werden <strong class="text-text-secondary">im Browser verschlüsselt</strong>,
+      <h2 class="text-sm font-semibold text-fg-faint tracking-widest uppercase mb-3">3. Zero-Knowledge-Prinzip</h2>
+      <p class="text-fg-muted text-sm mb-3">
+        Alle Inhalte einer Runde werden <strong class="text-fg-secondary">im Browser verschlüsselt</strong>,
         bevor sie den Server erreichen. Der Schlüssel steckt im URL-Fragment
-        (<code class="font-mono text-xs bg-surface-elevated text-text-secondary px-1 py-0.5 rounded">#…</code>) —
+        (<code class="font-mono text-xs bg-surface-elevated text-fg-secondary px-1 py-0.5 rounded">#…</code>) —
         diesen Teil schickt der Browser laut RFC&nbsp;3986 nie ans Backend.
       </p>
-      <p class="text-text-muted text-sm mb-2">Was der Server nie sieht: Namen der Teilnehmer:innen, Gebotsbeträge, Typen-Auswahl, Emoji-IDs, Admin-Schlüssel.</p>
-      <p class="text-text-muted text-sm">
+      <p class="text-fg-muted text-sm mb-2">Was der Server nie sieht: Namen der Teilnehmer:innen, Gebotsbeträge, Typen-Auswahl, Emoji-IDs, Admin-Schlüssel.</p>
+      <p class="text-fg-muted text-sm">
         Was der Server sehen kann: Anzahl der Einträge, Zeitpunkte der Einreichung, Existenz einer Runden-ID.
         Mehr dazu: <a href="/#wie-es-funktioniert" class="text-brand hover:text-brand-dark">Wie FairShare funktioniert</a>.
       </p>
     </div>
 
     <div>
-      <h2 class="text-sm font-semibold text-text-faint tracking-widest uppercase mb-3">4. Gespeicherte Daten</h2>
-      <p class="text-text-muted text-sm mb-3">
+      <h2 class="text-sm font-semibold text-fg-faint tracking-widest uppercase mb-3">4. Gespeicherte Daten</h2>
+      <p class="text-fg-muted text-sm mb-3">
         FairShare speichert keine personenbezogenen Daten. Es gibt keine Nutzerkonten,
         keine E-Mail-Adressen und keine Tracking-Cookies. Runden-IDs sind zufällig generiert
         und enthalten keine personenbezogenen Informationen.
       </p>
-      <p class="text-text-muted text-sm mb-3">
+      <p class="text-fg-muted text-sm mb-3">
         Gespeicherte Runden-Links werden ausschließlich in deinem Browser
-        (<code class="font-mono text-xs bg-surface-elevated text-text-secondary px-1 py-0.5 rounded">localStorage</code>)
+        (<code class="font-mono text-xs bg-surface-elevated text-fg-secondary px-1 py-0.5 rounded">localStorage</code>)
         gespeichert — nie auf dem Server.
       </p>
-      <p class="text-text-muted text-sm">
-        Runden werden nach <strong class="text-text-secondary">6 Monaten automatisch vom Server gelöscht</strong>.
+      <p class="text-fg-muted text-sm">
+        Runden werden nach <strong class="text-fg-secondary">6 Monaten automatisch vom Server gelöscht</strong>.
       </p>
     </div>
 
     <div>
-      <h2 class="text-sm font-semibold text-text-faint tracking-widest uppercase mb-3">5. Cookies &amp; Tracking</h2>
-      <p class="text-text-muted text-sm">
+      <h2 class="text-sm font-semibold text-fg-faint tracking-widest uppercase mb-3">5. Cookies &amp; Tracking</h2>
+      <p class="text-fg-muted text-sm">
         FairShare setzt keine Tracking-Cookies und verwendet keine Analyse-Dienste.
         Es werden keine personenbezogenen Daten für Werbezwecke verarbeitet.
       </p>
     </div>
 
     <div>
-      <h2 class="text-sm font-semibold text-text-faint tracking-widest uppercase mb-3">6. Deine Rechte</h2>
-      <p class="text-text-muted text-sm">
+      <h2 class="text-sm font-semibold text-fg-faint tracking-widest uppercase mb-3">6. Deine Rechte</h2>
+      <p class="text-fg-muted text-sm">
         Du hast das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung
         deiner personenbezogenen Daten sowie das Recht auf Datenübertragbarkeit.
         Da FairShare keine personenbezogenen Daten speichert, liegen in aller Regel keine

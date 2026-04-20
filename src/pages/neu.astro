@@ -286,6 +286,13 @@ import FeedbackBox from '../components/FeedbackBox.astro';
   import { saveRunde } from '../lib/storage';
   import { zeigeFeedback, versteckeFeedback } from '../lib/ui';
 
+  function formatBetrag(n: number): string {
+    return n.toFixed(2).replace('.', ',');
+  }
+  function parseGeld(s: string): number {
+    return parseFloat(s.replace(',', '.'));
+  }
+
   const form = document.getElementById('runde-form') as HTMLFormElement;
   const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
   const formBereich = document.getElementById('form-bereich') as HTMLDivElement;
@@ -318,7 +325,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
   }
 
   function aktualisiereRichtwert() {
-    const gesamtkosten = parseFloat(
+    const gesamtkosten = parseGeld(
       (form.querySelector('#gesamtkosten') as HTMLInputElement).value,
     );
     if (!gesamtkosten || gesamtkosten <= 0) return;
@@ -339,7 +346,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
 
       const stdInput = el.querySelector<HTMLInputElement>('[name="standardgebot[]"]');
       if (stdInput && stdInput.dataset.auto === 'true') {
-        stdInput.value = richtwertSlot.toFixed(2);
+        stdInput.value = formatBetrag(richtwertSlot);
       }
 
       const richtwertAnzeige = el.querySelector<HTMLSpanElement>('.standardgebot-richtwert');
@@ -357,7 +364,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
     if (t.value === '') return;
     const v = parseFloat(t.value.replace(',', '.'));
     if (isNaN(v) || v < 0) { t.value = ''; return; }
-    t.value = v.toFixed(2);
+    t.value = formatBetrag(v);
   }, true);
 
   const presetNamen: Record<string, string> = { '1.0': 'Erwachsen', '0.75': 'Ermäßigt', '0.5': 'Kind' };
@@ -486,7 +493,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
       const { rundenname, gesamtkosten, personen } = await parseSplid(buffer);
 
       (form.querySelector('#rundeName') as HTMLInputElement).value = rundenname;
-      (form.querySelector('#gesamtkosten') as HTMLInputElement).value = gesamtkosten.toFixed(2);
+      (form.querySelector('#gesamtkosten') as HTMLInputElement).value = formatBetrag(gesamtkosten);
 
       const alleSlots = slotsContainer.querySelectorAll<HTMLDivElement>('.slot-eintrag');
       alleSlots.forEach((s, i) => { if (i > 0) s.remove(); });
@@ -496,7 +503,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
       function befuelleSlot(slotEl: HTMLDivElement, label: string, ausgaben: number) {
         (slotEl.querySelector('[name="label[]"]') as HTMLInputElement).value = label;
         (slotEl.querySelector('[name="gewichtung[]"]') as HTMLInputElement).value = '1';
-        (slotEl.querySelector('[name="ausgaben[]"]') as HTMLInputElement).value = ausgaben.toFixed(2);
+        (slotEl.querySelector('[name="ausgaben[]"]') as HTMLInputElement).value = formatBetrag(ausgaben);
         // Erwachsen-Radio als Standard auswählen
         const erwachsenRadio = slotEl.querySelector<HTMLInputElement>('.slot-gewichtung-radio[value="1.0"]');
         if (erwachsenRadio) erwachsenRadio.checked = true;
@@ -622,7 +629,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
       };
 
       (form.querySelector('#rundeName') as HTMLInputElement).value = config.name;
-      (form.querySelector('#gesamtkosten') as HTMLInputElement).value = Number(config.kosten).toFixed(2);
+      (form.querySelector('#gesamtkosten') as HTMLInputElement).value = formatBetrag(config.kosten);
 
       function befuelleWiederholSlot(
         slotEl: HTMLDivElement,
@@ -642,7 +649,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
         if (slot.standardgebot !== undefined) {
           checkbox.checked = true;
           eingabe.classList.remove('hidden');
-          stdInput.value = slot.standardgebot.toFixed(2);
+          stdInput.value = formatBetrag(slot.standardgebot);
           stdInput.dataset.auto = 'false';
         } else {
           checkbox.checked = false;
@@ -693,7 +700,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
 
     try {
       const rundeName = (form.querySelector('#rundeName') as HTMLInputElement).value.trim();
-      const gesamtkosten = parseFloat(
+      const gesamtkosten = parseGeld(
         (form.querySelector('#gesamtkosten') as HTMLInputElement).value,
       );
 
@@ -716,12 +723,12 @@ import FeedbackBox from '../components/FeedbackBox.astro';
         const ausgabenRaw = ausgabenSichtbar
           ? (slotEintraege[i]?.querySelector('[name="ausgaben[]"]') as HTMLInputElement)?.value
           : undefined;
-        const ausgaben = ausgabenRaw ? parseFloat(ausgabenRaw) : undefined;
+        const ausgaben = ausgabenRaw ? parseGeld(ausgabenRaw) : undefined;
         const stdCheckbox = slotEintraege[i]?.querySelector<HTMLInputElement>('.standardgebot-checkbox');
         const stdRaw = stdCheckbox?.checked
           ? (slotEintraege[i]?.querySelector<HTMLInputElement>('[name="standardgebot[]"]'))?.value
           : undefined;
-        const standardgebot = stdRaw ? parseFloat(stdRaw) : undefined;
+        const standardgebot = stdRaw ? parseGeld(stdRaw) : undefined;
         return {
           label,
           gewichtung: gewichtungen[i],

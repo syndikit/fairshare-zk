@@ -350,4 +350,21 @@ describe('initGebot', () => {
       return !el.classList.contains('hidden') && el.textContent?.includes('aufsteigend');
     });
   });
+
+  it('zeigt Korrektur-Fehler wenn Betrag im Einzel-Modus leer ist', async () => {
+    const { partKeyB64, encTeilnehmerBlob } = await createEncryptedBlob();
+    mockLocation('/runde/abc12345', `#pk=${partKeyB64}`);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ encTeilnehmerBlob, gebote: [] }),
+    }));
+
+    await initGebot();
+
+    (document.getElementById('korrektur-emoji') as HTMLInputElement).value = '🦊🌙⭐';
+    // korrektur-betrag leer lassen
+    document.getElementById('korrektur-form')!.dispatchEvent(new Event('submit', { bubbles: true }));
+
+    await vi.waitFor(() => expect(document.getElementById('korrektur-fehler')!.classList.contains('hidden')).toBe(false));
+  });
 });

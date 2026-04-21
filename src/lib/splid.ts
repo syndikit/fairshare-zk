@@ -51,13 +51,13 @@ export async function parseSplid(buffer: ArrayBuffer): Promise<SplidImport> {
 
   for (let i = 0; i < rows.length; i++) {
     const vals = rows[i];
-    const vonI = vals.findIndex((c) => String(c ?? '').trim() === 'Von');
-    const betragI = vals.findIndex((c) => String(c ?? '').trim() === 'Betrag');
+    const vonI = vals.findIndex((c) => String(c).trim() === 'Von');
+    const betragI = vals.findIndex((c) => String(c).trim() === 'Betrag');
     if (vonI >= 0 && betragI >= 0) {
       headerRowIdx = i;
       vonIdx = vonI;
       betragIdx = betragI;
-      const erstelltAmI = vals.findIndex((c) => String(c ?? '').trim() === 'Erstellt am');
+      const erstelltAmI = vals.findIndex((c) => String(c).trim() === 'Erstellt am');
       personenStartCol = erstelltAmI >= 0 ? erstelltAmI + 1 : 6;
       break;
     }
@@ -73,7 +73,7 @@ export async function parseSplid(buffer: ArrayBuffer): Promise<SplidImport> {
   const headerVals = rows[headerRowIdx];
   const personenNamen: string[] = [];
   for (let col = personenStartCol; col < headerVals.length; col += 2) {
-    const name = String(headerVals[col] ?? '').trim();
+    const name = String(headerVals[col]).trim();
     if (name) personenNamen.push(name);
   }
 
@@ -90,17 +90,17 @@ export async function parseSplid(buffer: ArrayBuffer): Promise<SplidImport> {
   for (let i = headerRowIdx + 1; i < rows.length; i++) {
     const vals = rows[i];
     const betrag = Number(vals[betragIdx]);
-    const von = String(vals[vonIdx] ?? '').trim();
+    const von = String(vals[vonIdx]).trim();
     if (!isFinite(betrag) || betrag <= 0) continue;
     gesamtkosten += betrag;
     if (von && ausgabenMap.has(von)) {
-      ausgabenMap.set(von, (ausgabenMap.get(von) ?? 0) + betrag);
+      ausgabenMap.set(von, ausgabenMap.get(von)! + betrag);
     }
   }
 
   const personen: SplidPerson[] = personenNamen.map((name) => ({
     name,
-    ausgaben: Math.round((ausgabenMap.get(name) ?? 0) * 100) / 100,
+    ausgaben: Math.round(ausgabenMap.get(name)! * 100) / 100,
   }));
 
   return {

@@ -143,6 +143,17 @@ describe('parseSplid', () => {
     await expect(parseSplid(buf)).rejects.toThrow('Kopfzeile');
   });
 
+  it('wirft wenn Sheet vollständig leer ist', async () => {
+    const ws = XLSX.utils.aoa_to_sheet([]);
+    (ws as Record<string, unknown>)['!ref'] = undefined;
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Zusammenfassung');
+    const nodeBuf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+    const buf = nodeBuf.buffer.slice(nodeBuf.byteOffset, nodeBuf.byteOffset + nodeBuf.byteLength) as ArrayBuffer;
+
+    await expect(parseSplid(buf)).rejects.toThrow('Rundenname');
+  });
+
   it('wirft wenn Rundenname leer ist (A1 leer)', async () => {
     const ws = XLSX.utils.aoa_to_sheet([
       [''],
@@ -217,5 +228,63 @@ describe('parseSplid', () => {
     const buf = nodeBuf.buffer.slice(nodeBuf.byteOffset, nodeBuf.byteOffset + nodeBuf.byteLength) as ArrayBuffer;
 
     await expect(parseSplid(buf)).rejects.toThrow('Teilnehmer');
+  });
+
+  it('überspringt leere Personennamen in der Kopfzeile', async () => {
+    // Kopfzeile enthält eine Leerspalte zwischen zwei Personen → nur Anna und Ben landen in personenNamen
+    const rows: unknown[][] = [
+      ['Leerspalten-Runde'],
+      [],
+      [],
+      ['Titel', 'Betrag', 'Währung', 'Von', 'Datum', 'Erstellt am', 'Anna', '', '', '', 'Ben', ''],
+      ['Einkauf', 50, 'EUR', 'Anna', '01.01.26', '01.01.26'],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Zusammenfassung');
+    const nodeBuf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+    const buf = nodeBuf.buffer.slice(nodeBuf.byteOffset, nodeBuf.byteOffset + nodeBuf.byteLength) as ArrayBuffer;
+
+    const result = await parseSplid(buf);
+    expect(result.personen.map((p) => p.name)).toEqual(['Anna', 'Ben']);
+  });
+
+  it('überspringt Zeile wenn Betrag nicht-finit ist (z.B. Text-Zelle)', async () => {
+    const rows: unknown[][] = [
+      ['NaN-Runde'],
+      [],
+      [],
+      ['Titel', 'Betrag', 'Währung', 'Von', 'Datum', 'Erstellt am', 'Anna', ''],
+      ['Gültig', 100, 'EUR', 'Anna', '01.01.26', '01.01.26'],
+      ['Ungültig', 'kein Betrag', 'EUR', 'Anna', '01.01.26', '01.01.26'],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Zusammenfassung');
+    const nodeBuf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+    const buf = nodeBuf.buffer.slice(nodeBuf.byteOffset, nodeBuf.byteOffset + nodeBuf.byteLength) as ArrayBuffer;
+
+    const { gesamtkosten } = await parseSplid(buf);
+    expect(gesamtkosten).toBe(100);
+  });
+
+  it('zählt Betrag zu Gesamtkosten auch wenn Von-Spalte leer ist', async () => {
+    const rows: unknown[][] = [
+      ['Leeres-Von-Runde'],
+      [],
+      [],
+      ['Titel', 'Betrag', 'Währung', 'Von', 'Datum', 'Erstellt am', 'Anna', ''],
+      ['MitVon', 60, 'EUR', 'Anna', '01.01.26', '01.01.26'],
+      ['OhneVon', 40, 'EUR', '', '01.01.26', '01.01.26'],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Zusammenfassung');
+    const nodeBuf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+    const buf = nodeBuf.buffer.slice(nodeBuf.byteOffset, nodeBuf.byteOffset + nodeBuf.byteLength) as ArrayBuffer;
+
+    const { gesamtkosten, personen } = await parseSplid(buf);
+    expect(gesamtkosten).toBe(100);
+    expect(personen.find((p) => p.name === 'Anna')!.ausgaben).toBe(60);
   });
 });

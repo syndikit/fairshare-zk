@@ -82,8 +82,9 @@ describe('initNeu', () => {
       writable: true,
       configurable: true,
     });
-    vi.stubGlobal('navigator', {
-      clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: vi.fn().mockResolvedValue(undefined) },
+      configurable: true,
     });
   });
 
@@ -102,7 +103,7 @@ describe('initNeu', () => {
     initNeu();
 
     document.getElementById('runde-form')!.dispatchEvent(new Event('submit', { bubbles: true }));
-    await new Promise(r => setTimeout(r, 100));
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
 
     expect(fetchMock).toHaveBeenCalledOnce();
     const [url, options] = fetchMock.mock.calls[0];
@@ -121,7 +122,7 @@ describe('initNeu', () => {
 
     initNeu();
     document.getElementById('runde-form')!.dispatchEvent(new Event('submit', { bubbles: true }));
-    await new Promise(r => setTimeout(r, 100));
+    await vi.waitFor(() => expect(document.getElementById('ergebnis-bereich')!.classList.contains('hidden')).toBe(false));
 
     expect(document.getElementById('ergebnis-bereich')!.classList.contains('hidden')).toBe(false);
     expect(document.getElementById('form-bereich')!.classList.contains('hidden')).toBe(true);
@@ -165,9 +166,22 @@ describe('initNeu', () => {
 
     initNeu();
     document.getElementById('runde-form')!.dispatchEvent(new Event('submit', { bubbles: true }));
-    await new Promise(r => setTimeout(r, 100));
+    await vi.waitFor(() => expect(document.getElementById('fehler')!.classList.contains('hidden')).toBe(false));
 
     expect(document.getElementById('fehler')!.classList.contains('hidden')).toBe(false);
     expect(document.getElementById('fehler')!.textContent).toContain('Rate limit');
+  });
+
+  it('zeigt Fehler bei ungültigen Gesamtkosten (0)', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    initNeu();
+    (document.getElementById('gesamtkosten') as HTMLInputElement).value = '0';
+    document.getElementById('runde-form')!.dispatchEvent(new Event('submit', { bubbles: true }));
+    await vi.waitFor(() => expect(document.getElementById('fehler')!.classList.contains('hidden')).toBe(false));
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(document.getElementById('fehler')!.textContent).toContain('Gesamtkosten');
   });
 });

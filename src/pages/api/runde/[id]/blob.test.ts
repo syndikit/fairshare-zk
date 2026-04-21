@@ -43,6 +43,15 @@ describe('GET /api/runde/[id]/blob', () => {
     const body = await res.json();
     expect(body.encTeilnehmerBlob).toBe('iv123.cipher456');
     expect(body.gebote).toHaveLength(1);
+    expect(body.gebote[0]).toEqual({
+      emojiHmac: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+      encGebot: 'k.iv.ct',
+    });
+  });
+
+  it('nicht-ENOENT readFile-Fehler wird re-geworfen', async () => {
+    mockReadFile.mockRejectedValue(new Error('EIO'));
+    await expect(handler({ params: { id: 'abc12345' } })).rejects.toThrow('EIO');
   });
 
   it('gibt adminToken und id nicht zurück (Zero-Knowledge)', async () => {

@@ -52,6 +52,38 @@ describe('POST /api/runde/[id]/gebot', () => {
     handler = mod.POST as typeof handler;
   });
 
+  it('ungültige Runden-ID gibt 400', async () => {
+    const res = await handler({
+      params: { id: 'INVALID!' },
+      request: makeRequest({ emojiHmac: EMOJI_HMAC, encGebot: VALID_ENC_GEBOT }),
+    });
+    expect(res.status).toBe(400);
+    expect(mockWriteFile).not.toHaveBeenCalled();
+  });
+
+  it('ungültiger JSON-Body gibt 400', async () => {
+    const req = new Request('http://localhost/api/runde/abc12345/gebot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: 'kein json',
+    });
+    const res = await handler({ params: { id: 'abc12345' }, request: req });
+    expect(res.status).toBe(400);
+    expect(mockWriteFile).not.toHaveBeenCalled();
+  });
+
+  it('ENOENT bei readFile gibt 404', async () => {
+    const enoent = Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
+    mockReadFile.mockRejectedValue(enoent);
+
+    const res = await handler({
+      params: { id: 'abc12345' },
+      request: makeRequest({ emojiHmac: EMOJI_HMAC, encGebot: VALID_ENC_GEBOT }),
+    });
+    expect(res.status).toBe(404);
+    expect(mockWriteFile).not.toHaveBeenCalled();
+  });
+
   it('neues Gebot wird hinzugefügt (kein Duplikat)', async () => {
     mockReadFile.mockResolvedValue(makeRunde([]));
 
@@ -168,6 +200,17 @@ describe('POST /api/runde/[id]/gebot', () => {
     });
     expect(res.status).toBe(400);
     expect(mockWriteFile).not.toHaveBeenCalled();
+  });
+
+  it('readFile mit Nicht-ENOENT-Fehler wirft durch', async () => {
+    mockReadFile.mockRejectedValue(new Error('EIO'));
+
+    await expect(
+      handler({
+        params: { id: 'abc12345' },
+        request: makeRequest({ emojiHmac: EMOJI_HMAC, encGebot: VALID_ENC_GEBOT }),
+      }),
+    ).rejects.toThrow('EIO');
   });
 
   it('writeFile ENOSPC gibt 507', async () => {
@@ -296,6 +339,17 @@ describe('DELETE /api/runde/[id]/gebot', () => {
     });
     expect(res.status).toBe(400);
     expect(mockWriteFile).not.toHaveBeenCalled();
+  });
+
+  it('readFile mit Nicht-ENOENT-Fehler bei DELETE wirft durch', async () => {
+    mockReadFile.mockRejectedValue(new Error('EIO'));
+
+    await expect(
+      handler({
+        params: { id: 'abc12345' },
+        request: makeDeleteRequest({ emojiHmac: EMOJI_HMAC, adminToken: ADMIN_TOKEN }),
+      }),
+    ).rejects.toThrow('EIO');
   });
 
   it('ENOENT bei readFile gibt 404', async () => {

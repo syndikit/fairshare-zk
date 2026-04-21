@@ -1,5 +1,6 @@
 node_modules/
 dist/
+coverage/
 data/runden/*.json
 data/sync/*.json
 .env

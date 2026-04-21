@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { formatEur } from './ui';
+// @vitest-environment jsdom
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { formatEur, zeigeFeedback, versteckeFeedback } from './ui';
 
 describe('formatEur', () => {
   it('formatiert ganzen Betrag mit zwei Dezimalstellen', () => {
@@ -16,5 +17,41 @@ describe('formatEur', () => {
 
   it('formatiert vierstelligen Betrag mit Tausenderpunkt', () => {
     expect(formatEur(1234.56)).toBe('1.234,56 €');
+  });
+});
+
+describe('zeigeFeedback / versteckeFeedback', () => {
+  let el: HTMLElement;
+
+  beforeEach(() => {
+    el = document.createElement('div');
+    el.id = 'feedback';
+    el.classList.add('hidden');
+    document.body.appendChild(el);
+  });
+
+  afterEach(() => {
+    el.remove();
+  });
+
+  it('zeigeFeedback setzt Text und entfernt hidden-Klasse', () => {
+    zeigeFeedback('feedback', 'Alles gut', 'gruen');
+    expect(el.textContent).toBe('Alles gut');
+    expect(el.classList.contains('hidden')).toBe(false);
+  });
+
+  it('versteckeFeedback fügt hidden-Klasse hinzu und leert Text', () => {
+    el.textContent = 'Fehlermeldung';
+    el.classList.remove('hidden');
+    versteckeFeedback('feedback');
+    expect(el.classList.contains('hidden')).toBe(true);
+    expect(el.textContent).toBe('');
+  });
+
+  it('zeigeFeedback gefolgt von versteckeFeedback hinterlässt leeres Element', () => {
+    zeigeFeedback('feedback', 'Hinweis', 'amber');
+    versteckeFeedback('feedback');
+    expect(el.textContent).toBe('');
+    expect(el.classList.contains('hidden')).toBe(true);
   });
 });

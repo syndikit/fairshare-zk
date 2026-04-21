@@ -79,6 +79,13 @@ describe('POST /api/runde/erstellen', () => {
     expect(mockWriteFile).not.toHaveBeenCalled();
   });
 
+  it('encTeilnehmerBlob zu lang (> 10.000 Zeichen) → 400', async () => {
+    const tooLong = 'A'.repeat(5001) + '.' + 'B'.repeat(5001);
+    const res = await handler({ request: makeRequest({ encTeilnehmerBlob: tooLong }) });
+    expect(res.status).toBe(400);
+    expect(mockWriteFile).not.toHaveBeenCalled();
+  });
+
   it('kein JSON-Body → 400', async () => {
     const req = new Request('http://localhost/api/runde/erstellen', {
       method: 'POST',

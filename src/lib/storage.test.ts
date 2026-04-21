@@ -182,6 +182,17 @@ describe('saveGebotLokal / getGebotSlot', () => {
     expect(getGebotSlot('runde1', '🐼🚀🌈')).toBe('SlotA');
     expect(getGebotSlot('runde2', '🐼🚀🌈')).toBe('SlotB');
   });
+
+  it('getGebotSlot gibt null zurück bei korruptem Gebot-Storage', () => {
+    ls.store.set('fairshare-gebot-runde1', '{kaputt}');
+    expect(getGebotSlot('runde1', '🐼🚀🌈')).toBeNull();
+  });
+
+  it('saveGebotLokal ignoriert korrupten Vorhandenen und schreibt neu', () => {
+    ls.store.set('fairshare-gebot-runde1', '{kaputt}');
+    saveGebotLokal('runde1', '🐼🚀🌈', 'Erwachsen');
+    expect(getGebotSlot('runde1', '🐼🚀🌈')).toBe('Erwachsen');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -198,6 +209,11 @@ describe('exportJson', () => {
     saveRunde(r);
     const parsed = JSON.parse(exportJson());
     expect(parsed).toEqual([r]);
+  });
+
+  it('exportiert mit 2-Space-Einrückung', () => {
+    saveRunde(runde());
+    expect(exportJson()).toMatch(/^\[\n {2}/);
   });
 });
 

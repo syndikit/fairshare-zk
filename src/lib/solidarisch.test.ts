@@ -3,6 +3,8 @@ import {
   berechneAuswertung,
   berechneAusgleich,
   berechneRichtwert,
+  generiereEmojiId,
+  EMOJIS,
   type Gebot,
   type GebotErgebnis,
   type Slot,
@@ -29,6 +31,24 @@ function gebot(
 function slot(label: string, gewichtung: number, anzahl = 1): Slot {
   return { label, gewichtung, anzahl };
 }
+
+// ---------------------------------------------------------------------------
+// generiereEmojiId
+// ---------------------------------------------------------------------------
+
+describe('generiereEmojiId', () => {
+  it('gibt einen String aus genau 3 Emojis zurück', () => {
+    const id = generiereEmojiId();
+    const chars = [...id];
+    expect(chars).toHaveLength(3);
+    chars.forEach((emoji) => expect(EMOJIS).toContain(emoji));
+  });
+
+  it('erzeugt bei mehrfachem Aufruf unterschiedliche Werte (stochastisch)', () => {
+    const results = new Set(Array.from({ length: 20 }, () => generiereEmojiId()));
+    expect(results.size).toBeGreaterThan(1);
+  });
+});
 
 // ---------------------------------------------------------------------------
 // Richtwert aus ALLEN Slots (inkl. unbelegte)

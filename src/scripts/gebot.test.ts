@@ -91,7 +91,7 @@ async function createEncryptedBlob(overrides?: Partial<{
     adminPubKey: adminPubKeyB64,
     hmacKey: hmacKeyB64,
     slots: [{ label: 'Erwachsen', gewichtung: 1.0, anzahl: 1 }],
-    ...(overrides?.dreiGebotModus !== undefined ? { dreiGebotModus: overrides.dreiGebotModus } : {}),
+    dreiGebotModus: overrides?.dreiGebotModus,
   };
   const encTeilnehmerBlob = await encrypt(partKey, JSON.stringify(blobData));
   return { partKeyB64, encTeilnehmerBlob };
@@ -302,6 +302,51 @@ describe('initGebot', () => {
 
     await vi.waitFor(() => {
       const el = document.getElementById('gebot-fehler')!;
+      return !el.classList.contains('hidden') && el.textContent?.includes('aufsteigend');
+    });
+  });
+
+  it('korrigiert Drei-Gebot erfolgreich', async () => {
+    const { partKeyB64, encTeilnehmerBlob } = await createEncryptedBlob({ dreiGebotModus: true });
+    mockLocation('/runde/abc12345', `#pk=${partKeyB64}`);
+    const mockFetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ encTeilnehmerBlob, gebote: [] }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ success: true }) });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await initGebot();
+
+    (document.getElementById('korrektur-emoji') as HTMLInputElement).value = '🦊🌙⭐';
+    (document.getElementById('korrektur-betrag-min') as HTMLInputElement).value = '50';
+    (document.getElementById('korrektur-betrag-mittel') as HTMLInputElement).value = '80';
+    (document.getElementById('korrektur-betrag-max') as HTMLInputElement).value = '120';
+    document.getElementById('korrektur-form')!.dispatchEvent(new Event('submit', { bubbles: true }));
+
+    await vi.waitFor(() => expect(document.getElementById('zustand-bestaetigung')!.classList.contains('hidden')).toBe(false));
+    const korrekturCall = mockFetch.mock.calls[1];
+    const body = JSON.parse(korrekturCall[1].body);
+    expect(body.encGebot).toBeTruthy();
+    expect(body.isCorrection).toBe(true);
+  });
+
+  it('zeigt Korrektur-Fehler wenn Drei-Gebot-Beträge nicht aufsteigend', async () => {
+    const { partKeyB64, encTeilnehmerBlob } = await createEncryptedBlob({ dreiGebotModus: true });
+    mockLocation('/runde/abc12345', `#pk=${partKeyB64}`);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ encTeilnehmerBlob, gebote: [] }),
+    }));
+
+    await initGebot();
+
+    (document.getElementById('korrektur-emoji') as HTMLInputElement).value = '🦊🌙⭐';
+    (document.getElementById('korrektur-betrag-min') as HTMLInputElement).value = '90';
+    (document.getElementById('korrektur-betrag-mittel') as HTMLInputElement).value = '50';
+    (document.getElementById('korrektur-betrag-max') as HTMLInputElement).value = '120';
+    document.getElementById('korrektur-form')!.dispatchEvent(new Event('submit', { bubbles: true }));
+
+    await vi.waitFor(() => {
+      const el = document.getElementById('korrektur-fehler')!;
       return !el.classList.contains('hidden') && el.textContent?.includes('aufsteigend');
     });
   });

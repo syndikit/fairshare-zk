@@ -55,7 +55,7 @@ export const POST: APIRoute = async ({ params, request }) => {
       headers: { 'Content-Type': 'application/json' },
     });
   }
-  if (typeof b.encGebot !== 'string' || !GEBOT_FORMAT.test(b.encGebot) || b.encGebot.length > 1_000) {
+  if (typeof b.encGebot !== 'string' || !GEBOT_FORMAT.test(b.encGebot) || b.encGebot.length > 1_500) {
     return new Response(JSON.stringify({ error: 'encGebot fehlt oder hat ungültiges Format' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },

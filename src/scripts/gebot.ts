@@ -19,6 +19,7 @@ interface TeilnehmerBlob {
   adminPubKey: string;
   hmacKey: string;
   slots: { label: string; gewichtung: number; anzahl: number; standardgebot?: number }[];
+  dreiGebotModus?: boolean;
 }
 
 export async function initGebot(): Promise<void> {
@@ -197,6 +198,11 @@ export async function initGebot(): Promise<void> {
   zustandFormular.classList.remove('hidden');
   zustandFormular.classList.add('animate-fade-in');
 
+  // Drei-Gebot-Modus: UI umschalten
+  const dreiGebotModus = blob.dreiGebotModus === true;
+  document.getElementById('betrag-einzel')!.classList.toggle('hidden', dreiGebotModus);
+  document.getElementById('betrag-drei')!.classList.toggle('hidden', !dreiGebotModus);
+
   // Korrektur-Tab einblenden falls bereits geboten
   if (blob.slots.some(s => slotBereitsGeboten(s.label))) {
     document.getElementById('tab-korrigieren')!.classList.remove('hidden');
@@ -240,9 +246,29 @@ export async function initGebot(): Promise<void> {
         10,
       );
       const selectedSlot = blob.slots[selectedIdx];
-      const betrag = parseFloat(
-        (gebotForm.querySelector('#betrag') as HTMLInputElement).value.replace(',', '.'),
-      );
+
+      let payload: object;
+      if (dreiGebotModus) {
+        const betragMin = parseFloat((document.getElementById('betrag-min') as HTMLInputElement).value.replace(',', '.'));
+        const betragMittel = parseFloat((document.getElementById('betrag-mittel') as HTMLInputElement).value.replace(',', '.'));
+        const betragMax = parseFloat((document.getElementById('betrag-max') as HTMLInputElement).value.replace(',', '.'));
+        if (!betragMin || !betragMittel || !betragMax || betragMin <= 0 || betragMittel <= 0 || betragMax <= 0) {
+          zeigeFeedback('gebot-fehler', 'Bitte alle drei Beträge ausfüllen.', 'rot');
+          return;
+        }
+        if (betragMin > betragMittel || betragMittel > betragMax) {
+          zeigeFeedback('gebot-fehler', 'Die Beträge müssen aufsteigend sein: Min ≤ Mittel ≤ Max.', 'rot');
+          return;
+        }
+        payload = { slotLabel: selectedSlot.label, gewichtung: selectedSlot.gewichtung, betragMin, betragMittel, betragMax };
+      } else {
+        const betrag = parseFloat((gebotForm.querySelector('#betrag') as HTMLInputElement).value.replace(',', '.'));
+        if (!betrag || betrag <= 0) {
+          zeigeFeedback('gebot-fehler', 'Bitte einen gültigen Betrag eingeben.', 'rot');
+          return;
+        }
+        payload = { slotLabel: selectedSlot.label, gewichtung: selectedSlot.gewichtung, betrag };
+      }
 
       let emojiId: string;
       let emojiHmac: string;
@@ -255,12 +281,7 @@ export async function initGebot(): Promise<void> {
         versuche++;
         emojiId = generiereEmojiId();
         emojiHmac = await hmac(hmacKey, emojiId);
-        encGebot = await encryptGebot(adminPubKey, JSON.stringify({
-          emojiId,
-          slotLabel: selectedSlot.label,
-          gewichtung: selectedSlot.gewichtung,
-          betrag,
-        }));
+        encGebot = await encryptGebot(adminPubKey, JSON.stringify({ emojiId, ...payload }));
         res = await fetch(`/api/runde/${rundenId}/gebot`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

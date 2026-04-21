@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'src/**'
+      - '!src/**/*.test.ts'
       - 'public/**'
       - 'vendor/**'
       - 'package*.json'

@@ -30,8 +30,15 @@ function setupDom() {
     <div id="panel-korrigieren" class="hidden"></div>
     <form id="gebot-form">
       <input type="radio" name="slot" value="0" checked />
-      <input type="number" id="betrag" />
-      <p id="betrag-richtwert-hinweis"></p>
+      <div id="betrag-einzel">
+        <input type="number" id="betrag" />
+        <p id="betrag-richtwert-hinweis"></p>
+      </div>
+      <div id="betrag-drei" class="hidden">
+        <input type="number" id="betrag-min" />
+        <input type="number" id="betrag-mittel" />
+        <input type="number" id="betrag-max" />
+      </div>
       <div id="duplikat-warnung" class="hidden"></div>
       <div id="duplikat-schritt1"></div>
       <div id="duplikat-schritt2" class="hidden"></div>

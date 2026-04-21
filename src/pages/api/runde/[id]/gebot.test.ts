@@ -192,8 +192,8 @@ describe('POST /api/runde/[id]/gebot', () => {
     expect(mockWriteFile).not.toHaveBeenCalled();
   });
 
-  it('encGebot über 1000 Zeichen gibt 400', async () => {
-    const longGebot = `${'A'.repeat(500)}.${'B'.repeat(100)}.${'C'.repeat(401)}`;
+  it('encGebot über 1500 Zeichen gibt 400', async () => {
+    const longGebot = `${'A'.repeat(700)}.${'B'.repeat(400)}.${'C'.repeat(401)}`;
     const res = await handler({
       params: { id: 'abc12345' },
       request: makeRequest({ emojiHmac: EMOJI_HMAC, encGebot: longGebot }),

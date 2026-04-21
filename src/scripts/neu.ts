@@ -500,6 +500,9 @@ export function initNeu(): void {
       const { publicKey: adminPubKey, privateKey: adminPrivKey } = await generateAdminKeyPair();
       const hmacKey = await generateHmacKey();
 
+      const dreiGebotModus =
+        (document.getElementById('drei-gebot-toggle') as HTMLInputElement)?.checked ?? false;
+
       // Blob zusammenstellen + verschlüsseln
       const blob = {
         rundeName,
@@ -507,6 +510,7 @@ export function initNeu(): void {
         adminPubKey: await exportKey(adminPubKey),
         hmacKey: await exportKey(hmacKey),
         slots: finalSlots,
+        dreiGebotModus,
       };
       const encTeilnehmerBlob = await encrypt(partKey, JSON.stringify(blob));
 

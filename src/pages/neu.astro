@@ -14,6 +14,14 @@ import FeedbackBox from '../components/FeedbackBox.astro';
         <div id="power-menu" class="hidden absolute right-0 mt-1 w-52 bg-surface-raised border border-border rounded-lg shadow-lg z-10 py-1">
           <button id="splid-import-btn" type="button"
             class="w-full text-left text-sm px-4 py-2 text-fg-secondary hover:bg-surface-elevated transition-colors">Abrechnung importieren</button>
+          <label class="flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-surface-elevated transition-colors select-none">
+            <span class="text-sm text-fg-secondary">Drei-Gebot-Modus</span>
+            <input type="checkbox" id="drei-gebot-toggle" class="sr-only peer" />
+            <div class="w-9 h-5 bg-gray-300 rounded-full peer-checked:bg-brand relative shrink-0
+                        after:absolute after:top-0.5 after:left-0.5 after:w-4 after:h-4
+                        after:bg-white after:rounded-full after:transition-all
+                        peer-checked:after:translate-x-4"></div>
+          </label>
         </div>
       </div>
     </div>

@@ -4,7 +4,15 @@ import {
   decrypt,
   decryptGebot,
 } from '../lib/crypto';
-import { berechneAuswertung, berechneAusgleich, type Gebot, type GebotErgebnis } from '../lib/solidarisch';
+import {
+  berechneAuswertung,
+  berechneAusgleich,
+  ermittleDreiGebotStatus,
+  dreiGebotZuGebote,
+  type Gebot,
+  type GebotErgebnis,
+  type DreiGebotTriple,
+} from '../lib/solidarisch';
 import { formatEur } from '../lib/ui';
 
 interface TeilnehmerBlob {
@@ -13,6 +21,18 @@ interface TeilnehmerBlob {
   adminPubKey: string;
   hmacKey: string;
   slots: { label: string; gewichtung: number; anzahl: number; ausgaben?: number; standardgebot?: number }[];
+  dreiGebotModus?: boolean;
+}
+
+interface RawGebotPayload {
+  emojiId: string;
+  slotLabel: string;
+  gewichtung: number;
+  betrag?: number;
+  betragMin?: number;
+  betragMittel?: number;
+  betragMax?: number;
+  istStandard?: boolean;
 }
 
 export async function initAdmin(): Promise<void> {
@@ -94,11 +114,21 @@ export async function initAdmin(): Promise<void> {
   const dedupGebote = [...latestByHmac.values()];
 
   // Gebote entschlüsseln
+  const dreiGebotModus = blob.dreiGebotModus === true;
   const geboteWithHmac: Array<{ emojiHmac: string; gebot: Gebot }> = [];
+  const dreiGebotTriples: DreiGebotTriple[] = [];
+
   for (const { emojiHmac, encGebot } of dedupGebote) {
     try {
-      const g = JSON.parse(await decryptGebot(adminPrivKey, encGebot)) as Gebot;
-      geboteWithHmac.push({ emojiHmac, gebot: g });
+      const raw = JSON.parse(await decryptGebot(adminPrivKey, encGebot)) as RawGebotPayload;
+      if (raw.betragMin !== undefined && raw.betragMittel !== undefined && raw.betragMax !== undefined) {
+        dreiGebotTriples.push({
+          emojiId: raw.emojiId, slotLabel: raw.slotLabel, gewichtung: raw.gewichtung,
+          betragMin: raw.betragMin, betragMittel: raw.betragMittel, betragMax: raw.betragMax,
+        });
+      }
+      // Für Anzeige und Vollständigkeits-Check immer als Gebot (betrag irrelevant bis Auswertung)
+      geboteWithHmac.push({ emojiHmac, gebot: { emojiId: raw.emojiId, slotLabel: raw.slotLabel, gewichtung: raw.gewichtung, betrag: raw.betrag ?? 0 } });
     } catch { /* korruptes Gebot überspringen */ }
   }
   const gebote = geboteWithHmac.map(({ gebot }) => gebot);
@@ -159,9 +189,20 @@ export async function initAdmin(): Promise<void> {
     document.getElementById('duplikat-box')!.classList.remove('hidden');
   }
 
+  // Drei-Gebot-Modus: Status ermitteln und Gebote für Berechnung konvertieren
+  let dreiGebotStatus: ReturnType<typeof ermittleDreiGebotStatus> | null = null;
+  let geboteFuerBerechnung = alleGebote;
+  if (dreiGebotModus && allesDa && dreiGebotTriples.length > 0) {
+    dreiGebotStatus = ermittleDreiGebotStatus(blob.gesamtkosten, dreiGebotTriples);
+    const konvertiert = dreiGebotZuGebote(dreiGebotStatus, dreiGebotTriples);
+    // Standard-Slots weiterhin ergänzen
+    const standardGebote = alleGebote.filter((g) => g.istStandard);
+    geboteFuerBerechnung = [...konvertiert, ...standardGebote];
+  }
+
   // Auswertung berechnen (nur wenn Gebote vorhanden)
-  const auswertung = alleGebote.length > 0
-    ? berechneAuswertung(blob.gesamtkosten, alleGebote, blob.slots)
+  const auswertung = geboteFuerBerechnung.length > 0
+    ? berechneAuswertung(blob.gesamtkosten, geboteFuerBerechnung, blob.slots)
     : null;
 
   // Richtwert für Anzeige + "fehlt"-Zeilen
@@ -437,6 +478,15 @@ export async function initAdmin(): Promise<void> {
     const fehlbetragVorhanden = auswertung && auswertung.fehlbetrag > 0.005;
     if (fehlbetragVorhanden) {
       zeigeBanner(`Fehlbetrag: ${formatEur(auswertung!.fehlbetrag)} — Runde muss wiederholt werden.`, 'red');
+    } else if (dreiGebotStatus) {
+      const statusTexte: Record<string, string> = {
+        gruen: '🟢 Grün — Minimalgebote decken die Kosten. Auswertung mit Minimalgeboten.',
+        gelb:  '🟡 Gelb — Erst mittlere Gebote decken die Kosten. Auswertung mit mittleren Geboten.',
+        rot:   '🔴 Rot — Erst Maximalgebote decken die Kosten. Auswertung mit Maximalgeboten.',
+        kritisch: '⚫ Kritisch — Selbst Maximalgebote reichen nicht. Auswertung mit Maximalgeboten als Näherung.',
+      };
+      const bannerFarbe = dreiGebotStatus === 'gruen' ? 'green' : dreiGebotStatus === 'kritisch' ? 'red' : 'amber';
+      zeigeBanner(statusTexte[dreiGebotStatus], bannerFarbe);
     } else {
       zeigeBanner('Alle Beiträge vollständig. Auswertung abgeschlossen.', 'green');
     }

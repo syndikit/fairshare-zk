@@ -193,6 +193,43 @@ export function berechneAuswertung(
   };
 }
 
+// ---------------------------------------------------------------------------
+// Drei-Gebot-Modus
+// ---------------------------------------------------------------------------
+
+export type DreiGebotStatus = 'gruen' | 'gelb' | 'rot' | 'kritisch';
+
+export interface DreiGebotTriple {
+  emojiId: string;
+  slotLabel: string;
+  gewichtung: number;
+  betragMin: number;
+  betragMittel: number;
+  betragMax: number;
+}
+
+/** Ermittelt das niedrigste Level, auf dem die Gesamtkosten gedeckt sind. */
+export function ermittleDreiGebotStatus(
+  gesamtkosten: number,
+  gebote: DreiGebotTriple[],
+): DreiGebotStatus {
+  if (gebote.reduce((s, g) => s + g.betragMin, 0) >= gesamtkosten) return 'gruen';
+  if (gebote.reduce((s, g) => s + g.betragMittel, 0) >= gesamtkosten) return 'gelb';
+  if (gebote.reduce((s, g) => s + g.betragMax, 0) >= gesamtkosten) return 'rot';
+  return 'kritisch';
+}
+
+/** Wandelt Drei-Gebot-Tripel in einfache Gebote um (Betrag je nach Status). */
+export function dreiGebotZuGebote(status: DreiGebotStatus, gebote: DreiGebotTriple[]): Gebot[] {
+  return gebote.map((t) => ({
+    emojiId: t.emojiId,
+    slotLabel: t.slotLabel,
+    gewichtung: t.gewichtung,
+    betrag: status === 'gruen' ? t.betragMin : status === 'gelb' ? t.betragMittel : t.betragMax,
+  }));
+}
+
+// ---------------------------------------------------------------------------
 /**
  * Berechnet Ausgleichszahlungen (minimale Anzahl Überweisungen).
  *

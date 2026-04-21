@@ -4,10 +4,13 @@ import {
   berechneAusgleich,
   berechneRichtwert,
   generiereEmojiId,
+  ermittleDreiGebotStatus,
+  dreiGebotZuGebote,
   EMOJIS,
   type Gebot,
   type GebotErgebnis,
   type Slot,
+  type DreiGebotTriple,
 } from './solidarisch';
 
 // ---------------------------------------------------------------------------
@@ -571,5 +574,73 @@ describe('Fehlerfälle', () => {
 
   it('wirft bei leerer Slots-Liste', () => {
     expect(() => berechneAuswertung(100, [gebot(1, 50)], [])).toThrow('Keine Slots definiert');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ermittleDreiGebotStatus
+// ---------------------------------------------------------------------------
+
+function triple(
+  betragMin: number,
+  betragMittel: number,
+  betragMax: number,
+  overrides: Partial<DreiGebotTriple> = {},
+): DreiGebotTriple {
+  return { emojiId: '🐼🚀🌈', slotLabel: 'Slot', gewichtung: 1, betragMin, betragMittel, betragMax, ...overrides };
+}
+
+describe('ermittleDreiGebotStatus', () => {
+  it('gibt gruen zurück wenn Minimalgebote die Kosten decken', () => {
+    expect(ermittleDreiGebotStatus(100, [triple(50, 80, 120), triple(60, 80, 120)])).toBe('gruen');
+  });
+
+  it('gibt gelb zurück wenn erst Mittelgebote die Kosten decken', () => {
+    expect(ermittleDreiGebotStatus(100, [triple(30, 60, 120), triple(30, 60, 120)])).toBe('gelb');
+  });
+
+  it('gibt rot zurück wenn erst Maximalgebote die Kosten decken', () => {
+    expect(ermittleDreiGebotStatus(100, [triple(20, 40, 60), triple(20, 40, 60)])).toBe('rot');
+  });
+
+  it('gibt kritisch zurück wenn selbst Maximalgebote nicht reichen', () => {
+    expect(ermittleDreiGebotStatus(100, [triple(10, 20, 30), triple(10, 20, 30)])).toBe('kritisch');
+  });
+
+  it('wertet genau die Summe als ausreichend (Grenzfall)', () => {
+    expect(ermittleDreiGebotStatus(100, [triple(100, 150, 200)])).toBe('gruen');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// dreiGebotZuGebote
+// ---------------------------------------------------------------------------
+
+describe('dreiGebotZuGebote', () => {
+  const gebote = [triple(10, 20, 30), triple(40, 50, 60)];
+
+  it('wählt betragMin bei gruen', () => {
+    const result = dreiGebotZuGebote('gruen', gebote);
+    expect(result.map(g => g.betrag)).toEqual([10, 40]);
+  });
+
+  it('wählt betragMittel bei gelb', () => {
+    const result = dreiGebotZuGebote('gelb', gebote);
+    expect(result.map(g => g.betrag)).toEqual([20, 50]);
+  });
+
+  it('wählt betragMax bei rot', () => {
+    const result = dreiGebotZuGebote('rot', gebote);
+    expect(result.map(g => g.betrag)).toEqual([30, 60]);
+  });
+
+  it('wählt betragMax bei kritisch', () => {
+    const result = dreiGebotZuGebote('kritisch', gebote);
+    expect(result.map(g => g.betrag)).toEqual([30, 60]);
+  });
+
+  it('überträgt emojiId, slotLabel und gewichtung korrekt', () => {
+    const [g] = dreiGebotZuGebote('gruen', [triple(10, 20, 30, { emojiId: '🦊🌙⭐', slotLabel: 'Erwachsen', gewichtung: 0.75 })]);
+    expect(g).toMatchObject({ emojiId: '🦊🌙⭐', slotLabel: 'Erwachsen', gewichtung: 0.75 });
   });
 });

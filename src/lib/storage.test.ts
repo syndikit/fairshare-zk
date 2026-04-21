@@ -183,6 +183,11 @@ describe('saveGebotLokal / getGebotSlot', () => {
     expect(getGebotSlot('runde2', '🐼🚀🌈')).toBe('SlotB');
   });
 
+  it('gibt null zurück wenn Gebot vorhanden aber emojiId nicht gefunden', () => {
+    saveGebotLokal('runde1', '🎉🌟🦋', 'Erwachsen');
+    expect(getGebotSlot('runde1', '🐼🚀🌈')).toBeNull();
+  });
+
   it('getGebotSlot gibt null zurück bei korruptem Gebot-Storage', () => {
     ls.store.set('fairshare-gebot-runde1', '{kaputt}');
     expect(getGebotSlot('runde1', '🐼🚀🌈')).toBeNull();

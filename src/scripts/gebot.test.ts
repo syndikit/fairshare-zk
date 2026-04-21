@@ -177,10 +177,7 @@ describe('initGebot', () => {
     (document.getElementById('betrag') as HTMLInputElement).value = '80';
     document.getElementById('gebot-form')!.dispatchEvent(new Event('submit', { bubbles: true }));
 
-    // Warten bis async Handler abgeschlossen
-    await new Promise(r => setTimeout(r, 50));
-
-    expect(document.getElementById('zustand-bestaetigung')!.classList.contains('hidden')).toBe(false);
+    await vi.waitFor(() => expect(document.getElementById('zustand-bestaetigung')!.classList.contains('hidden')).toBe(false));
     expect(fetchMock).toHaveBeenCalledTimes(2);
     const [, gebotCall] = fetchMock.mock.calls;
     expect(gebotCall[0]).toContain('/gebot');
@@ -203,9 +200,7 @@ describe('initGebot', () => {
     (document.getElementById('betrag') as HTMLInputElement).value = '80';
     document.getElementById('gebot-form')!.dispatchEvent(new Event('submit', { bubbles: true }));
 
-    await new Promise(r => setTimeout(r, 10));
-
-    expect(document.getElementById('duplikat-warnung')!.classList.contains('hidden')).toBe(false);
+    await vi.waitFor(() => expect(document.getElementById('duplikat-warnung')!.classList.contains('hidden')).toBe(false));
   });
 
   it('entfernt Fragment aus URL nach dem Laden', async () => {

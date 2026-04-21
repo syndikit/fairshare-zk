@@ -213,6 +213,28 @@ describe('Rundungskorrektur ohne ueberRichtwert (Z.172 else-Zweig)', () => {
   });
 });
 
+describe('Rundungskorrektur mit ueberRichtwert (Z.172 if-Zweig)', () => {
+  it('delta-Korrektur landet auf letztem Eintrag MIT ueberRichtwert wenn alle über Richtwert bieten', () => {
+    // richtwert = ceil(10/3 * 100)/100 = 3.34
+    // Alle bieten 4.00 → ueberRichtwert = 0.66 für alle
+    // summeUeberRichtwert = 1.98, rohUeberschuss = 2.00
+    // geldZurueck je Person = runden(0.66/1.98 * 2) = runden(0.6666...) = 0.67
+    // solidarischerBeitrag je Person = 4.00 - 0.67 = 3.33
+    // summeBerechnete = 9.99, delta = -0.01
+    // rueckwaerts >= 0 → Korrektur auf letzten Eintrag MIT ueberRichtwert (idx=2)
+    const slots = [slot('A', 1), slot('B', 1), slot('C', 1)];
+    const gebote = [
+      gebot(1, 4.00, { slotLabel: 'A' }),
+      gebot(1, 4.00, { slotLabel: 'B' }),
+      gebot(1, 4.00, { slotLabel: 'C' }),
+    ];
+    const result = berechneAuswertung(10.0, gebote, slots);
+    const beitraege = result.ergebnisse.map((e) => e.solidarischerBeitrag);
+    expect(beitraege.reduce((s, b) => s + b, 0)).toBeCloseTo(10.0);
+    expect(result.summeBeitraege).toBeCloseTo(10.0);
+  });
+});
+
 describe('Normalfall (exakt gedeckt)', () => {
   it('keine Überschuss-Verteilung wenn summeGebote = gesamtkosten', () => {
     // richtwert = 200 / 2 = 100, beide bieten exakt 100

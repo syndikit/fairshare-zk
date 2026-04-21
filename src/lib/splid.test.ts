@@ -143,6 +143,67 @@ describe('parseSplid', () => {
     await expect(parseSplid(buf)).rejects.toThrow('Kopfzeile');
   });
 
+  it('wirft wenn Rundenname leer ist (A1 leer)', async () => {
+    const ws = XLSX.utils.aoa_to_sheet([
+      [''],
+      [],
+      [],
+      ['Titel', 'Betrag', 'Währung', 'Von', 'Datum', 'Erstellt am', 'Anna', ''],
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Zusammenfassung');
+    const nodeBuf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+    const buf = nodeBuf.buffer.slice(nodeBuf.byteOffset, nodeBuf.byteOffset + nodeBuf.byteLength) as ArrayBuffer;
+
+    await expect(parseSplid(buf)).rejects.toThrow('Rundenname');
+  });
+
+  it('fällt auf Spalte 6 zurück wenn „Erstellt am" fehlt', async () => {
+    const rows: unknown[][] = [
+      ['Fallback-Runde'],
+      [],
+      [],
+      ['Titel', 'Betrag', 'Währung', 'Von', 'Datum', 'AndereSpalte', 'Anna', '', 'Ben', ''],
+      ['Einkauf', 50, 'EUR', 'Anna', '01.01.26'],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Zusammenfassung');
+    const nodeBuf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+    const buf = nodeBuf.buffer.slice(nodeBuf.byteOffset, nodeBuf.byteOffset + nodeBuf.byteLength) as ArrayBuffer;
+
+    const result = await parseSplid(buf);
+    expect(result.personen.map((p) => p.name)).toEqual(['Anna', 'Ben']);
+    expect(result.gesamtkosten).toBe(50);
+  });
+
+  it('überspringt Datenzeilen mit Betrag ≤ 0', async () => {
+    const buf = buildSplidBuffer({
+      personen: ['Anna'],
+      ausgaben: [
+        { von: 'Anna', betrag: 100 },
+        { von: 'Anna', betrag: 0 },
+        { von: 'Anna', betrag: -10 },
+      ],
+    });
+    const { gesamtkosten } = await parseSplid(buf);
+    expect(gesamtkosten).toBe(100);
+  });
+
+  it('zählt Betrag unbekannter Person zu Gesamtkosten, aber nicht zu Ausgaben', async () => {
+    const buf = buildSplidBuffer({
+      personen: ['Anna'],
+      ausgaben: [
+        { von: 'Anna', betrag: 50 },
+        { von: 'Unbekannt', betrag: 30 },
+      ],
+    });
+    const { gesamtkosten, personen } = await parseSplid(buf);
+    expect(gesamtkosten).toBe(80);
+    const anna = personen.find((p) => p.name === 'Anna')!;
+    expect(anna.ausgaben).toBe(50);
+  });
+
   it('wirft wenn keine Personen erkannt werden', async () => {
     const ws = XLSX.utils.aoa_to_sheet([
       ['Runde'],

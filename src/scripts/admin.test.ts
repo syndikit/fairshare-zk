@@ -189,10 +189,12 @@ describe('initAdmin', () => {
     fetchMock.mockResolvedValue({ ok: true });
     loeschenBtn.click();
 
-    await new Promise(r => setTimeout(r, 10));
+    await vi.waitFor(() => {
+      const deleteCalls = fetchMock.mock.calls.filter(c => c[1]?.method === 'DELETE');
+      expect(deleteCalls.length).toBe(1);
+    });
 
     const deleteCalls = fetchMock.mock.calls.filter(c => c[1]?.method === 'DELETE');
-    expect(deleteCalls.length).toBe(1);
     expect(deleteCalls[0][1].body).toContain(gebot.emojiHmac);
   });
 

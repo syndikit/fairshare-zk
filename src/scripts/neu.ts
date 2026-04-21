@@ -428,6 +428,11 @@ export function initNeu(): void {
         (form.querySelector('#gesamtkosten') as HTMLInputElement).value,
       );
 
+      if (!gesamtkosten || gesamtkosten <= 0 || !isFinite(gesamtkosten)) {
+        zeigeFeedback('fehler', 'Bitte gib gültige Gesamtkosten ein.', 'rot');
+        return;
+      }
+
       const labels = [...slotsContainer.querySelectorAll<HTMLDivElement>('.slot-eintrag')].map((slotEl) => {
         const labelEl = slotEl.querySelector<HTMLInputElement>('[name="label[]"]');
         const labelVal = labelEl?.value.trim() ?? '';

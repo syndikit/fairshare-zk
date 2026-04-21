@@ -128,7 +128,7 @@ export async function initAdmin(): Promise<void> {
         });
       }
       // Für Anzeige und Vollständigkeits-Check immer als Gebot (betrag irrelevant bis Auswertung)
-      geboteWithHmac.push({ emojiHmac, gebot: { emojiId: raw.emojiId, slotLabel: raw.slotLabel, gewichtung: raw.gewichtung, betrag: raw.betrag ?? 0 } });
+      geboteWithHmac.push({ emojiHmac, gebot: { emojiId: raw.emojiId, slotLabel: raw.slotLabel, gewichtung: raw.gewichtung, betrag: raw.betrag ?? (raw.betragMittel ?? 0) } });
     } catch { /* korruptes Gebot überspringen */ }
   }
   const gebote = geboteWithHmac.map(({ gebot }) => gebot);

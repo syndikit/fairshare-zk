@@ -202,6 +202,8 @@ export async function initGebot(): Promise<void> {
   const dreiGebotModus = blob.dreiGebotModus === true;
   document.getElementById('betrag-einzel')!.classList.toggle('hidden', dreiGebotModus);
   document.getElementById('betrag-drei')!.classList.toggle('hidden', !dreiGebotModus);
+  document.getElementById('korrektur-betrag-einzel')!.classList.toggle('hidden', dreiGebotModus);
+  document.getElementById('korrektur-betrag-drei')!.classList.toggle('hidden', !dreiGebotModus);
 
   // Korrektur-Tab einblenden falls bereits geboten
   if (blob.slots.some(s => slotBereitsGeboten(s.label))) {
@@ -252,7 +254,7 @@ export async function initGebot(): Promise<void> {
         const betragMin = parseFloat((document.getElementById('betrag-min') as HTMLInputElement).value.replace(',', '.'));
         const betragMittel = parseFloat((document.getElementById('betrag-mittel') as HTMLInputElement).value.replace(',', '.'));
         const betragMax = parseFloat((document.getElementById('betrag-max') as HTMLInputElement).value.replace(',', '.'));
-        if (!betragMin || !betragMittel || !betragMax || betragMin <= 0 || betragMittel <= 0 || betragMax <= 0) {
+        if (isNaN(betragMin) || isNaN(betragMittel) || isNaN(betragMax) || betragMin <= 0 || betragMittel <= 0 || betragMax <= 0) {
           zeigeFeedback('gebot-fehler', 'Bitte alle drei Beträge ausfüllen.', 'rot');
           return;
         }
@@ -381,7 +383,7 @@ export async function initGebot(): Promise<void> {
       });
       korrekturSlotHinweis.textContent = `Slot aus deinem ursprünglichen Gebot: ${bekannterSlot}`;
       korrekturSlotHinweis.className = 'text-xs text-brand mt-1';
-      betragFeldAktualisieren(slotIdx, 'korrektur-betrag', 'korrektur-richtwert-hinweis');
+      if (!dreiGebotModus) betragFeldAktualisieren(slotIdx, 'korrektur-betrag', 'korrektur-richtwert-hinweis');
     } else {
       radios.forEach((r) => { r.disabled = false; });
       if (emojiId) {
@@ -409,17 +411,32 @@ export async function initGebot(): Promise<void> {
         10,
       );
       const selectedSlot = blob.slots[selectedIdx];
-      const betrag = parseFloat(
-        (document.getElementById('korrektur-betrag') as HTMLInputElement).value.replace(',', '.'),
-      );
+
+      let korrekturPayload: object;
+      if (dreiGebotModus) {
+        const betragMin = parseFloat((document.getElementById('korrektur-betrag-min') as HTMLInputElement).value.replace(',', '.'));
+        const betragMittel = parseFloat((document.getElementById('korrektur-betrag-mittel') as HTMLInputElement).value.replace(',', '.'));
+        const betragMax = parseFloat((document.getElementById('korrektur-betrag-max') as HTMLInputElement).value.replace(',', '.'));
+        if (isNaN(betragMin) || isNaN(betragMittel) || isNaN(betragMax) || betragMin <= 0 || betragMittel <= 0 || betragMax <= 0) {
+          zeigeFeedback('korrektur-fehler', 'Bitte alle drei Beträge ausfüllen.', 'rot');
+          return;
+        }
+        if (betragMin > betragMittel || betragMittel > betragMax) {
+          zeigeFeedback('korrektur-fehler', 'Die Beträge müssen aufsteigend sein: Min ≤ Mittel ≤ Max.', 'rot');
+          return;
+        }
+        korrekturPayload = { slotLabel: selectedSlot.label, gewichtung: selectedSlot.gewichtung, betragMin, betragMittel, betragMax };
+      } else {
+        const betrag = parseFloat((document.getElementById('korrektur-betrag') as HTMLInputElement).value.replace(',', '.'));
+        if (isNaN(betrag) || betrag <= 0) {
+          zeigeFeedback('korrektur-fehler', 'Bitte einen gültigen Betrag eingeben.', 'rot');
+          return;
+        }
+        korrekturPayload = { slotLabel: selectedSlot.label, gewichtung: selectedSlot.gewichtung, betrag };
+      }
 
       const emojiHmac = await hmac(hmacKey, emojiId);
-      const encGebot = await encryptGebot(adminPubKey, JSON.stringify({
-        emojiId,
-        slotLabel: selectedSlot.label,
-        gewichtung: selectedSlot.gewichtung,
-        betrag,
-      }));
+      const encGebot = await encryptGebot(adminPubKey, JSON.stringify({ emojiId, ...korrekturPayload }));
 
       const res = await fetch(`/api/runde/${rundenId}/gebot`, {
         method: 'POST',

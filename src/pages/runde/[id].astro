@@ -49,8 +49,8 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
           <div id="slot-auswahl" class="space-y-2"></div>
         </div>
 
-        <!-- Betrag -->
-        <div>
+        <!-- Betrag (Einzel-Modus) -->
+        <div id="betrag-einzel">
           <label for="betrag" class="block text-sm font-medium text-fg-secondary mb-1">
             Dein Gebot (€)
           </label>
@@ -58,13 +58,55 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
             type="number"
             id="betrag"
             name="betrag"
-            required
             min="0.01"
             step="0.01"
             placeholder="z.B. 80"
             class="w-full border border-border-strong bg-surface-raised text-fg rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
           />
           <p id="betrag-richtwert-hinweis" class="text-xs text-fg-faint mt-1"></p>
+        </div>
+
+        <!-- Betrag (Drei-Gebot-Modus, hidden by default) -->
+        <div id="betrag-drei" class="hidden space-y-3">
+          <div>
+            <label for="betrag-min" class="block text-sm font-medium text-fg-secondary mb-1">
+              Minimalgebot (€)
+            </label>
+            <input
+              type="number"
+              id="betrag-min"
+              min="0.01"
+              step="0.01"
+              placeholder="z.B. 60"
+              class="w-full border border-border-strong bg-surface-raised text-fg rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+            />
+          </div>
+          <div>
+            <label for="betrag-mittel" class="block text-sm font-medium text-fg-secondary mb-1">
+              Mittleres Gebot (€)
+            </label>
+            <input
+              type="number"
+              id="betrag-mittel"
+              min="0.01"
+              step="0.01"
+              placeholder="z.B. 80"
+              class="w-full border border-border-strong bg-surface-raised text-fg rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+            />
+          </div>
+          <div>
+            <label for="betrag-max" class="block text-sm font-medium text-fg-secondary mb-1">
+              Maximalgebot (€)
+            </label>
+            <input
+              type="number"
+              id="betrag-max"
+              min="0.01"
+              step="0.01"
+              placeholder="z.B. 110"
+              class="w-full border border-border-strong bg-surface-raised text-fg rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+            />
+          </div>
         </div>
 
         <!-- Fehler -->

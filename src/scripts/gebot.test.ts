@@ -53,8 +53,15 @@ function setupDom() {
     <form id="korrektur-form">
       <input type="radio" name="slot-korrektur" value="0" checked />
       <input id="korrektur-emoji" type="text" />
-      <input id="korrektur-betrag" type="number" />
-      <p id="korrektur-richtwert-hinweis"></p>
+      <div id="korrektur-betrag-einzel">
+        <input id="korrektur-betrag" type="number" />
+        <p id="korrektur-richtwert-hinweis"></p>
+      </div>
+      <div id="korrektur-betrag-drei" class="hidden">
+        <input type="number" id="korrektur-betrag-min" />
+        <input type="number" id="korrektur-betrag-mittel" />
+        <input type="number" id="korrektur-betrag-max" />
+      </div>
       <p id="korrektur-slot-hinweis"></p>
       <button type="submit" id="korrektur-btn">Gebot ersetzen</button>
     </form>
@@ -68,6 +75,7 @@ function setupDom() {
 async function createEncryptedBlob(overrides?: Partial<{
   rundeName: string;
   gesamtkosten: number;
+  dreiGebotModus: boolean;
 }>) {
   const partKey = await generatePartKey();
   const { publicKey: adminPubKey } = await generateAdminKeyPair();
@@ -83,6 +91,7 @@ async function createEncryptedBlob(overrides?: Partial<{
     adminPubKey: adminPubKeyB64,
     hmacKey: hmacKeyB64,
     slots: [{ label: 'Erwachsen', gewichtung: 1.0, anzahl: 1 }],
+    ...(overrides?.dreiGebotModus !== undefined ? { dreiGebotModus: overrides.dreiGebotModus } : {}),
   };
   const encTeilnehmerBlob = await encrypt(partKey, JSON.stringify(blobData));
   return { partKeyB64, encTeilnehmerBlob };
@@ -221,5 +230,79 @@ describe('initGebot', () => {
     await initGebot();
 
     expect(history.replaceState).toHaveBeenCalledWith(null, '', '/runde/abc12345');
+  });
+
+  it('schaltet auf Drei-Felder-UI um wenn dreiGebotModus aktiv ist', async () => {
+    const { partKeyB64, encTeilnehmerBlob } = await createEncryptedBlob({ dreiGebotModus: true });
+    mockLocation('/runde/abc12345', `#pk=${partKeyB64}`);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ encTeilnehmerBlob, gebote: [] }),
+    }));
+
+    await initGebot();
+
+    expect(document.getElementById('betrag-einzel')!.classList.contains('hidden')).toBe(true);
+    expect(document.getElementById('betrag-drei')!.classList.contains('hidden')).toBe(false);
+    expect(document.getElementById('korrektur-betrag-einzel')!.classList.contains('hidden')).toBe(true);
+    expect(document.getElementById('korrektur-betrag-drei')!.classList.contains('hidden')).toBe(false);
+  });
+
+  it('reicht Drei-Gebot erfolgreich ein', async () => {
+    const { partKeyB64, encTeilnehmerBlob } = await createEncryptedBlob({ dreiGebotModus: true });
+    mockLocation('/runde/abc12345', `#pk=${partKeyB64}`);
+    const mockFetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ encTeilnehmerBlob, gebote: [] }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ success: true }) });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await initGebot();
+
+    (document.getElementById('betrag-min') as HTMLInputElement).value = '60';
+    (document.getElementById('betrag-mittel') as HTMLInputElement).value = '80';
+    (document.getElementById('betrag-max') as HTMLInputElement).value = '110';
+    document.getElementById('gebot-form')!.dispatchEvent(new Event('submit', { bubbles: true }));
+
+    await vi.waitFor(() => expect(document.getElementById('zustand-bestaetigung')!.classList.contains('hidden')).toBe(false));
+    const gebotCall = mockFetch.mock.calls[1];
+    const body = JSON.parse(gebotCall[1].body);
+    expect(body.encGebot).toBeTruthy();
+  });
+
+  it('zeigt Fehler bei fehlenden Drei-Gebot-Feldern', async () => {
+    const { partKeyB64, encTeilnehmerBlob } = await createEncryptedBlob({ dreiGebotModus: true });
+    mockLocation('/runde/abc12345', `#pk=${partKeyB64}`);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ encTeilnehmerBlob, gebote: [] }),
+    }));
+
+    await initGebot();
+
+    // Felder leer lassen → submit
+    document.getElementById('gebot-form')!.dispatchEvent(new Event('submit', { bubbles: true }));
+
+    await vi.waitFor(() => expect(document.getElementById('gebot-fehler')!.classList.contains('hidden')).toBe(false));
+  });
+
+  it('zeigt Fehler wenn Min > Mittel im Drei-Gebot-Modus', async () => {
+    const { partKeyB64, encTeilnehmerBlob } = await createEncryptedBlob({ dreiGebotModus: true });
+    mockLocation('/runde/abc12345', `#pk=${partKeyB64}`);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ encTeilnehmerBlob, gebote: [] }),
+    }));
+
+    await initGebot();
+
+    (document.getElementById('betrag-min') as HTMLInputElement).value = '100';
+    (document.getElementById('betrag-mittel') as HTMLInputElement).value = '50';
+    (document.getElementById('betrag-max') as HTMLInputElement).value = '120';
+    document.getElementById('gebot-form')!.dispatchEvent(new Event('submit', { bubbles: true }));
+
+    await vi.waitFor(() => {
+      const el = document.getElementById('gebot-fehler')!;
+      return !el.classList.contains('hidden') && el.textContent?.includes('aufsteigend');
+    });
   });
 });

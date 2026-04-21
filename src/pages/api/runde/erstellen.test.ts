@@ -114,3 +114,68 @@ describe('POST /api/runde/erstellen', () => {
     expect(body.error).toBe('Fehler beim Speichern');
   });
 });
+
+describe('cleanupAlteRunden (fire-and-forget)', () => {
+  const SIX_MONTHS_MS = 6 * 30 * 24 * 60 * 60 * 1000;
+  let handler: (ctx: { request: Request }) => Promise<Response>;
+
+  beforeEach(async () => {
+    vi.resetAllMocks();
+    mockWriteFile.mockResolvedValue(undefined);
+    const mod = await import('./erstellen?t=' + Date.now());
+    handler = mod.POST as typeof handler;
+  });
+
+  async function triggerAndFlush() {
+    await handler({ request: makeRequest({ encTeilnehmerBlob: VALID_BLOB }) });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  it('überspringt Nicht-JSON-Dateien', async () => {
+    mockReaddir.mockResolvedValue(['runde.json', 'readme.txt', '.gitkeep']);
+    mockStat.mockResolvedValue({ mtimeMs: Date.now() });
+
+    await triggerAndFlush();
+
+    expect(mockStat).toHaveBeenCalledTimes(1);
+    expect(mockUnlink).not.toHaveBeenCalled();
+  });
+
+  it('löscht JSON-Dateien älter als 6 Monate', async () => {
+    mockReaddir.mockResolvedValue(['alte-runde.json']);
+    mockStat.mockResolvedValue({ mtimeMs: Date.now() - SIX_MONTHS_MS - 1 });
+    mockUnlink.mockResolvedValue(undefined);
+
+    await triggerAndFlush();
+
+    expect(mockUnlink).toHaveBeenCalledOnce();
+  });
+
+  it('lässt Dateien jünger als 6 Monate unangetastet', async () => {
+    mockReaddir.mockResolvedValue(['neue-runde.json']);
+    mockStat.mockResolvedValue({ mtimeMs: Date.now() - SIX_MONTHS_MS + 1000 });
+
+    await triggerAndFlush();
+
+    expect(mockUnlink).not.toHaveBeenCalled();
+  });
+
+  it('ignoriert stat/unlink-Fehler und macht weiter', async () => {
+    mockReaddir.mockResolvedValue(['runde.json']);
+    mockStat.mockRejectedValue(Object.assign(new Error('EACCES'), { code: 'EACCES' }));
+
+    await triggerAndFlush();
+
+    expect(mockUnlink).not.toHaveBeenCalled();
+  });
+
+  it('ignoriert readdir-Fehler — Handler gibt trotzdem 200', async () => {
+    mockReaddir.mockRejectedValue(new Error('EACCES'));
+
+    const res = await handler({ request: makeRequest({ encTeilnehmerBlob: VALID_BLOB }) });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(res.status).toBe(200);
+    expect(mockWriteFile).toHaveBeenCalledOnce();
+  });
+});

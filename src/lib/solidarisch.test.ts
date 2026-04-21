@@ -3,6 +3,8 @@ import {
   berechneAuswertung,
   berechneAusgleich,
   berechneRichtwert,
+  generiereEmojiId,
+  EMOJIS,
   type Gebot,
   type GebotErgebnis,
   type Slot,
@@ -29,6 +31,24 @@ function gebot(
 function slot(label: string, gewichtung: number, anzahl = 1): Slot {
   return { label, gewichtung, anzahl };
 }
+
+// ---------------------------------------------------------------------------
+// generiereEmojiId
+// ---------------------------------------------------------------------------
+
+describe('generiereEmojiId', () => {
+  it('gibt einen String aus genau 3 Emojis zurück', () => {
+    const id = generiereEmojiId();
+    const chars = [...id];
+    expect(chars).toHaveLength(3);
+    chars.forEach((emoji) => expect(EMOJIS).toContain(emoji));
+  });
+
+  it('erzeugt bei mehrfachem Aufruf unterschiedliche Werte (stochastisch)', () => {
+    const results = new Set(Array.from({ length: 20 }, () => generiereEmojiId()));
+    expect(results.size).toBeGreaterThan(1);
+  });
+});
 
 // ---------------------------------------------------------------------------
 // Richtwert aus ALLEN Slots (inkl. unbelegte)
@@ -171,6 +191,24 @@ describe('Gemischter Fall', () => {
 // ---------------------------------------------------------------------------
 // Normalfall: summeGebote = gesamtkosten → kein geldZurueck
 // ---------------------------------------------------------------------------
+
+describe('Rundungskorrektur ohne ueberRichtwert (Z.172 else-Zweig)', () => {
+  it('delta-Korrektur landet auf letztem Eintrag wenn niemand über Richtwert bietet', () => {
+    // richtwert = ceil(1.0/3 * 100)/100 = 0.34
+    // Alle bieten exakt 0.34 → ueberRichtwert = 0 für alle
+    // summeBerechnete = 3 × 0.34 = 1.02, delta = 0.02
+    // rueckwaerts = -1 → Korrektur auf letzten Eintrag
+    const slots = [slot('A', 1), slot('B', 1), slot('C', 1)];
+    const gebote = [
+      gebot(1, 0.34, { slotLabel: 'A' }),
+      gebot(1, 0.34, { slotLabel: 'B' }),
+      gebot(1, 0.34, { slotLabel: 'C' }),
+    ];
+    const result = berechneAuswertung(1.0, gebote, slots);
+    const beitraege = result.ergebnisse.map((e) => e.solidarischerBeitrag);
+    expect(beitraege.reduce((s, b) => s + b, 0)).toBeCloseTo(1.0);
+  });
+});
 
 describe('Normalfall (exakt gedeckt)', () => {
   it('keine Überschuss-Verteilung wenn summeGebote = gesamtkosten', () => {
@@ -437,6 +475,16 @@ describe('berechneAusgleich', () => {
     expect(zahlungen[0].von).toBe('Kind');
     expect(zahlungen[0].an).toBe('🌟🎉🦋');
     expect(zahlungen[0].betrag).toBeCloseTo(60);
+  });
+
+  it('Standard-Slot ohne Eintrag in ausgabenProSlot wird als 0 behandelt (Z.223)', () => {
+    const ergebnisse: GebotErgebnis[] = [
+      ergebnis('—', 'Kind', 40, { istStandard: true }),
+    ];
+    // 'Kind' nicht in ausgabenProSlot → ?? 0, netto = 40 → Schuldner, aber kein Gläubiger
+    const ausgaben = new Map<string, number>();
+    const zahlungen = berechneAusgleich(ergebnisse, ausgaben);
+    expect(zahlungen).toHaveLength(0);
   });
 
   it('Standard-Slot als Gläubiger: Schuldner zahlt an Standard-Slot', () => {

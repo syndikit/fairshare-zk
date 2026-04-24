@@ -70,6 +70,7 @@ Encryption formats:
 - Commit often — at least once per completed task
 - Branch: `feature/issue-{nr}-kurzbeschreibung`
 - PRs klein halten — ein Feature pro PR; immer mit `Closes #Nr`
+- Vor dem Merge immer `/review` ausführen — kein Merge ohne abgeschlossenes Review
 - Squash Merge beim Mergen in main
 - Labels: feature, bug, chore, security, test, ready — vom Issue auf den PR übertragen; ready-Label vom Issue entfernen wenn Umsetzung beginnt
 

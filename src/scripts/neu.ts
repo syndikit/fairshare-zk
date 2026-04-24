@@ -184,6 +184,7 @@ export function initNeu(): void {
 
   function closePowerMenu() {
     powerMenu.classList.add('hidden');
+    document.getElementById('import-info-popover')?.classList.add('hidden');
     powerMenuBtn.setAttribute('aria-expanded', 'false');
     document.removeEventListener('click', closePowerMenuOnOutsideClick);
   }
@@ -207,6 +208,10 @@ export function initNeu(): void {
   document.getElementById('splid-import-btn')!.addEventListener('click', () => {
     closePowerMenu();
     splidFileInput.click();
+  });
+
+  document.getElementById('import-info-btn')!.addEventListener('click', () => {
+    document.getElementById('import-info-popover')!.classList.toggle('hidden');
   });
 
   splidFileInput.addEventListener('change', async () => {

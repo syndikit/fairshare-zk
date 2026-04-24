@@ -11,18 +11,36 @@ import FeedbackBox from '../components/FeedbackBox.astro';
       <div class="relative">
         <button id="power-menu-btn" type="button" aria-label="Weitere Optionen" aria-expanded="false"
           class="text-fg-faint hover:text-fg-secondary text-xl leading-none px-2 py-1 rounded hover:bg-surface-hover transition-colors">⋯</button>
-        <div id="power-menu" class="hidden absolute right-0 mt-1 w-52 bg-surface-raised border border-border rounded-lg shadow-lg z-10 py-1">
+        <div id="power-menu" class="hidden absolute right-0 mt-1 w-64 bg-surface-raised border border-border rounded-lg shadow-lg z-10 py-1">
           <label class="flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-surface-elevated transition-colors select-none">
-            <span class="text-sm text-fg-secondary">Drei-Gebot-Modus</span>
+            <div>
+              <span class="text-sm text-fg-secondary block">Drei-Gebot-Modus</span>
+              <span class="text-xs text-fg-faint">Teilnehmer nennen drei Betragsoptionen</span>
+            </div>
             <input type="checkbox" id="drei-gebot-toggle" class="sr-only peer" />
-            <div class="w-9 h-5 bg-border-strong rounded-full peer-checked:bg-brand relative shrink-0
+            <div class="w-9 h-5 bg-border-strong rounded-full peer-checked:bg-brand relative shrink-0 ml-3
                         after:absolute after:top-0.5 after:left-0.5 after:w-4 after:h-4
                         after:bg-white after:rounded-full after:transition-all
                         peer-checked:after:translate-x-4"></div>
           </label>
           <div class="border-t border-border my-1"></div>
-          <button id="splid-import-btn" type="button"
-            class="w-full text-left text-sm px-4 py-2 text-fg-secondary hover:bg-surface-elevated transition-colors">Abrechnung importieren</button>
+          <div>
+            <div class="flex items-center">
+              <button id="splid-import-btn" type="button"
+                class="flex-1 text-left px-4 py-2 hover:bg-surface-elevated transition-colors">
+                <span class="text-sm text-fg-secondary block">Abrechnung importieren</span>
+                <span class="text-xs text-fg-faint">Splid-Export oder eigene CSV/XLSX</span>
+              </button>
+              <button id="import-info-btn" type="button" aria-label="Format-Informationen"
+                class="px-3 py-2 text-fg-faint hover:text-fg-secondary transition-colors text-sm shrink-0">ⓘ</button>
+            </div>
+            <div id="import-info-popover" class="hidden border-t border-border mx-4 pt-2 pb-3 space-y-1">
+              <p class="text-xs text-fg-secondary"><span class="text-fg-faint">Pflicht:</span> Name · Ausgaben · Gewichtung · Anzahl</p>
+              <p class="text-xs text-fg-secondary"><span class="text-fg-faint">Optional:</span> Standardgebot</p>
+              <a href="/beispiel-basis-import.csv" download
+                class="inline-flex items-center gap-1 text-xs text-brand hover:underline pt-0.5">↓ Beispieldatei laden</a>
+            </div>
+          </div>
         </div>
       </div>
     </div>

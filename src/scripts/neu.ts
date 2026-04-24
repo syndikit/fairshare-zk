@@ -238,7 +238,10 @@ export function initNeu(): void {
           const stdInput = slotEl.querySelector<HTMLInputElement>('[name="standardgebot[]"]');
           if (checkbox) checkbox.checked = true;
           if (eingabe) eingabe.classList.remove('hidden');
-          if (stdInput) stdInput.value = formatBetrag(slot.standardgebot);
+          if (stdInput) {
+            stdInput.value = formatBetrag(slot.standardgebot);
+            stdInput.dataset.auto = 'false';
+          }
         }
       }
 

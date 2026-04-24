@@ -106,6 +106,9 @@ function runden(x: number): number {
  *
  * Überschuss (summeGebote > gesamtkosten) wird proportional an die zurückgegeben,
  * die mehr als ihren Richtwert-Anteil geboten haben — sodass summeBeitraege ≈ gesamtkosten.
+ *
+ * Fehlbetrag (summeGebote < gesamtkosten): fehlbetrag > 0 ist ein Fehlerzustand —
+ * die Runde ist ungültig und muss mit höheren Geboten wiederholt werden.
  */
 export function berechneAuswertung(
   gesamtkosten: number,

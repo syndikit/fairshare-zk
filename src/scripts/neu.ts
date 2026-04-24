@@ -268,7 +268,8 @@ export function initNeu(): void {
       aktualisiereRichtwert();
 
       const namen = result.slots.map(s => s.name).join(', ');
-      zeigeFeedback('splid-erfolg', `${result.slots.length} Slots importiert: ${namen}`, 'gruen');
+      const einheit = result.format === 'splid' ? 'Personen' : 'Slots';
+      zeigeFeedback('splid-erfolg', `${result.slots.length} ${einheit} importiert: ${namen}`, 'gruen');
     } catch (err) {
       zeigeFeedback('splid-fehler', (err as Error).message, 'rot');
     }

@@ -1,0 +1,54 @@
+name: 🗂️ Project Automation
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  move-to-ready:
+    name: Move to Ready when labeled
+    if: github.event.label.name == 'ready'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+    steps:
+      - name: 🔍 Find project item
+        id: find-item
+        run: |
+          ITEM_ID=$(gh api graphql -f query='
+            query($id: ID!) {
+              node(id: $id) {
+                ... on Issue {
+                  projectItems(first: 10) {
+                    nodes {
+                      id
+                      project { number }
+                    }
+                  }
+                }
+              }
+            }
+          ' -F id="${{ github.event.issue.node_id }}" \
+            --jq '.data.node.projectItems.nodes[] | select(.project.number == 1) | .id')
+
+          echo "item_id=$ITEM_ID" >> "$GITHUB_OUTPUT"
+
+      - name: 📋 Set status to Ready
+        if: steps.find-item.outputs.item_id != ''
+        run: |
+          gh api graphql -f mutation='
+            mutation($project: ID!, $item: ID!, $field: ID!, $value: String!) {
+              updateProjectV2ItemFieldValue(input: {
+                projectId: $project
+                itemId: $item
+                fieldId: $field
+                value: { singleSelectOptionId: $value }
+              }) {
+                projectV2Item { id }
+              }
+            }
+          ' \
+            -F project="PVT_kwDOEEHWO84BVly_" \
+            -F item="${{ steps.find-item.outputs.item_id }}" \
+            -F field="PVTSSF_lADOEEHWO84BVly_zhRAmiA" \
+            -F value="61e4505c"

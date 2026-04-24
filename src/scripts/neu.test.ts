@@ -13,6 +13,8 @@ function setupDom() {
     <button id="power-menu-btn" aria-expanded="false"></button>
     <div id="power-menu" class="hidden"></div>
     <button id="splid-import-btn"></button>
+    <button id="import-info-btn"></button>
+    <div id="import-info-popover" class="hidden"></div>
     <input type="file" id="splid-file" />
     <div id="splid-erfolg" class="hidden"></div>
     <div id="splid-fehler" class="hidden"></div>

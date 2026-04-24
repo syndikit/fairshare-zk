@@ -1,0 +1,5 @@
+Name,Ausgaben,Gewichtung,Anzahl,Standardgebot
+Erwachsene,180.00,1.0,3,
+Ermäßigt,60.00,0.75,1,
+Kinder,45.00,0.5,2,30
+Beitrag,120.00,1.0,1,

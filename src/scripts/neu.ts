@@ -5,7 +5,8 @@ import {
   encrypt,
   exportKey,
 } from '../lib/crypto';
-import { parseSplid } from '../lib/splid';
+import { detectAndParse } from '../lib/basis-import';
+import type { ImportSlot } from '../lib/basis-import';
 import { saveRunde } from '../lib/storage';
 import { zeigeFeedback, versteckeFeedback, formatEur } from '../lib/ui';
 
@@ -183,6 +184,7 @@ export function initNeu(): void {
 
   function closePowerMenu() {
     powerMenu.classList.add('hidden');
+    document.getElementById('import-info-popover')?.classList.add('hidden');
     powerMenuBtn.setAttribute('aria-expanded', 'false');
     document.removeEventListener('click', closePowerMenuOnOutsideClick);
   }
@@ -198,7 +200,7 @@ export function initNeu(): void {
   });
 
   // ---------------------------------------------------------------------------
-  // Splid-Import
+  // Datei-Import (Splid oder Basis-Format)
   // ---------------------------------------------------------------------------
 
   const splidFileInput = document.getElementById('splid-file') as HTMLInputElement;
@@ -208,40 +210,54 @@ export function initNeu(): void {
     splidFileInput.click();
   });
 
+  document.getElementById('import-info-btn')!.addEventListener('click', () => {
+    document.getElementById('import-info-popover')!.classList.toggle('hidden');
+  });
+
   splidFileInput.addEventListener('change', async () => {
     const file = splidFileInput.files?.[0];
     if (!file) return;
 
     try {
       const buffer = await file.arrayBuffer();
-      const { rundenname, gesamtkosten, personen } = await parseSplid(buffer);
+      const result = await detectAndParse(buffer, file.name);
 
-      (form.querySelector('#rundeName') as HTMLInputElement).value = rundenname;
-      (form.querySelector('#gesamtkosten') as HTMLInputElement).value = formatBetrag(gesamtkosten);
+      if (result.format === 'splid') {
+        (form.querySelector('#rundeName') as HTMLInputElement).value = result.rundenname;
+      }
+      (form.querySelector('#gesamtkosten') as HTMLInputElement).value = formatBetrag(result.gesamtkosten);
 
       const alleSlots = slotsContainer.querySelectorAll<HTMLDivElement>('.slot-eintrag');
       alleSlots.forEach((s, i) => { if (i > 0) s.remove(); });
 
       const ersterSlot = slotsContainer.querySelector('.slot-eintrag') as HTMLDivElement;
 
-      function befuelleSlot(slotEl: HTMLDivElement, label: string, ausgaben: number) {
-        (slotEl.querySelector('[name="label[]"]') as HTMLInputElement).value = label;
-        (slotEl.querySelector('[name="gewichtung[]"]') as HTMLInputElement).value = '1';
-        (slotEl.querySelector('[name="ausgaben[]"]') as HTMLInputElement).value = formatBetrag(ausgaben);
-        // Erwachsen-Radio als Standard auswählen
-        const erwachsenRadio = slotEl.querySelector<HTMLInputElement>('.slot-gewichtung-radio[value="1.0"]');
-        if (erwachsenRadio) erwachsenRadio.checked = true;
+      function befuelleSlot(slotEl: HTMLDivElement, slot: ImportSlot) {
+        (slotEl.querySelector('[name="label[]"]') as HTMLInputElement).value = slot.name;
+        (slotEl.querySelector('[name="ausgaben[]"]') as HTMLInputElement).value = formatBetrag(slot.ausgaben);
+        setzeGewichtungRadio(slotEl, slot.gewichtung);
+        (slotEl.querySelector('[name="anzahl[]"]') as HTMLInputElement).value = String(slot.anzahl);
+        if (slot.standardgebot !== undefined) {
+          const checkbox = slotEl.querySelector<HTMLInputElement>('.standardgebot-checkbox');
+          const eingabe = slotEl.querySelector<HTMLDivElement>('.standardgebot-eingabe');
+          const stdInput = slotEl.querySelector<HTMLInputElement>('[name="standardgebot[]"]');
+          if (checkbox) checkbox.checked = true;
+          if (eingabe) eingabe.classList.remove('hidden');
+          if (stdInput) {
+            stdInput.value = formatBetrag(slot.standardgebot);
+            stdInput.dataset.auto = 'false';
+          }
+        }
       }
 
-      befuelleSlot(ersterSlot, personen[0].name, personen[0].ausgaben);
+      befuelleSlot(ersterSlot, result.slots[0]);
 
-      for (let i = 1; i < personen.length; i++) {
+      for (let i = 1; i < result.slots.length; i++) {
         const vorlage = slotsContainer.querySelector('.slot-eintrag') as HTMLDivElement;
         const klon = vorlage.cloneNode(true) as HTMLDivElement;
-        // Eindeutigen Namen für Radio-Buttons setzen
         const uid = `gw-slot-${slotCounter++}`;
         klon.querySelectorAll<HTMLInputElement>('.slot-gewichtung-radio').forEach(r => { r.name = uid; });
-        befuelleSlot(klon, personen[i].name, personen[i].ausgaben);
+        befuelleSlot(klon, result.slots[i]);
         aktualisierePresetPlaceholder(klon);
         slotsContainer.appendChild(klon);
       }
@@ -251,8 +267,9 @@ export function initNeu(): void {
       setzeAusgabenSichtbarkeit(true);
       aktualisiereRichtwert();
 
-      const namen = personen.map(p => p.name).join(', ');
-      zeigeFeedback('splid-erfolg', `${personen.length} Personen importiert: ${namen}`, 'gruen');
+      const namen = result.slots.map(s => s.name).join(', ');
+      const einheit = result.format === 'splid' ? 'Personen' : 'Slots';
+      zeigeFeedback('splid-erfolg', `${result.slots.length} ${einheit} importiert: ${namen}`, 'gruen');
     } catch (err) {
       zeigeFeedback('splid-fehler', (err as Error).message, 'rot');
     }

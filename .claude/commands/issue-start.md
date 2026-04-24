@@ -22,7 +22,47 @@ Die Kurzbeschreibung: lowercase, Bindestriche statt Leerzeichen, max. 4 Wörter,
 git checkout -b feature/issue-$ARGUMENTS-kurzbeschreibung
 ```
 
-Entferne das `ready`-Label vom Issue.
+Entferne das `ready`-Label vom Issue:
+
+```bash
+gh issue edit $ARGUMENTS --remove-label ready
+```
+
+Setze den Project-Status auf "In progress":
+
+```bash
+ISSUE_NODE_ID=$(gh issue view $ARGUMENTS --json id --jq '.id')
+ITEM_ID=$(gh api graphql -f query='
+  query($id: ID!) {
+    node(id: $id) {
+      ... on Issue {
+        projectItems(first: 10) {
+          nodes { id project { number } }
+        }
+      }
+    }
+  }
+' -F id="$ISSUE_NODE_ID" --jq '.data.node.projectItems.nodes[] | select(.project.number == 1) | .id')
+
+if [ -n "$ITEM_ID" ]; then
+  gh api graphql -f query='
+    mutation($project: ID!, $item: ID!, $field: ID!, $value: String!) {
+      updateProjectV2ItemFieldValue(input: {
+        projectId: $project
+        itemId: $item
+        fieldId: $field
+        value: { singleSelectOptionId: $value }
+      }) {
+        projectV2Item { id }
+      }
+    }
+  ' \
+    -F project="PVT_kwDOEEHWO84BVly_" \
+    -F item="$ITEM_ID" \
+    -F field="PVTSSF_lADOEEHWO84BVly_zhRAmiA" \
+    -F value="47fc9ee4"
+fi
+```
 
 ## Schritt 3: Kontext ausgeben
 

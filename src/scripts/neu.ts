@@ -111,7 +111,7 @@ export function initNeu(): void {
       const eintrag = target.closest('.slot-eintrag') as HTMLDivElement;
       const hiddenInput = eintrag.querySelector<HTMLInputElement>('[name="gewichtung[]"]');
       if (hiddenInput && target.value) {
-        hiddenInput.value = target.value;
+        hiddenInput.value = target.value.replace(',', '.');
         aktualisiereRichtwert();
       }
     }

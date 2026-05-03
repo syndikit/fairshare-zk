@@ -37,7 +37,7 @@ function setupDom() {
         <div class="ausgaben-inline hidden"></div>
         <input type="radio" class="slot-gewichtung-radio" name="gw-slot-0" value="1.0" checked />
         <input type="radio" class="slot-gewichtung-radio" name="gw-slot-0" value="0.75" />
-        <input type="radio" class="slot-gewichtung-radio" name="gw-slot-0" value="0.5" />
+        <input type="radio" class="slot-gewichtung-radio" name="gw-slot-0" value="0.25" />
         <input type="radio" class="slot-gewichtung-radio" name="gw-slot-0" value="manuell" />
         <input type="number" class="slot-gewichtung-manuell" value="1" readonly />
         <input type="hidden" name="gewichtung[]" value="1" />

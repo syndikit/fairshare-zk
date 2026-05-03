@@ -92,7 +92,7 @@ export function initNeu(): void {
     t.value = formatBetrag(v);
   }, true);
 
-  const presetNamen: Record<string, string> = { '1.0': 'Erwachsen', '0.75': 'Ermäßigt', '0.5': 'Kind' };
+  const presetNamen: Record<string, string> = { '1.0': 'Erwachsen', '0.75': 'Ermäßigt', '0.25': 'Kind' };
   function aktualisierePresetPlaceholder(slotEl: HTMLElement) {
     const labelInput = slotEl.querySelector<HTMLInputElement>('[name="label[]"]');
     if (!labelInput) return;
@@ -336,7 +336,7 @@ export function initNeu(): void {
     if (hiddenInput) hiddenInput.value = String(gewichtung);
 
     // Passendes Radio auswählen oder Manuell
-    const presets = ['1.0', '0.75', '0.5'];
+    const presets = ['1.0', '0.75', '0.25'];
     const matchingValue = presets.find(v => Math.abs(parseFloat(v) - gewichtung) < 0.001);
     if (matchingValue) {
       const radio = slotEl.querySelector<HTMLInputElement>(`.slot-gewichtung-radio[value="${matchingValue}"]`);

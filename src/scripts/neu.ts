@@ -111,11 +111,23 @@ export function initNeu(): void {
       const eintrag = target.closest('.slot-eintrag') as HTMLDivElement;
       const hiddenInput = eintrag.querySelector<HTMLInputElement>('[name="gewichtung[]"]');
       if (hiddenInput && target.value) {
-        hiddenInput.value = target.value;
+        hiddenInput.value = target.value.replace(',', '.');
         aktualisiereRichtwert();
       }
     }
   });
+
+  slotsContainer.addEventListener('blur', (e) => {
+    const target = e.target as HTMLInputElement;
+    if (!target.classList.contains('slot-gewichtung-manuell') || target.readOnly) return;
+    const v = parseFloat(target.value.replace(',', '.'));
+    if (isNaN(v) || v <= 0) {
+      target.value = '';
+      const eintrag = target.closest('.slot-eintrag') as HTMLDivElement;
+      const hiddenInput = eintrag?.querySelector<HTMLInputElement>('[name="gewichtung[]"]');
+      if (hiddenInput) hiddenInput.value = '';
+    }
+  }, true);
 
   slotsContainer.addEventListener('change', (e) => {
     const target = e.target as HTMLInputElement;

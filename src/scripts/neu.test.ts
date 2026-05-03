@@ -39,7 +39,7 @@ function setupDom() {
         <input type="radio" class="slot-gewichtung-radio" name="gw-slot-0" value="0.75" />
         <input type="radio" class="slot-gewichtung-radio" name="gw-slot-0" value="0.25" />
         <input type="radio" class="slot-gewichtung-radio" name="gw-slot-0" value="manuell" />
-        <input type="number" class="slot-gewichtung-manuell" value="1" readonly />
+        <input type="text" inputmode="decimal" class="slot-gewichtung-manuell" value="1" readonly />
         <input type="hidden" name="gewichtung[]" value="1" />
         <input type="number" name="anzahl[]" value="1" />
         <input type="checkbox" class="standardgebot-checkbox" />
@@ -172,6 +172,37 @@ describe('initNeu', () => {
 
     expect(document.getElementById('fehler')!.classList.contains('hidden')).toBe(false);
     expect(document.getElementById('fehler')!.textContent).toContain('Rate limit');
+  });
+
+  it('normalisiert Komma zu Punkt im Manuell-Gewichtungsfeld', () => {
+    initNeu();
+
+    const manuellRadio = document.querySelector<HTMLInputElement>('.slot-gewichtung-radio[value="manuell"]')!;
+    manuellRadio.checked = true;
+    manuellRadio.dispatchEvent(new Event('change', { bubbles: true }));
+
+    const manuellInput = document.querySelector<HTMLInputElement>('.slot-gewichtung-manuell')!;
+    const hiddenInput = document.querySelector<HTMLInputElement>('[name="gewichtung[]"]')!;
+
+    manuellInput.value = '0,25';
+    manuellInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+    expect(hiddenInput.value).toBe('0.25');
+  });
+
+  it('leert Manuell-Gewichtungsfeld bei ungültiger Eingabe nach Blur', () => {
+    initNeu();
+
+    const manuellRadio = document.querySelector<HTMLInputElement>('.slot-gewichtung-radio[value="manuell"]')!;
+    manuellRadio.checked = true;
+    manuellRadio.dispatchEvent(new Event('change', { bubbles: true }));
+
+    const manuellInput = document.querySelector<HTMLInputElement>('.slot-gewichtung-manuell')!;
+    manuellInput.value = 'abc';
+    manuellInput.dispatchEvent(new Event('input', { bubbles: true }));
+    manuellInput.dispatchEvent(new FocusEvent('blur', { bubbles: true }));
+
+    expect(manuellInput.value).toBe('');
   });
 
   it('zeigt Fehler bei ungültigen Gesamtkosten (0)', async () => {

@@ -4,6 +4,7 @@ import {
   decrypt,
   decryptGebot,
 } from '../lib/crypto';
+import { saveRunde } from '../lib/storage';
 import {
   berechneAuswertung,
   berechneAusgleich,
@@ -107,6 +108,17 @@ export async function initAdmin(): Promise<void> {
     zeigeFehler('Blob-Entschlüsselung fehlgeschlagen. Falscher Schlüssel?');
     return;
   }
+
+  // Runde in localStorage speichern (inkl. Admin-Link für "Meine Runden")
+  const origin = window.location.origin;
+  saveRunde({
+    id: rundenId,
+    name: blob.rundeName,
+    hinzugefuegtAm: new Date().toISOString(),
+    teilnehmerLink: `${origin}/runde/${rundenId}#pk=${partKeyB64}`,
+    adminLink: `${origin}/runde/${rundenId}/admin/${adminToken}#pk=${partKeyB64}&bk=${adminPrivKeyB64}`,
+    slots: blob.slots,
+  });
 
   // Deduplizierung: pro emojiHmac das neueste Gebot behalten (Korrekturen überschreiben alte)
   const latestByHmac = new Map<string, { emojiHmac: string; encGebot: string }>();

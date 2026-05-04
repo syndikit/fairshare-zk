@@ -94,12 +94,27 @@ function mockLocation(pathname: string, hash: string) {
 }
 
 // ---------------------------------------------------------------------------
+// localStorage-Mock (happy-dom localStorage ist nicht vollständig implementiert)
+// ---------------------------------------------------------------------------
+
+function makeLocalStorageMock() {
+  let store: Record<string, string> = {};
+  return {
+    getItem: (key: string) => store[key] ?? null,
+    setItem: (key: string, value: string) => { store[key] = String(value); },
+    removeItem: (key: string) => { delete store[key]; },
+    clear: () => { store = {}; },
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
 describe('initAdmin', () => {
   beforeEach(() => {
     setupDom();
+    vi.stubGlobal('localStorage', makeLocalStorageMock());
   });
 
   afterEach(() => {
@@ -209,5 +224,58 @@ describe('initAdmin', () => {
     await initAdmin();
 
     expect(history.replaceState).toHaveBeenCalledWith(null, '', '/runde/abc12345/admin/tok123');
+  });
+
+  it('speichert Runde mit Admin-Link in localStorage nach erfolgreichem Öffnen', async () => {
+    const { partKeyB64, adminPrivKeyB64, encTeilnehmerBlob } = await createTestKeys();
+    mockLocation('/runde/abc12345/admin/tok123', `#pk=${partKeyB64}&bk=${adminPrivKeyB64}`);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ encTeilnehmerBlob, gebote: [] }),
+    }));
+
+    await initAdmin();
+
+    const raw = localStorage.getItem('fairshare_runden');
+    expect(raw).not.toBeNull();
+    const runden = JSON.parse(raw!);
+    expect(runden).toHaveLength(1);
+    expect(runden[0].id).toBe('abc12345');
+    expect(runden[0].adminLink).toContain('/runde/abc12345/admin/tok123');
+    expect(runden[0].adminLink).toContain(`pk=${partKeyB64}`);
+    expect(runden[0].adminLink).toContain(`bk=${adminPrivKeyB64}`);
+    expect(runden[0].name).toBe('Testrunde Admin');
+  });
+
+  it('speichert Runde nicht wenn pk oder bk fehlt', async () => {
+    mockLocation('/runde/abc12345/admin/tok123', '#bk=irgendwas');
+    vi.stubGlobal('fetch', vi.fn());
+
+    await initAdmin();
+
+    expect(localStorage.getItem('fairshare_runden')).toBeNull();
+  });
+
+  it('upgradet bestehenden Teilnehmer-Eintrag auf Admin-Link', async () => {
+    const { partKeyB64, adminPrivKeyB64, encTeilnehmerBlob } = await createTestKeys();
+    // Vorher: Eintrag ohne adminLink (wie nach Gebot-Abgabe)
+    localStorage.setItem('fairshare_runden', JSON.stringify([{
+      id: 'abc12345',
+      name: 'Testrunde Admin',
+      hinzugefuegtAm: '2024-01-01T00:00:00.000Z',
+      teilnehmerLink: 'http://localhost/runde/abc12345#pk=alterpk',
+    }]));
+
+    mockLocation('/runde/abc12345/admin/tok123', `#pk=${partKeyB64}&bk=${adminPrivKeyB64}`);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ encTeilnehmerBlob, gebote: [] }),
+    }));
+
+    await initAdmin();
+
+    const runden = JSON.parse(localStorage.getItem('fairshare_runden')!);
+    expect(runden).toHaveLength(1);
+    expect(runden[0].adminLink).toContain('/runde/abc12345/admin/tok123');
   });
 });

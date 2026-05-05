@@ -8,7 +8,15 @@ import FeedbackBox from '../components/FeedbackBox.astro';
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-semibold mb-1">Meine Runden</h1>
-        <p class="text-fg-muted text-sm">Gespeichert in deinem Browser.</p>
+        <div class="flex items-center gap-1">
+          <p class="text-fg-muted text-sm">Nur auf diesem Gerät</p>
+          <details class="relative">
+            <summary class="cursor-pointer text-fg-faint hover:text-fg-secondary transition-colors text-sm select-none list-none leading-none">ⓘ</summary>
+            <div class="absolute left-0 top-6 bg-surface-raised border border-border rounded-xl shadow-lg z-10 w-72 p-3 text-xs text-fg-secondary">
+              Deine Runden werden im Browser dieses Geräts gespeichert und sind auf anderen Geräten nicht sichtbar.
+            </div>
+          </details>
+        </div>
       </div>
       <details class="relative">
         <summary class="cursor-pointer text-fg-faint hover:text-fg-secondary transition-colors text-xl select-none list-none px-2 py-1">⋯</summary>
@@ -79,8 +87,8 @@ import FeedbackBox from '../components/FeedbackBox.astro';
     } catch (err) {
       rundenListe.innerHTML = '';
       const meldung = err instanceof SyntaxError
-        ? 'Deine gespeicherten Runden konnten nicht geladen werden — die Daten im Browser sind beschädigt. Du kannst sie über das ⋯-Menü zurücksetzen.'
-        : 'Deine gespeicherten Runden konnten nicht geladen werden.';
+        ? 'Die gespeicherten Runden konnten nicht gelesen werden. Du kannst sie über das ⋯-Menü zurücksetzen.'
+        : 'Die gespeicherten Runden konnten nicht geladen werden.';
       zeigeFeedback('storage-fehler', meldung, 'rot');
       return;
     }

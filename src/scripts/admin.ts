@@ -50,7 +50,7 @@ export async function initAdmin(): Promise<void> {
       amber: 'bg-amber-subtle border border-amber-outline text-amber-fg',
       red:   'bg-danger-subtle border border-danger-outline text-danger-fg',
     };
-    banner.className = `rounded-xl px-4 py-3 text-sm font-medium print:hidden ${farbenKlassen[farbe]}`;
+    banner.className = `rounded-xl px-4 py-3 text-sm font-medium ${farbenKlassen[farbe]}`;
     banner.textContent = text;
     banner.classList.remove('hidden');
   }

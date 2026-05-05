@@ -146,7 +146,7 @@ describe('initGebot', () => {
     await initGebot();
 
     expect(document.getElementById('zustand-fehler')!.classList.contains('hidden')).toBe(false);
-    expect(document.getElementById('fehler-text')!.textContent).toContain('Schlüssel');
+    expect(document.getElementById('fehler-text')!.textContent).toContain('unvollständig');
   });
 
   it('zeigt Fehler wenn Runde nicht gefunden (fetch 404)', async () => {

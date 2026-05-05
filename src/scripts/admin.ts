@@ -96,7 +96,7 @@ export async function initAdmin(): Promise<void> {
       importAdminPrivKey(adminPrivKeyB64),
     ]);
   } catch {
-    zeigeFehler('Schlüssel im Admin-Link sind ungültig.');
+    zeigeFehler('Der Admin-Link ist ungültig oder wurde verändert.');
     return;
   }
 
@@ -105,7 +105,7 @@ export async function initAdmin(): Promise<void> {
   try {
     blob = JSON.parse(await decrypt(partKey, blobData.encTeilnehmerBlob)) as TeilnehmerBlob;
   } catch {
-    zeigeFehler('Blob-Entschlüsselung fehlgeschlagen. Falscher Schlüssel?');
+    zeigeFehler('Auswertung konnte nicht geladen werden. Bitte prüfe, ob der Admin-Link vollständig ist.');
     return;
   }
 

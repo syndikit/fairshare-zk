@@ -37,7 +37,7 @@ export async function initGebot(): Promise<void> {
 
   if (!partKeyB64) {
     zeigeFehler(
-      'Kein Schlüssel im Link gefunden. Bitte verwende den vollständigen Teilnehmer-Link.',
+      'Der Link ist unvollständig oder wurde falsch kopiert.',
     );
     return;
   }
@@ -71,7 +71,7 @@ export async function initGebot(): Promise<void> {
     const partKey = await importPartKey(partKeyB64);
     blob = JSON.parse(await decrypt(partKey, blobData.encTeilnehmerBlob)) as TeilnehmerBlob;
   } catch {
-    zeigeFehler('Entschlüsselung fehlgeschlagen. Ist der Link vollständig?');
+    zeigeFehler('Der Link funktioniert nicht. Bitte prüfe, ob er vollständig kopiert wurde.');
     return;
   }
 
@@ -240,7 +240,7 @@ export async function initGebot(): Promise<void> {
     versteckeFeedback('gebot-fehler');
     duplikatWarnung.classList.add('hidden');
     gebotBtn.disabled = true;
-    gebotBtn.textContent = 'Verschlüssele…';
+    gebotBtn.textContent = 'Wird gesendet…';
 
     try {
       const selectedIdx = parseInt(
@@ -402,7 +402,7 @@ export async function initGebot(): Promise<void> {
     e.preventDefault();
     versteckeFeedback('korrektur-fehler');
     korrekturBtn.disabled = true;
-    korrekturBtn.textContent = 'Verschlüssele…';
+    korrekturBtn.textContent = 'Wird gesendet…';
 
     try {
       const emojiId = (document.getElementById('korrektur-emoji') as HTMLInputElement).value.trim();

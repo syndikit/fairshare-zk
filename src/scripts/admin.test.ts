@@ -34,9 +34,6 @@ function setupDom() {
     <div id="ausgleich-liste"></div>
     <p id="gebote-anzahl"></p>
     <button id="wiederholen-btn"></button>
-    <div id="wiederholen-dialog" class="hidden"></div>
-    <button id="wiederholen-ja"></button>
-    <button id="wiederholen-nein"></button>
   `;
 }
 

@@ -36,6 +36,23 @@ interface RawGebotPayload {
   istStandard?: boolean;
 }
 
+export function baueWiederholenPayload(
+  blob: Pick<TeilnehmerBlob, 'rundeName' | 'gesamtkosten' | 'slots'>,
+  mitAusgaben: boolean,
+) {
+  return {
+    name: blob.rundeName,
+    kosten: blob.gesamtkosten,
+    slots: blob.slots.map(({ label, gewichtung, anzahl, standardgebot, ausgaben }) => ({
+      label,
+      gewichtung,
+      anzahl,
+      ...(standardgebot !== undefined ? { standardgebot } : {}),
+      ...(mitAusgaben && ausgaben !== undefined ? { ausgaben } : {}),
+    })),
+  };
+}
+
 export async function initAdmin(): Promise<void> {
   function zeigeFehler(msg: string) {
     document.getElementById('zustand-laden')!.classList.add('hidden');
@@ -511,18 +528,10 @@ export async function initAdmin(): Promise<void> {
   document.getElementById('zustand-laden')!.classList.add('hidden');
   document.getElementById('zustand-auswertung')!.classList.remove('hidden');
 
-  // Runde wiederholen: Slot-Konfiguration in sessionStorage speichern und zu /neu navigieren
+  // Runde wiederholen: ggf. Browser-Dialog für Ausgaben-Übernahme, dann zu /neu navigieren
   document.getElementById('wiederholen-btn')!.addEventListener('click', () => {
-    sessionStorage.setItem('rundeWiederholen', JSON.stringify({
-      name: blob.rundeName,
-      kosten: blob.gesamtkosten,
-      slots: blob.slots.map(({ label, gewichtung, anzahl, standardgebot }) => ({
-        label,
-        gewichtung,
-        anzahl,
-        ...(standardgebot !== undefined ? { standardgebot } : {}),
-      })),
-    }));
+    const mitAusgaben = ausgabenMap.size > 0 && confirm('Ausgaben aus dieser Runde übernehmen?');
+    sessionStorage.setItem('rundeWiederholen', JSON.stringify(baueWiederholenPayload(blob, mitAusgaben)));
     location.href = '/neu';
   });
 }

@@ -62,6 +62,7 @@ Encryption formats:
 - **Progressive Disclosure:** Komplexität erscheint erst, wenn sie gebraucht wird. Features werden nicht entfernt — sie werden zum richtigen Moment sichtbar.
 - Kein Feature im primären Sichtbereich, das die meisten Nutzer nie brauchen.
 - Power-Features sind auffindbar, aber nie aufdringlich.
+- **Nutzersprache statt Technikbegriffe:** Konsequenz beschreiben, nicht Mechanismus. Keine Crypto-Begriffe. Maßstab: würde Apple das so schreiben? „Wird gesendet…" statt „Verschlüssele…"; „Link ist unvollständig" statt „Kein Schlüssel im Link".
 
 ## Git-Workflow
 

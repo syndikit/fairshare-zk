@@ -378,7 +378,7 @@ export function initNeu(): void {
       const config = JSON.parse(wiederholenRaw) as {
         name: string;
         kosten: number;
-        slots: { label: string; gewichtung: number; anzahl: number; standardgebot?: number }[];
+        slots: { label: string; gewichtung: number; anzahl: number; standardgebot?: number; ausgaben?: number }[];
       };
 
       (form.querySelector('#rundeName') as HTMLInputElement).value = config.name;
@@ -386,7 +386,7 @@ export function initNeu(): void {
 
       function befuelleWiederholSlot(
         slotEl: HTMLDivElement,
-        slot: { label: string; gewichtung: number; anzahl: number; standardgebot?: number },
+        slot: { label: string; gewichtung: number; anzahl: number; standardgebot?: number; ausgaben?: number },
       ) {
         const presetNamenWiederhol: Record<string, string> = { 'Erwachsen': '', 'Ermäßigt': '', 'Kind': '', 'Beitrag': '' };
         // Labels die reine Preset-Namen sind, als leer behandeln (Preset-Name wird beim Absenden wieder gesetzt)
@@ -410,6 +410,10 @@ export function initNeu(): void {
           stdInput.value = '';
           stdInput.dataset.auto = 'true';
         }
+
+        if (slot.ausgaben !== undefined) {
+          (slotEl.querySelector('[name="ausgaben[]"]') as HTMLInputElement).value = formatBetrag(slot.ausgaben);
+        }
       }
 
       slotsContainer.querySelectorAll<HTMLDivElement>('.slot-eintrag').forEach((s, i) => {
@@ -430,6 +434,12 @@ export function initNeu(): void {
       }
 
       aktualisiereEntfernenButtons();
+
+      if (config.slots.some(s => s.ausgaben !== undefined)) {
+        ausgabenSichtbar = true;
+        setzeAusgabenSichtbarkeit(true);
+      }
+
       aktualisiereRichtwert();
     } catch {
       // Ungültiger sessionStorage-Eintrag — ignorieren

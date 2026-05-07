@@ -10,7 +10,7 @@ import {
   hmac,
 } from '../lib/crypto';
 import { generiereEmojiId } from '../lib/solidarisch';
-import { initAdmin } from './admin';
+import { initAdmin, baueWiederholenPayload } from './admin';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -46,7 +46,7 @@ interface TestKeys {
   hmacKey: CryptoKey;
 }
 
-async function createTestKeys(slotOverrides?: Partial<{ anzahl: number }>): Promise<TestKeys> {
+async function createTestKeys(slotOverrides?: Partial<{ anzahl: number; ausgaben: number }>): Promise<TestKeys> {
   const partKey = await generatePartKey();
   const { publicKey: adminPubKey, privateKey: adminPrivKey } = await generateAdminKeyPair();
   const hmacKey = await generateHmacKey();
@@ -61,7 +61,12 @@ async function createTestKeys(slotOverrides?: Partial<{ anzahl: number }>): Prom
     gesamtkosten: 600,
     adminPubKey: adminPubKeyB64,
     hmacKey: hmacKeyB64,
-    slots: [{ label: 'Erwachsen', gewichtung: 1.0, anzahl: slotOverrides?.anzahl ?? 1 }],
+    slots: [{
+      label: 'Erwachsen',
+      gewichtung: 1.0,
+      anzahl: slotOverrides?.anzahl ?? 1,
+      ...(slotOverrides?.ausgaben !== undefined ? { ausgaben: slotOverrides.ausgaben } : {}),
+    }],
   };
   const encTeilnehmerBlob = await encrypt(partKey, JSON.stringify(blobData));
 
@@ -256,6 +261,61 @@ describe('initAdmin', () => {
     expect(localStorage.getItem('fairshare_runden')).toBeNull();
   });
 
+  it('ruft confirm auf und speichert Ausgaben bei OK', async () => {
+    const keys = await createTestKeys({ ausgaben: 200 });
+    mockLocation('/runde/abc12345/admin/tok123', `#pk=${keys.partKeyB64}&bk=${keys.adminPrivKeyB64}`);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ encTeilnehmerBlob: keys.encTeilnehmerBlob, gebote: [] }),
+    }));
+    vi.stubGlobal('confirm', vi.fn().mockReturnValue(true));
+    const sessionStorageMock = makeLocalStorageMock();
+    vi.stubGlobal('sessionStorage', sessionStorageMock);
+
+    await initAdmin();
+    document.getElementById('wiederholen-btn')!.click();
+
+    expect(confirm).toHaveBeenCalledWith('Ausgaben aus dieser Runde übernehmen?');
+    const payload = JSON.parse(sessionStorageMock.getItem('rundeWiederholen')!);
+    expect(payload.slots[0].ausgaben).toBe(200);
+  });
+
+  it('speichert Payload ohne Ausgaben wenn confirm abgebrochen', async () => {
+    const keys = await createTestKeys({ ausgaben: 200 });
+    mockLocation('/runde/abc12345/admin/tok123', `#pk=${keys.partKeyB64}&bk=${keys.adminPrivKeyB64}`);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ encTeilnehmerBlob: keys.encTeilnehmerBlob, gebote: [] }),
+    }));
+    vi.stubGlobal('confirm', vi.fn().mockReturnValue(false));
+    const sessionStorageMock = makeLocalStorageMock();
+    vi.stubGlobal('sessionStorage', sessionStorageMock);
+
+    await initAdmin();
+    document.getElementById('wiederholen-btn')!.click();
+
+    const payload = JSON.parse(sessionStorageMock.getItem('rundeWiederholen')!);
+    expect(payload.slots[0]).not.toHaveProperty('ausgaben');
+  });
+
+  it('navigiert ohne confirm wenn keine Ausgaben vorhanden', async () => {
+    const keys = await createTestKeys({ anzahl: 1 });
+    mockLocation('/runde/abc12345/admin/tok123', `#pk=${keys.partKeyB64}&bk=${keys.adminPrivKeyB64}`);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ encTeilnehmerBlob: keys.encTeilnehmerBlob, gebote: [] }),
+    }));
+    vi.stubGlobal('confirm', vi.fn());
+    const sessionStorageMock = makeLocalStorageMock();
+    vi.stubGlobal('sessionStorage', sessionStorageMock);
+
+    await initAdmin();
+    document.getElementById('wiederholen-btn')!.click();
+
+    expect(confirm).not.toHaveBeenCalled();
+    expect(sessionStorageMock.getItem('rundeWiederholen')).not.toBeNull();
+  });
+
   it('upgradet bestehenden Teilnehmer-Eintrag auf Admin-Link', async () => {
     const { partKeyB64, adminPrivKeyB64, encTeilnehmerBlob } = await createTestKeys();
     // Vorher: Eintrag ohne adminLink (wie nach Gebot-Abgabe)
@@ -277,5 +337,55 @@ describe('initAdmin', () => {
     const runden = JSON.parse(localStorage.getItem('fairshare_runden')!);
     expect(runden).toHaveLength(1);
     expect(runden[0].adminLink).toContain('/runde/abc12345/admin/tok123');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// baueWiederholenPayload
+// ---------------------------------------------------------------------------
+
+const testBlob = {
+  rundeName: 'Testrunde',
+  gesamtkosten: 600,
+  slots: [
+    { label: 'Erwachsen', gewichtung: 1, anzahl: 3, ausgaben: 200 },
+    { label: 'Kind', gewichtung: 0.5, anzahl: 2, ausgaben: 100, standardgebot: 50 },
+    { label: 'Ohne Ausgaben', gewichtung: 1, anzahl: 1 },
+  ],
+};
+
+describe('baueWiederholenPayload', () => {
+  it('enthält keine ausgaben wenn mitAusgaben=false (Nein-Pfad)', () => {
+    const payload = baueWiederholenPayload(testBlob, false);
+    for (const slot of payload.slots) {
+      expect(slot).not.toHaveProperty('ausgaben');
+    }
+  });
+
+  it('enthält ausgaben für Slots mit Ausgaben wenn mitAusgaben=true (Ja-Pfad)', () => {
+    const payload = baueWiederholenPayload(testBlob, true);
+    expect(payload.slots[0].ausgaben).toBe(200);
+    expect(payload.slots[1].ausgaben).toBe(100);
+  });
+
+  it('lässt Slot ohne ausgaben auch bei mitAusgaben=true ohne ausgaben', () => {
+    const payload = baueWiederholenPayload(testBlob, true);
+    expect(payload.slots[2]).not.toHaveProperty('ausgaben');
+  });
+
+  it('überträgt name und kosten korrekt', () => {
+    const payload = baueWiederholenPayload(testBlob, false);
+    expect(payload.name).toBe('Testrunde');
+    expect(payload.kosten).toBe(600);
+  });
+
+  it('überträgt standardgebot unabhängig von mitAusgaben', () => {
+    expect(baueWiederholenPayload(testBlob, false).slots[1].standardgebot).toBe(50);
+    expect(baueWiederholenPayload(testBlob, true).slots[1].standardgebot).toBe(50);
+  });
+
+  it('überträgt label, gewichtung und anzahl', () => {
+    const payload = baueWiederholenPayload(testBlob, false);
+    expect(payload.slots[0]).toMatchObject({ label: 'Erwachsen', gewichtung: 1, anzahl: 3 });
   });
 });

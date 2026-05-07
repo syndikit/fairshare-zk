@@ -528,20 +528,10 @@ export async function initAdmin(): Promise<void> {
   document.getElementById('zustand-laden')!.classList.add('hidden');
   document.getElementById('zustand-auswertung')!.classList.remove('hidden');
 
-  // Runde wiederholen: ggf. Dialog für Slot-Ausgaben, dann zu /neu navigieren
-  function navigiereWiederholen(mitAusgaben: boolean) {
+  // Runde wiederholen: ggf. Browser-Dialog für Ausgaben-Übernahme, dann zu /neu navigieren
+  document.getElementById('wiederholen-btn')!.addEventListener('click', () => {
+    const mitAusgaben = ausgabenMap.size > 0 && confirm('Ausgaben aus dieser Runde übernehmen?');
     sessionStorage.setItem('rundeWiederholen', JSON.stringify(baueWiederholenPayload(blob, mitAusgaben)));
     location.href = '/neu';
-  }
-
-  document.getElementById('wiederholen-btn')!.addEventListener('click', () => {
-    if (ausgabenMap.size === 0) {
-      navigiereWiederholen(false);
-      return;
-    }
-    document.getElementById('wiederholen-dialog')!.classList.remove('hidden');
   });
-
-  document.getElementById('wiederholen-ja')!.addEventListener('click', () => navigiereWiederholen(true));
-  document.getElementById('wiederholen-nein')!.addEventListener('click', () => navigiereWiederholen(false));
 }

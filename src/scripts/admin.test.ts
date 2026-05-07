@@ -46,7 +46,7 @@ interface TestKeys {
   hmacKey: CryptoKey;
 }
 
-async function createTestKeys(slotOverrides?: Partial<{ anzahl: number }>): Promise<TestKeys> {
+async function createTestKeys(slotOverrides?: Partial<{ anzahl: number; ausgaben: number }>): Promise<TestKeys> {
   const partKey = await generatePartKey();
   const { publicKey: adminPubKey, privateKey: adminPrivKey } = await generateAdminKeyPair();
   const hmacKey = await generateHmacKey();
@@ -61,7 +61,12 @@ async function createTestKeys(slotOverrides?: Partial<{ anzahl: number }>): Prom
     gesamtkosten: 600,
     adminPubKey: adminPubKeyB64,
     hmacKey: hmacKeyB64,
-    slots: [{ label: 'Erwachsen', gewichtung: 1.0, anzahl: slotOverrides?.anzahl ?? 1 }],
+    slots: [{
+      label: 'Erwachsen',
+      gewichtung: 1.0,
+      anzahl: slotOverrides?.anzahl ?? 1,
+      ...(slotOverrides?.ausgaben !== undefined ? { ausgaben: slotOverrides.ausgaben } : {}),
+    }],
   };
   const encTeilnehmerBlob = await encrypt(partKey, JSON.stringify(blobData));
 
@@ -254,6 +259,61 @@ describe('initAdmin', () => {
     await initAdmin();
 
     expect(localStorage.getItem('fairshare_runden')).toBeNull();
+  });
+
+  it('ruft confirm auf und speichert Ausgaben bei OK', async () => {
+    const keys = await createTestKeys({ ausgaben: 200 });
+    mockLocation('/runde/abc12345/admin/tok123', `#pk=${keys.partKeyB64}&bk=${keys.adminPrivKeyB64}`);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ encTeilnehmerBlob: keys.encTeilnehmerBlob, gebote: [] }),
+    }));
+    vi.stubGlobal('confirm', vi.fn().mockReturnValue(true));
+    const sessionStorageMock = makeLocalStorageMock();
+    vi.stubGlobal('sessionStorage', sessionStorageMock);
+
+    await initAdmin();
+    document.getElementById('wiederholen-btn')!.click();
+
+    expect(confirm).toHaveBeenCalledWith('Ausgaben aus dieser Runde übernehmen?');
+    const payload = JSON.parse(sessionStorageMock.getItem('rundeWiederholen')!);
+    expect(payload.slots[0].ausgaben).toBe(200);
+  });
+
+  it('speichert Payload ohne Ausgaben wenn confirm abgebrochen', async () => {
+    const keys = await createTestKeys({ ausgaben: 200 });
+    mockLocation('/runde/abc12345/admin/tok123', `#pk=${keys.partKeyB64}&bk=${keys.adminPrivKeyB64}`);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ encTeilnehmerBlob: keys.encTeilnehmerBlob, gebote: [] }),
+    }));
+    vi.stubGlobal('confirm', vi.fn().mockReturnValue(false));
+    const sessionStorageMock = makeLocalStorageMock();
+    vi.stubGlobal('sessionStorage', sessionStorageMock);
+
+    await initAdmin();
+    document.getElementById('wiederholen-btn')!.click();
+
+    const payload = JSON.parse(sessionStorageMock.getItem('rundeWiederholen')!);
+    expect(payload.slots[0]).not.toHaveProperty('ausgaben');
+  });
+
+  it('navigiert ohne confirm wenn keine Ausgaben vorhanden', async () => {
+    const keys = await createTestKeys({ anzahl: 1 });
+    mockLocation('/runde/abc12345/admin/tok123', `#pk=${keys.partKeyB64}&bk=${keys.adminPrivKeyB64}`);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ encTeilnehmerBlob: keys.encTeilnehmerBlob, gebote: [] }),
+    }));
+    vi.stubGlobal('confirm', vi.fn());
+    const sessionStorageMock = makeLocalStorageMock();
+    vi.stubGlobal('sessionStorage', sessionStorageMock);
+
+    await initAdmin();
+    document.getElementById('wiederholen-btn')!.click();
+
+    expect(confirm).not.toHaveBeenCalled();
+    expect(sessionStorageMock.getItem('rundeWiederholen')).not.toBeNull();
   });
 
   it('upgradet bestehenden Teilnehmer-Eintrag auf Admin-Link', async () => {

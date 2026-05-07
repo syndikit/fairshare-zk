@@ -10,7 +10,7 @@ import {
   hmac,
 } from '../lib/crypto';
 import { generiereEmojiId } from '../lib/solidarisch';
-import { initAdmin } from './admin';
+import { initAdmin, baueWiederholenPayload } from './admin';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -34,6 +34,9 @@ function setupDom() {
     <div id="ausgleich-liste"></div>
     <p id="gebote-anzahl"></p>
     <button id="wiederholen-btn"></button>
+    <div id="wiederholen-dialog" class="hidden"></div>
+    <button id="wiederholen-ja"></button>
+    <button id="wiederholen-nein"></button>
   `;
 }
 
@@ -277,5 +280,55 @@ describe('initAdmin', () => {
     const runden = JSON.parse(localStorage.getItem('fairshare_runden')!);
     expect(runden).toHaveLength(1);
     expect(runden[0].adminLink).toContain('/runde/abc12345/admin/tok123');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// baueWiederholenPayload
+// ---------------------------------------------------------------------------
+
+const testBlob = {
+  rundeName: 'Testrunde',
+  gesamtkosten: 600,
+  slots: [
+    { label: 'Erwachsen', gewichtung: 1, anzahl: 3, ausgaben: 200 },
+    { label: 'Kind', gewichtung: 0.5, anzahl: 2, ausgaben: 100, standardgebot: 50 },
+    { label: 'Ohne Ausgaben', gewichtung: 1, anzahl: 1 },
+  ],
+};
+
+describe('baueWiederholenPayload', () => {
+  it('enthält keine ausgaben wenn mitAusgaben=false (Nein-Pfad)', () => {
+    const payload = baueWiederholenPayload(testBlob, false);
+    for (const slot of payload.slots) {
+      expect(slot).not.toHaveProperty('ausgaben');
+    }
+  });
+
+  it('enthält ausgaben für Slots mit Ausgaben wenn mitAusgaben=true (Ja-Pfad)', () => {
+    const payload = baueWiederholenPayload(testBlob, true);
+    expect(payload.slots[0].ausgaben).toBe(200);
+    expect(payload.slots[1].ausgaben).toBe(100);
+  });
+
+  it('lässt Slot ohne ausgaben auch bei mitAusgaben=true ohne ausgaben', () => {
+    const payload = baueWiederholenPayload(testBlob, true);
+    expect(payload.slots[2]).not.toHaveProperty('ausgaben');
+  });
+
+  it('überträgt name und kosten korrekt', () => {
+    const payload = baueWiederholenPayload(testBlob, false);
+    expect(payload.name).toBe('Testrunde');
+    expect(payload.kosten).toBe(600);
+  });
+
+  it('überträgt standardgebot unabhängig von mitAusgaben', () => {
+    expect(baueWiederholenPayload(testBlob, false).slots[1].standardgebot).toBe(50);
+    expect(baueWiederholenPayload(testBlob, true).slots[1].standardgebot).toBe(50);
+  });
+
+  it('überträgt label, gewichtung und anzahl', () => {
+    const payload = baueWiederholenPayload(testBlob, false);
+    expect(payload.slots[0]).toMatchObject({ label: 'Erwachsen', gewichtung: 1, anzahl: 3 });
   });
 });

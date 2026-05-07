@@ -62,7 +62,7 @@ Encryption formats:
 - **Progressive Disclosure:** Komplexität erscheint erst, wenn sie gebraucht wird. Features werden nicht entfernt — sie werden zum richtigen Moment sichtbar.
 - Kein Feature im primären Sichtbereich, das die meisten Nutzer nie brauchen.
 - Power-Features sind auffindbar, aber nie aufdringlich.
-- **Nutzersprache statt Technikbegriffe:** UI-Texte beschreiben die *Konsequenz*, nicht den Mechanismus. Keine Crypto-Begriffe (Schlüssel, Verschlüsseln, Entschlüsseln), keine internen Datenbegriffe. Maßstab: würde ein Apple-Produkttexter das so schreiben? Beispiele: „Wird gesendet…" statt „Verschlüssele…", „Der Link ist unvollständig" statt „Kein Schlüssel im Link", „Nur auf diesem Gerät" statt „Gespeichert in deinem Browser". Gilt für Lade-Texte, Fehlermeldungen, Bestätigungsdialoge und Erklärungstexte gleichermaßen. (Hintergrund: Issue #121)
+- **Nutzersprache statt Technikbegriffe:** Konsequenz beschreiben, nicht Mechanismus. Keine Crypto-Begriffe. Maßstab: würde Apple das so schreiben? „Wird gesendet…" statt „Verschlüssele…"; „Link ist unvollständig" statt „Kein Schlüssel im Link".
 
 ## Git-Workflow
 

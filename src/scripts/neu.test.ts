@@ -217,4 +217,32 @@ describe('initNeu', () => {
     expect(fetchMock).not.toHaveBeenCalled();
     expect(document.getElementById('fehler')!.textContent).toContain('Gesamtkosten');
   });
+
+  it('Ja-Pfad: füllt ausgaben vor und macht Ausgaben-Felder sichtbar', () => {
+    sessionStorage.setItem('rundeWiederholen', JSON.stringify({
+      name: 'Wiederholrunde',
+      kosten: 300,
+      slots: [{ label: 'Erwachsen', gewichtung: 1, anzahl: 2, ausgaben: 150 }],
+    }));
+
+    initNeu();
+
+    const ausgabenInput = document.querySelector<HTMLInputElement>('[name="ausgaben[]"]')!;
+    expect(ausgabenInput.value).toBe('150,00');
+    expect(document.getElementById('ausgaben-link')!.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('Nein-Pfad: ausgaben bleibt leer wenn kein ausgaben im Payload', () => {
+    sessionStorage.setItem('rundeWiederholen', JSON.stringify({
+      name: 'Wiederholrunde',
+      kosten: 300,
+      slots: [{ label: 'Erwachsen', gewichtung: 1, anzahl: 2 }],
+    }));
+
+    initNeu();
+
+    const ausgabenInput = document.querySelector<HTMLInputElement>('[name="ausgaben[]"]')!;
+    expect(ausgabenInput.value).toBe('');
+    expect(document.getElementById('ausgaben-link')!.getAttribute('aria-expanded')).toBe('false');
+  });
 });

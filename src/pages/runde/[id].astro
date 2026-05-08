@@ -49,10 +49,7 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
     <div id="panel-abgeben">
       <form id="gebot-form" class="space-y-5">
         <!-- Slot-Auswahl -->
-        <div>
-          <p class="text-sm font-medium text-fg-secondary mb-2">Wähle deine Kategorie</p>
-          <div id="slot-auswahl" class="space-y-2"></div>
-        </div>
+        <div id="slot-auswahl" class="space-y-2"></div>
 
         <!-- Betrag (Einzel-Modus) -->
         <div id="betrag-einzel">
@@ -121,7 +118,7 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
         <div id="duplikat-warnung" class="hidden bg-amber-subtle border border-amber-outline text-amber-fg rounded-lg p-3 text-sm">
           <!-- Schritt 1 -->
           <div id="duplikat-schritt1">
-            <p class="font-medium">Du hast für diese Kategorie bereits geboten.</p>
+            <p class="font-medium">Du hast hier bereits geboten.</p>
             <div class="flex gap-2 pt-2">
               <button type="button" id="duplikat-abbrechen" class="border border-amber-outline text-amber-fg rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-amber-tinted transition-colors">Abbrechen</button>
               <button type="button" id="duplikat-weiter" class="border border-amber-border bg-amber-tinted text-amber-strong rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-amber-outline transition-colors">Fortfahren →</button>
@@ -174,7 +171,6 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
 
         <!-- Slot-Auswahl -->
         <div>
-          <p class="text-sm font-medium text-fg-secondary mb-2">Kategorie</p>
           <div id="slot-auswahl-korrektur" class="space-y-2"></div>
           <p id="korrektur-slot-hinweis" class="text-xs mt-1"></p>
         </div>

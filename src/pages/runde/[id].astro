@@ -24,6 +24,9 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
       </p>
     </div>
 
+    <!-- Hinweis: bereits geboten -->
+    <div id="gebot-hinweis-banner" class="hidden bg-success-subtle border border-success-outline text-success-fg rounded-xl p-4 text-sm"></div>
+
     <!-- Tab-Navigation -->
     <div class="flex border-b border-border">
       <button
@@ -44,10 +47,7 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
     <div id="panel-abgeben">
       <form id="gebot-form" class="space-y-5">
         <!-- Slot-Auswahl -->
-        <div>
-          <p class="text-sm font-medium text-fg-secondary mb-2">Wähle deinen Slot</p>
-          <div id="slot-auswahl" class="space-y-2"></div>
-        </div>
+        <div id="slot-auswahl" class="space-y-2"></div>
 
         <!-- Betrag (Einzel-Modus) -->
         <div id="betrag-einzel">
@@ -116,7 +116,7 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
         <div id="duplikat-warnung" class="hidden bg-amber-subtle border border-amber-outline text-amber-fg rounded-lg p-3 text-sm">
           <!-- Schritt 1 -->
           <div id="duplikat-schritt1">
-            <p class="font-medium">Du hast für diesen Slot bereits geboten.</p>
+            <p class="font-medium">Du hast hier bereits geboten.</p>
             <div class="flex gap-2 pt-2">
               <button type="button" id="duplikat-abbrechen" class="border border-amber-outline text-amber-fg rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-amber-tinted transition-colors">Abbrechen</button>
               <button type="button" id="duplikat-weiter" class="border border-amber-border bg-amber-tinted text-amber-strong rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-amber-outline transition-colors">Fortfahren →</button>
@@ -169,7 +169,6 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
 
         <!-- Slot-Auswahl -->
         <div>
-          <p class="text-sm font-medium text-fg-secondary mb-2">Slot</p>
           <div id="slot-auswahl-korrektur" class="space-y-2"></div>
           <p id="korrektur-slot-hinweis" class="text-xs mt-1"></p>
         </div>

@@ -144,7 +144,7 @@ export async function initGebot(): Promise<void> {
       hinweis.textContent = `Standardgebot: ${formatEur(slot.standardgebot)} · Richtwert: ${formatEur(richtwertSlot)}`;
     } else {
       betragInput.value = '';
-      hinweis.textContent = `Richtwert für diesen Slot: ${formatEur(richtwertSlot)}`;
+      hinweis.textContent = `Richtwert: ${formatEur(richtwertSlot)}`;
     }
   }
 
@@ -208,6 +208,20 @@ export async function initGebot(): Promise<void> {
   // Korrektur-Tab einblenden falls bereits geboten
   if (blob.slots.some(s => slotBereitsGeboten(s.label))) {
     document.getElementById('tab-korrigieren')!.classList.remove('hidden');
+  }
+
+  // Hinweis-Banner anzeigen falls bereits geboten
+  const bereitsGeboteteSlots = blob.slots.filter(s => slotBereitsGeboten(s.label));
+  if (bereitsGeboteteSlots.length > 0) {
+    const banner = document.getElementById('gebot-hinweis-banner')!;
+    if (bereitsGeboteteSlots.length === 1) {
+      const strong = document.createElement('strong');
+      strong.textContent = bereitsGeboteteSlots[0].label;
+      banner.append('Du hast für ', strong, ' bereits ein Gebot abgegeben.');
+    } else {
+      banner.textContent = 'Du hast bereits Gebote abgegeben.';
+    }
+    banner.classList.remove('hidden');
   }
 
   // ── Tab 1: Gebot abgeben ──────────────────────────────────────────────────

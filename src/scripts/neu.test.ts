@@ -27,8 +27,9 @@ function setupDom() {
     <button id="copy-admin"></button>
     <form id="runde-form">
       <input id="rundeName" name="rundeName" type="text" value="Testrunde" />
-      <input id="gesamtkosten" name="gesamtkosten" type="text" value="600" />
       <button type="submit" id="submit-btn">Runde erstellen</button>
+      <input id="gesamtkosten" name="gesamtkosten" type="text" value="600" />
+      <p id="gesamtkosten-fehler" class="hidden"></p>
     </form>
     <div id="slots-container">
       <div class="slot-eintrag">
@@ -244,5 +245,138 @@ describe('initNeu', () => {
     const ausgabenInput = document.querySelector<HTMLInputElement>('[name="ausgaben[]"]')!;
     expect(ausgabenInput.value).toBe('');
     expect(document.getElementById('ausgaben-link')!.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('berechnet Gesamtkosten live aus Slot-Ausgaben', () => {
+    initNeu();
+
+    const ausgabenInput = document.querySelector<HTMLInputElement>('[name="ausgaben[]"]')!;
+    ausgabenInput.value = '350';
+    ausgabenInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+    expect((document.getElementById('gesamtkosten') as HTMLInputElement).value).toBe('350,00');
+  });
+
+  it('blockiert Submit wenn Slot-Summe nicht mit Gesamtkosten übereinstimmt', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    initNeu();
+
+    const ausgabenInput = document.querySelector<HTMLInputElement>('[name="ausgaben[]"]')!;
+    ausgabenInput.value = '300';
+    ausgabenInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+    // Gesamtkosten manuell auf abweichenden Wert setzen
+    (document.getElementById('gesamtkosten') as HTMLInputElement).value = '500';
+
+    document.getElementById('runde-form')!.dispatchEvent(new Event('submit', { bubbles: true }));
+    await vi.waitFor(() =>
+      expect(document.getElementById('gesamtkosten-fehler')!.classList.contains('hidden')).toBe(false),
+    );
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(document.getElementById('gesamtkosten-fehler')!.textContent).toContain('300');
+  });
+
+  it('lässt Submit zu wenn keine Ausgaben erfasst sind', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 'abc12345', adminToken: 'tok1234567890abcd' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    initNeu();
+
+    // Ausgaben-Feld bleibt leer
+    document.getElementById('runde-form')!.dispatchEvent(new Event('submit', { bubbles: true }));
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
+
+    expect(document.getElementById('gesamtkosten-fehler')!.classList.contains('hidden')).toBe(true);
+  });
+
+  it('lässt Submit zu wenn Slot-Summe mit Gesamtkosten übereinstimmt', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 'abc12345', adminToken: 'tok1234567890abcd' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    initNeu();
+
+    const ausgabenInput = document.querySelector<HTMLInputElement>('[name="ausgaben[]"]')!;
+    ausgabenInput.value = '600';
+    ausgabenInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+    document.getElementById('runde-form')!.dispatchEvent(new Event('submit', { bubbles: true }));
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
+
+    expect(document.getElementById('gesamtkosten-fehler')!.classList.contains('hidden')).toBe(true);
+  });
+
+  it('setzt Gesamtkosten zurück wenn alle Ausgaben-Felder geleert werden', () => {
+    initNeu();
+
+    const ausgabenInput = document.querySelector<HTMLInputElement>('[name="ausgaben[]"]')!;
+    ausgabenInput.value = '350';
+    ausgabenInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+    ausgabenInput.value = '';
+    ausgabenInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+    expect((document.getElementById('gesamtkosten') as HTMLInputElement).value).toBe('');
+  });
+
+  it('blendet Inline-Fehler aus wenn Gesamtkosten manuell korrigiert wird', async () => {
+    vi.stubGlobal('fetch', vi.fn());
+    initNeu();
+
+    const ausgabenInput = document.querySelector<HTMLInputElement>('[name="ausgaben[]"]')!;
+    ausgabenInput.value = '300';
+    ausgabenInput.dispatchEvent(new Event('input', { bubbles: true }));
+    (document.getElementById('gesamtkosten') as HTMLInputElement).value = '500';
+
+    document.getElementById('runde-form')!.dispatchEvent(new Event('submit', { bubbles: true }));
+    await vi.waitFor(() =>
+      expect(document.getElementById('gesamtkosten-fehler')!.classList.contains('hidden')).toBe(false),
+    );
+
+    const gesamtkostenInput = document.getElementById('gesamtkosten') as HTMLInputElement;
+    gesamtkostenInput.value = '300';
+    gesamtkostenInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+    expect(document.getElementById('gesamtkosten-fehler')!.classList.contains('hidden')).toBe(true);
+  });
+
+  it('aktualisiert Gesamtkosten nach Slot-Entfernen', () => {
+    initNeu();
+
+    document.getElementById('slot-hinzufuegen')!.click();
+
+    const ausgabenInputs = document.querySelectorAll<HTMLInputElement>('[name="ausgaben[]"]');
+    ausgabenInputs[0].value = '300';
+    ausgabenInputs[0].dispatchEvent(new Event('input', { bubbles: true }));
+    ausgabenInputs[1].value = '200';
+    ausgabenInputs[1].dispatchEvent(new Event('input', { bubbles: true }));
+
+    expect((document.getElementById('gesamtkosten') as HTMLInputElement).value).toBe('500,00');
+
+    document.querySelectorAll<HTMLButtonElement>('.slot-entfernen')[0].click();
+
+    expect((document.getElementById('gesamtkosten') as HTMLInputElement).value).toBe('200,00');
+  });
+
+  it('zählt €0-Ausgaben bei der Summenberechnung mit', () => {
+    initNeu();
+
+    document.getElementById('slot-hinzufuegen')!.click();
+
+    const ausgabenInputs = document.querySelectorAll<HTMLInputElement>('[name="ausgaben[]"]');
+    ausgabenInputs[0].value = '0';
+    ausgabenInputs[0].dispatchEvent(new Event('input', { bubbles: true }));
+    ausgabenInputs[1].value = '600';
+    ausgabenInputs[1].dispatchEvent(new Event('input', { bubbles: true }));
+
+    expect((document.getElementById('gesamtkosten') as HTMLInputElement).value).toBe('600,00');
   });
 });

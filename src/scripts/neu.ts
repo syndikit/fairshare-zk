@@ -53,7 +53,12 @@ export function initNeu(): void {
     const gesamtkosten = parseGeld(
       (form.querySelector('#gesamtkosten') as HTMLInputElement).value,
     );
-    if (!gesamtkosten || gesamtkosten <= 0) return;
+    if (!gesamtkosten || gesamtkosten <= 0) {
+      slotsContainer.querySelectorAll<HTMLSpanElement>('.standardgebot-richtwert').forEach(el => {
+        el.textContent = '';
+      });
+      return;
+    }
 
     const slotEls = [...slotsContainer.querySelectorAll<HTMLDivElement>('.slot-eintrag')];
     const summeGewichtungen = slotEls.reduce((s, el) => {
@@ -110,7 +115,7 @@ export function initNeu(): void {
     t.value = formatBetrag(v);
   }, true);
 
-  const presetNamen: Record<string, string> = { '1.0': 'Erwachsen', '0.75': 'Ermäßigt', '0.25': 'Kind' };
+  const presetNamen: Record<string, string> = { '1.0': 'Erwachsen', '0.25': 'Kind' };
   function aktualisierePresetPlaceholder(slotEl: HTMLElement) {
     const labelInput = slotEl.querySelector<HTMLInputElement>('[name="label[]"]');
     if (!labelInput) return;
@@ -160,6 +165,10 @@ export function initNeu(): void {
       aktualisierePresetPlaceholder(eintrag);
       if (target.value === 'manuell') {
         if (manuellInput) {
+          const presetWerte = ['1', '1.0', '0.25'];
+          if (presetWerte.includes(manuellInput.value)) {
+            manuellInput.value = '0.125';
+          }
           manuellInput.readOnly = false;
           manuellInput.classList.remove('opacity-50', 'cursor-not-allowed');
           if (hiddenInput && manuellInput.value) hiddenInput.value = manuellInput.value;
@@ -199,7 +208,13 @@ export function initNeu(): void {
     const eintrag = target.closest('.slot-eintrag') as HTMLDivElement;
     eintrag.remove();
     aktualisiereEntfernenButtons();
-    aktualisiereGesamtkosten();
+    const hatAusgabenWerte = [...slotsContainer.querySelectorAll<HTMLInputElement>('[name="ausgaben[]"]')]
+      .some(el => !isNaN(parseGeld(el.value)));
+    if (hatAusgabenWerte) {
+      aktualisiereGesamtkosten();
+    } else {
+      aktualisiereRichtwert();
+    }
   });
 
   // ---------------------------------------------------------------------------
@@ -369,7 +384,7 @@ export function initNeu(): void {
     if (hiddenInput) hiddenInput.value = String(gewichtung);
 
     // Passendes Radio auswählen oder Manuell
-    const presets = ['1.0', '0.75', '0.25'];
+    const presets = ['1.0', '0.25'];
     const matchingValue = presets.find(v => Math.abs(parseFloat(v) - gewichtung) < 0.001);
     if (matchingValue) {
       const radio = slotEl.querySelector<HTMLInputElement>(`.slot-gewichtung-radio[value="${matchingValue}"]`);
@@ -409,7 +424,7 @@ export function initNeu(): void {
         slotEl: HTMLDivElement,
         slot: { label: string; gewichtung: number; anzahl: number; standardgebot?: number; ausgaben?: number },
       ) {
-        const presetNamenWiederhol: Record<string, string> = { 'Erwachsen': '', 'Ermäßigt': '', 'Kind': '', 'Beitrag': '' };
+        const presetNamenWiederhol: Record<string, string> = { 'Erwachsen': '', 'Kind': '', 'Beitrag': '' };
         // Labels die reine Preset-Namen sind, als leer behandeln (Preset-Name wird beim Absenden wieder gesetzt)
         (slotEl.querySelector('[name="label[]"]') as HTMLInputElement).value =
           (slot.label in presetNamenWiederhol) ? '' : slot.label;

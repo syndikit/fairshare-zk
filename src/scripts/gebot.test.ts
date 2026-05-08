@@ -72,6 +72,7 @@ function setupDom() {
     </form>
     <div id="korrektur-fehler" class="hidden"></div>
     <div id="emoji-anzeige"></div>
+    <p id="emoji-id-label">Deine Emoji-ID</p>
     <p id="bestaetigung-titel"></p>
     <p id="bestaetigung-text"></p>
   `;
@@ -548,6 +549,51 @@ describe('initGebot', () => {
     slot1Radio.dispatchEvent(new Event('change', { bubbles: true }));
 
     expect((document.getElementById('betrag') as HTMLInputElement).value).toBe('75');
+  });
+
+  it('kopiert Emoji-ID bei Klick und zeigt Bestätigungslabel', async () => {
+    const { partKeyB64, encTeilnehmerBlob } = await createEncryptedBlob();
+    mockLocation('/runde/abc12345', `#pk=${partKeyB64}`);
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal('navigator', { clipboard: { writeText } });
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ encTeilnehmerBlob, gebote: [] }) })
+      .mockResolvedValue({ ok: true, status: 200, json: async () => ({}) }));
+
+    await initGebot();
+    (document.getElementById('betrag') as HTMLInputElement).value = '80';
+    document.getElementById('gebot-form')!.dispatchEvent(new Event('submit', { bubbles: true }));
+    await vi.waitFor(() => expect(document.getElementById('zustand-bestaetigung')!.classList.contains('hidden')).toBe(false));
+
+    vi.useFakeTimers();
+    document.getElementById('emoji-anzeige')!.dispatchEvent(new Event('click'));
+    await Promise.resolve();
+
+    expect(writeText).toHaveBeenCalledWith(expect.any(String));
+    expect(document.getElementById('emoji-id-label')!.textContent).toBe('✓ Kopiert');
+
+    vi.advanceTimersByTime(2000);
+    expect(document.getElementById('emoji-id-label')!.textContent).toBe('Deine Emoji-ID');
+    vi.useRealTimers();
+  });
+
+  it('ignoriert Clipboard-Fehler still', async () => {
+    const { partKeyB64, encTeilnehmerBlob } = await createEncryptedBlob();
+    mockLocation('/runde/abc12345', `#pk=${partKeyB64}`);
+    vi.stubGlobal('navigator', { clipboard: { writeText: vi.fn().mockRejectedValue(new Error('denied')) } });
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ encTeilnehmerBlob, gebote: [] }) })
+      .mockResolvedValue({ ok: true, status: 200, json: async () => ({}) }));
+
+    await initGebot();
+    (document.getElementById('betrag') as HTMLInputElement).value = '80';
+    document.getElementById('gebot-form')!.dispatchEvent(new Event('submit', { bubbles: true }));
+    await vi.waitFor(() => expect(document.getElementById('zustand-bestaetigung')!.classList.contains('hidden')).toBe(false));
+
+    document.getElementById('emoji-anzeige')!.dispatchEvent(new Event('click'));
+    await Promise.resolve();
+
+    expect(document.getElementById('emoji-id-label')!.textContent).toBe('Deine Emoji-ID');
   });
 
   it('leert Betrag beim Wechsel von Auto-Slot zu normalem Slot', async () => {

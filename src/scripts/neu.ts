@@ -50,9 +50,7 @@ export function initNeu(): void {
   }
 
   function aktualisiereRichtwert() {
-    const gesamtkosten = parseGeld(
-      (form.querySelector('#gesamtkosten') as HTMLInputElement).value,
-    );
+    const gesamtkosten = parseGeld(gesamtkostenInput.value);
     if (!gesamtkosten || gesamtkosten <= 0) {
       slotsContainer.querySelectorAll<HTMLSpanElement>('.standardgebot-richtwert').forEach(el => {
         el.textContent = '';

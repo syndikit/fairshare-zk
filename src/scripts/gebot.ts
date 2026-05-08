@@ -210,6 +210,13 @@ export async function initGebot(): Promise<void> {
     document.getElementById('tab-korrigieren')!.classList.remove('hidden');
   }
 
+  // Hinweis-Banner anzeigen falls bereits geboten
+  const bereitsGebotenerSlot = blob.slots.find(s => slotBereitsGeboten(s.label));
+  if (bereitsGebotenerSlot) {
+    document.getElementById('gebot-hinweis-slot')!.textContent = bereitsGebotenerSlot.label;
+    document.getElementById('gebot-hinweis-banner')!.classList.remove('hidden');
+  }
+
   // ── Tab 1: Gebot abgeben ──────────────────────────────────────────────────
   const gebotForm = document.getElementById('gebot-form') as HTMLFormElement;
   const gebotBtn = document.getElementById('gebot-btn') as HTMLButtonElement;

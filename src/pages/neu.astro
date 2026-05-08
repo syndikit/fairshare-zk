@@ -64,6 +64,23 @@ import FeedbackBox from '../components/FeedbackBox.astro';
         />
       </div>
 
+      <!-- Gesamtkosten -->
+      <div>
+        <label for="gesamtkosten" class="block text-sm font-medium text-fg-secondary mb-1">
+          Gesamtkosten (€)
+        </label>
+        <input
+          type="text"
+          inputmode="decimal"
+          id="gesamtkosten"
+          name="gesamtkosten"
+          required
+          placeholder="z.B. 1200"
+          class="w-full border border-border-strong bg-surface-raised text-fg rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+        />
+        <p id="gesamtkosten-fehler" class="hidden text-xs text-danger-fg mt-1"></p>
+      </div>
+
       <!-- Personen -->
       <div>
         <div class="flex items-center justify-between mb-2">
@@ -123,10 +140,6 @@ import FeedbackBox from '../components/FeedbackBox.astro';
                       <span class="slot-gewichtung-badge inline-block border border-border-strong rounded-md px-2.5 py-1 text-xs text-fg-secondary hover:border-brand transition-colors">Erwachsen</span>
                     </label>
                     <label class="slot-gewichtung-label cursor-pointer">
-                      <input type="radio" class="slot-gewichtung-radio sr-only" name="gw-slot-0" value="0.75" />
-                      <span class="slot-gewichtung-badge inline-block border border-border-strong rounded-md px-2.5 py-1 text-xs text-fg-secondary hover:border-brand transition-colors">Ermäßigt</span>
-                    </label>
-                    <label class="slot-gewichtung-label cursor-pointer">
                       <input type="radio" class="slot-gewichtung-radio sr-only" name="gw-slot-0" value="0.25" />
                       <span class="slot-gewichtung-badge inline-block border border-border-strong rounded-md px-2.5 py-1 text-xs text-fg-secondary hover:border-brand transition-colors">Kind</span>
                     </label>
@@ -138,7 +151,7 @@ import FeedbackBox from '../components/FeedbackBox.astro';
                       type="text"
                       inputmode="decimal"
                       class="slot-gewichtung-manuell w-16 border border-border-strong bg-surface-elevated text-fg rounded-md px-2 py-1 text-sm text-center opacity-50 cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand"
-                      value="0.125"
+                      value="1"
                       placeholder="0,xxx"
                       readonly
                     />
@@ -184,23 +197,6 @@ import FeedbackBox from '../components/FeedbackBox.astro';
           aria-expanded="false"
           class="text-xs text-fg-faint hover:text-fg-secondary mt-1 transition-colors"
         >+ Ausgaben erfassen</button>
-      </div>
-
-      <!-- Gesamtkosten -->
-      <div>
-        <label for="gesamtkosten" class="block text-sm font-medium text-fg-secondary mb-1">
-          Gesamtkosten (€)
-        </label>
-        <input
-          type="text"
-          inputmode="decimal"
-          id="gesamtkosten"
-          name="gesamtkosten"
-          required
-          placeholder="z.B. 1200"
-          class="w-full border border-border-strong bg-surface-raised text-fg rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-        />
-        <p id="gesamtkosten-fehler" class="hidden text-xs text-danger-fg mt-1"></p>
       </div>
 
       <!-- Fehler -->

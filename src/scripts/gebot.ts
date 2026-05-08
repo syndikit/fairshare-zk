@@ -193,6 +193,11 @@ export async function initGebot(): Promise<void> {
     panelKorrigieren.classList.toggle('hidden', istAbgeben);
   }
 
+  function blendeKorrekturTabEin() {
+    tabKorrigieren.classList.remove('hidden');
+    document.getElementById('korrektur-link-btn')!.classList.add('hidden');
+  }
+
   tabAbgeben.addEventListener('click', () => zeigeTab('abgeben'));
   tabKorrigieren.addEventListener('click', () => zeigeTab('korrigieren'));
 
@@ -209,10 +214,8 @@ export async function initGebot(): Promise<void> {
   document.getElementById('korrektur-betrag-einzel')!.classList.toggle('hidden', dreiGebotModus);
   document.getElementById('korrektur-betrag-drei')!.classList.toggle('hidden', !dreiGebotModus);
 
-  // Korrektur-Tab einblenden falls bereits geboten; Link im Tab-Bereich ausblenden
   if (blob.slots.some(s => slotBereitsGeboten(s.label))) {
-    document.getElementById('tab-korrigieren')!.classList.remove('hidden');
-    document.getElementById('korrektur-link-btn')!.classList.add('hidden');
+    blendeKorrekturTabEin();
   }
 
   // ── Tab 1: Gebot abgeben ──────────────────────────────────────────────────
@@ -309,7 +312,7 @@ export async function initGebot(): Promise<void> {
 
       slotAlsGebotenMarkieren(selectedSlot.label);
       saveGebotLokal(rundenId, emojiId!, selectedSlot.label);
-      document.getElementById('tab-korrigieren')!.classList.remove('hidden');
+      blendeKorrekturTabEin();
       zeigeBestaetigung(emojiId!, false);
     } catch (err) {
       zeigeFeedback('gebot-fehler', 'Unerwarteter Fehler. Bitte versuche es erneut.', 'rot');
@@ -372,7 +375,7 @@ export async function initGebot(): Promise<void> {
   });
   duplikatKorrigieren.addEventListener('click', () => {
     duplikatZuruecksetzen();
-    tabKorrigieren.classList.remove('hidden');
+    blendeKorrekturTabEin();
     zeigeTab('korrigieren');
     document.getElementById('korrektur-emoji')?.focus();
   });
@@ -381,9 +384,8 @@ export async function initGebot(): Promise<void> {
     await gebot_einreichen();
   });
 
-  // Korrektur-Link (immer sichtbar, öffnet Korrektur-Tab)
   document.getElementById('korrektur-link-btn')!.addEventListener('click', () => {
-    tabKorrigieren.classList.remove('hidden');
+    blendeKorrekturTabEin();
     zeigeTab('korrigieren');
     document.getElementById('korrektur-emoji')?.focus();
   });

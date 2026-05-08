@@ -566,15 +566,18 @@ describe('initGebot', () => {
     await vi.waitFor(() => expect(document.getElementById('zustand-bestaetigung')!.classList.contains('hidden')).toBe(false));
 
     vi.useFakeTimers();
-    document.getElementById('emoji-anzeige')!.dispatchEvent(new Event('click'));
-    await Promise.resolve();
+    try {
+      document.getElementById('emoji-anzeige')!.dispatchEvent(new Event('click'));
+      await Promise.resolve();
 
-    expect(writeText).toHaveBeenCalledWith(expect.any(String));
-    expect(document.getElementById('emoji-id-label')!.textContent).toBe('✓ Kopiert');
+      expect(writeText).toHaveBeenCalledWith(expect.any(String));
+      expect(document.getElementById('emoji-id-label')!.textContent).toBe('✓ Kopiert');
 
-    vi.advanceTimersByTime(2000);
-    expect(document.getElementById('emoji-id-label')!.textContent).toBe('Deine Emoji-ID');
-    vi.useRealTimers();
+      vi.advanceTimersByTime(2000);
+      expect(document.getElementById('emoji-id-label')!.textContent).toBe('Deine Emoji-ID');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('ignoriert Clipboard-Fehler still', async () => {

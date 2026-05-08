@@ -85,15 +85,3 @@ import Layout from '../layouts/Layout.astro';
   </section>
 </Layout>
 
-<script>
-  try {
-    const runden = JSON.parse(localStorage.getItem('fairshare_runden') || '[]');
-    if (Array.isArray(runden) && runden.length > 0) {
-      const el = document.getElementById('cta-meine-runden');
-      if (el) {
-        el.classList.remove('hidden');
-        el.classList.add('inline-flex', 'animate-fade-in');
-      }
-    }
-  } catch { /* ignore */ }
-</script>

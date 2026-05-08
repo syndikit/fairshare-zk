@@ -348,6 +348,20 @@ describe('initNeu', () => {
     expect(document.getElementById('gesamtkosten-fehler')!.classList.contains('hidden')).toBe(true);
   });
 
+  it('überschreibt Gesamtkosten nicht wenn manuell eingegeben', () => {
+    initNeu();
+
+    const gesamtkostenInput = document.getElementById('gesamtkosten') as HTMLInputElement;
+    gesamtkostenInput.value = '500';
+    gesamtkostenInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+    const ausgabenInput = document.querySelector<HTMLInputElement>('[name="ausgaben[]"]')!;
+    ausgabenInput.value = '200';
+    ausgabenInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+    expect(gesamtkostenInput.value).toBe('500');
+  });
+
   it('aktualisiert Gesamtkosten nach Slot-Entfernen', () => {
     initNeu();
 

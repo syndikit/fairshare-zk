@@ -450,6 +450,82 @@ describe('initGebot', () => {
     expect(document.getElementById('weiterer-slot-text')!.querySelector('strong')).toBeNull();
   });
 
+  it('Abbrechen-Button versteckt die Weiterer-Slot-Warnung', async () => {
+    const partKey = await generatePartKey();
+    const { publicKey: adminPubKey } = await generateAdminKeyPair();
+    const hmacKey = await generateHmacKey();
+    const partKeyB64 = await exportKey(partKey);
+    const blobData = {
+      rundeName: 'Testrunde',
+      gesamtkosten: 600,
+      adminPubKey: await exportKey(adminPubKey),
+      hmacKey: await exportKey(hmacKey),
+      slots: [
+        { label: 'Erwachsen', gewichtung: 1.0, anzahl: 1 },
+        { label: 'Kind', gewichtung: 0.5, anzahl: 1 },
+      ],
+    };
+    const encTeilnehmerBlob = await encrypt(partKey, JSON.stringify(blobData));
+
+    mockLocation('/runde/abc12345', `#pk=${partKeyB64}`);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ encTeilnehmerBlob, gebote: [] }),
+    }));
+
+    localStorage.setItem('fairshare-slot-abc12345-Erwachsen', '1');
+
+    await initGebot();
+
+    (document.querySelector('form#gebot-form input[name="slot"]') as HTMLInputElement).value = '1';
+    (document.getElementById('betrag') as HTMLInputElement).value = '40';
+    document.getElementById('gebot-form')!.dispatchEvent(new Event('submit', { bubbles: true }));
+
+    await vi.waitFor(() => expect(document.getElementById('weiterer-slot-warnung')!.classList.contains('hidden')).toBe(false));
+
+    document.getElementById('weiterer-slot-abbrechen')!.dispatchEvent(new Event('click'));
+
+    expect(document.getElementById('weiterer-slot-warnung')!.classList.contains('hidden')).toBe(true);
+  });
+
+  it('zeigt Weiterer-Slot-Warnung im Drei-Gebot-Modus', async () => {
+    const partKey = await generatePartKey();
+    const { publicKey: adminPubKey } = await generateAdminKeyPair();
+    const hmacKey = await generateHmacKey();
+    const partKeyB64 = await exportKey(partKey);
+    const blobData = {
+      rundeName: 'Testrunde',
+      gesamtkosten: 600,
+      adminPubKey: await exportKey(adminPubKey),
+      hmacKey: await exportKey(hmacKey),
+      slots: [
+        { label: 'Erwachsen', gewichtung: 1.0, anzahl: 1 },
+        { label: 'Kind', gewichtung: 0.5, anzahl: 1 },
+      ],
+      dreiGebotModus: true,
+    };
+    const encTeilnehmerBlob = await encrypt(partKey, JSON.stringify(blobData));
+
+    mockLocation('/runde/abc12345', `#pk=${partKeyB64}`);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ encTeilnehmerBlob, gebote: [] }),
+    }));
+
+    localStorage.setItem('fairshare-slot-abc12345-Erwachsen', '1');
+
+    await initGebot();
+
+    (document.querySelector('form#gebot-form input[name="slot"]') as HTMLInputElement).value = '1';
+    (document.getElementById('betrag-min') as HTMLInputElement).value = '30';
+    (document.getElementById('betrag-mittel') as HTMLInputElement).value = '40';
+    (document.getElementById('betrag-max') as HTMLInputElement).value = '60';
+    document.getElementById('gebot-form')!.dispatchEvent(new Event('submit', { bubbles: true }));
+
+    await vi.waitFor(() => expect(document.getElementById('weiterer-slot-warnung')!.classList.contains('hidden')).toBe(false));
+    expect(document.getElementById('weiterer-slot-text')!.textContent).toContain('Erwachsen');
+  });
+
   it('zeigt keine Warnung wenn noch kein Gebot vorliegt', async () => {
     const { partKeyB64, encTeilnehmerBlob } = await createEncryptedBlob();
     mockLocation('/runde/abc12345', `#pk=${partKeyB64}`);

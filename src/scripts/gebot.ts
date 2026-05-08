@@ -209,9 +209,10 @@ export async function initGebot(): Promise<void> {
   document.getElementById('korrektur-betrag-einzel')!.classList.toggle('hidden', dreiGebotModus);
   document.getElementById('korrektur-betrag-drei')!.classList.toggle('hidden', !dreiGebotModus);
 
-  // Korrektur-Tab einblenden falls bereits geboten
+  // Korrektur-Tab einblenden falls bereits geboten; Link im Tab-Bereich ausblenden
   if (blob.slots.some(s => slotBereitsGeboten(s.label))) {
     document.getElementById('tab-korrigieren')!.classList.remove('hidden');
+    document.getElementById('korrektur-link-btn')!.classList.add('hidden');
   }
 
   // ── Tab 1: Gebot abgeben ──────────────────────────────────────────────────

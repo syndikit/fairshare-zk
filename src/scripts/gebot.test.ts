@@ -70,7 +70,6 @@ function setupDom() {
     <p id="bestaetigung-titel"></p>
     <p id="bestaetigung-text"></p>
     <div id="gebot-hinweis-banner" class="hidden"></div>
-    <strong id="gebot-hinweis-slot"></strong>
   `;
 }
 
@@ -370,7 +369,7 @@ describe('initGebot', () => {
     await vi.waitFor(() => expect(document.getElementById('korrektur-fehler')!.classList.contains('hidden')).toBe(false));
   });
 
-  it('zeigt Hinweis-Banner beim Laden wenn Slot bereits geboten wurde', async () => {
+  it('zeigt Hinweis-Banner mit Slot-Namen wenn genau ein Slot geboten wurde', async () => {
     const { partKeyB64, encTeilnehmerBlob } = await createEncryptedBlob();
     mockLocation('/runde/abc12345', `#pk=${partKeyB64}`);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
@@ -382,8 +381,43 @@ describe('initGebot', () => {
 
     await initGebot();
 
-    expect(document.getElementById('gebot-hinweis-banner')!.classList.contains('hidden')).toBe(false);
-    expect(document.getElementById('gebot-hinweis-slot')!.textContent).toBe('Erwachsen');
+    const banner = document.getElementById('gebot-hinweis-banner')!;
+    expect(banner.classList.contains('hidden')).toBe(false);
+    expect(banner.textContent).toContain('Erwachsen');
+    expect(banner.querySelector('strong')?.textContent).toBe('Erwachsen');
+  });
+
+  it('zeigt Hinweis-Banner ohne Slot-Namen wenn mehrere Slots geboten wurden', async () => {
+    const partKey = await generatePartKey();
+    const { publicKey: adminPubKey } = await generateAdminKeyPair();
+    const hmacKey = await generateHmacKey();
+    const partKeyB64 = await exportKey(partKey);
+    const blobData = {
+      rundeName: 'Testrunde',
+      gesamtkosten: 600,
+      adminPubKey: await exportKey(adminPubKey),
+      hmacKey: await exportKey(hmacKey),
+      slots: [
+        { label: 'Erwachsen', gewichtung: 1.0, anzahl: 1 },
+        { label: 'Kind', gewichtung: 0.5, anzahl: 1 },
+      ],
+    };
+    const encTeilnehmerBlob = await encrypt(partKey, JSON.stringify(blobData));
+    mockLocation('/runde/abc12345', `#pk=${partKeyB64}`);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ encTeilnehmerBlob, gebote: [] }),
+    }));
+
+    localStorage.setItem('fairshare-slot-abc12345-Erwachsen', '1');
+    localStorage.setItem('fairshare-slot-abc12345-Kind', '1');
+
+    await initGebot();
+
+    const banner = document.getElementById('gebot-hinweis-banner')!;
+    expect(banner.classList.contains('hidden')).toBe(false);
+    expect(banner.textContent).toBe('Du hast bereits Gebote abgegeben.');
+    expect(banner.querySelector('strong')).toBeNull();
   });
 
   it('zeigt keinen Hinweis-Banner wenn kein Slot geboten wurde', async () => {

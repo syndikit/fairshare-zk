@@ -141,9 +141,13 @@ export async function initGebot(): Promise<void> {
     const hinweis = document.getElementById(hinweisId)!;
     if (slot.standardgebot !== undefined) {
       betragInput.value = slot.standardgebot.toFixed(2);
+      betragInput.dataset.autofilled = 'true';
       hinweis.textContent = `Standardgebot: ${formatEur(slot.standardgebot)} · Richtwert: ${formatEur(richtwertSlot)}`;
     } else {
-      betragInput.value = '';
+      if (betragInput.dataset.autofilled) {
+        betragInput.value = '';
+        delete betragInput.dataset.autofilled;
+      }
       hinweis.textContent = `Richtwert: ${formatEur(richtwertSlot)}`;
     }
   }

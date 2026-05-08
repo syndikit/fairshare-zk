@@ -24,9 +24,6 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
       </p>
     </div>
 
-    <!-- Hinweis: bereits geboten -->
-    <div id="gebot-hinweis-banner" class="hidden bg-success-subtle border border-success-outline text-success-fg rounded-xl p-4 text-sm"></div>
-
     <!-- Tab-Navigation -->
     <div class="flex border-b border-border">
       <button
@@ -111,6 +108,15 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
 
         <!-- Fehler -->
         <FeedbackBox id="gebot-fehler" />
+
+        <!-- Warnung: Gebot für weiteren Slot -->
+        <div id="weiterer-slot-warnung" class="hidden bg-amber-subtle border border-amber-outline text-amber-fg rounded-lg p-3 text-sm">
+          <p id="weiterer-slot-text" class="font-medium"></p>
+          <div class="flex gap-2 pt-2">
+            <button type="button" id="weiterer-slot-abbrechen" class="border border-amber-outline text-amber-fg rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-amber-tinted transition-colors">Abbrechen</button>
+            <button type="button" id="weiterer-slot-bestaetigen" class="border border-amber-border bg-amber-tinted text-amber-strong rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-amber-outline transition-colors">Trotzdem bieten</button>
+          </div>
+        </div>
 
         <!-- Duplikat-Warnung Two-Step (Soft-Warning, kein Hard-Block) -->
         <div id="duplikat-warnung" class="hidden bg-amber-subtle border border-amber-outline text-amber-fg rounded-lg p-3 text-sm">

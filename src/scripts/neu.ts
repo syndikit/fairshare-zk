@@ -415,7 +415,8 @@ export function initNeu(): void {
       };
 
       (form.querySelector('#rundeName') as HTMLInputElement).value = config.name;
-      (form.querySelector('#gesamtkosten') as HTMLInputElement).value = formatBetrag(config.kosten);
+      gesamtkostenInput.value = formatBetrag(config.kosten);
+      gesamtkostenInput.dataset.auto = 'false';
 
       function befuelleWiederholSlot(
         slotEl: HTMLDivElement,

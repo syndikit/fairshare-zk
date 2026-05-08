@@ -238,10 +238,11 @@ export async function initGebot(): Promise<void> {
     emojiAnzeige.textContent = emojiId;
     emojiAnzeige.classList.add('animate-pop-in');
     emojiAnzeige.onclick = () => {
+      const label = document.getElementById('emoji-id-label')!;
+      const originalText = label.textContent ?? '';
       navigator.clipboard?.writeText(emojiId).then(() => {
-        const label = document.getElementById('emoji-id-label')!;
         label.textContent = '✓ Kopiert';
-        setTimeout(() => { label.textContent = 'Deine Emoji-ID'; }, 2000);
+        setTimeout(() => { label.textContent = originalText; }, 2000);
       }).catch(() => {});
     };
     document.getElementById('bestaetigung-titel')!.textContent = istKorrektur ? 'Gebot korrigiert' : 'Gebot abgegeben';

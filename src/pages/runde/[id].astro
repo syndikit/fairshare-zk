@@ -25,7 +25,7 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
     </div>
 
     <!-- Tab-Navigation -->
-    <div class="flex border-b border-border">
+    <div class="flex items-end border-b border-border">
       <button
         id="tab-abgeben"
         class="px-4 py-2 text-sm font-medium border-b-2 border-brand text-brand -mb-px transition-colors"
@@ -37,6 +37,13 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
         class="hidden px-4 py-2 text-sm font-medium border-b-2 border-transparent text-fg-muted -mb-px hover:text-fg-strong transition-colors"
       >
         Gebot korrigieren
+      </button>
+      <button
+        type="button"
+        id="korrektur-link-btn"
+        class="ml-auto pb-2 text-xs text-fg-faint hover:text-fg-secondary transition-colors hover:underline underline-offset-2"
+      >
+        Gebot korrigieren →
       </button>
     </div>
 
@@ -146,11 +153,6 @@ import FeedbackBox from '../../components/FeedbackBox.astro';
           Gebot abgeben
         </button>
 
-        <p class="text-center mt-1">
-          <button type="button" id="korrektur-link-btn" class="text-xs text-fg-faint hover:text-fg-secondary underline transition-colors">
-            Gebot korrigieren →
-          </button>
-        </p>
       </form>
     </div>
 

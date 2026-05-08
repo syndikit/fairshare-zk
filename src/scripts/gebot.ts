@@ -144,7 +144,7 @@ export async function initGebot(): Promise<void> {
       hinweis.textContent = `Standardgebot: ${formatEur(slot.standardgebot)} · Richtwert: ${formatEur(richtwertSlot)}`;
     } else {
       betragInput.value = '';
-      hinweis.textContent = `Richtwert für diesen Slot: ${formatEur(richtwertSlot)}`;
+      hinweis.textContent = `Richtwert für diese Kategorie: ${formatEur(richtwertSlot)}`;
     }
   }
 

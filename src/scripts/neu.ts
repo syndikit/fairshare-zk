@@ -165,7 +165,7 @@ export function initNeu(): void {
       aktualisierePresetPlaceholder(eintrag);
       if (target.value === 'manuell') {
         if (manuellInput) {
-          const presetWerte = ['1', '1.0', '0.25'];
+          const presetWerte = ['1.0', '0.25'];
           if (presetWerte.includes(manuellInput.value)) {
             manuellInput.value = '0.125';
           }

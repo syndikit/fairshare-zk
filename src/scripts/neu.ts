@@ -86,8 +86,10 @@ export function initNeu(): void {
     });
   }
 
-  document.getElementById('gesamtkosten')!.addEventListener('input', () => {
+  const gesamtkostenInput = document.getElementById('gesamtkosten') as HTMLInputElement;
+  gesamtkostenInput.addEventListener('input', () => {
     (document.getElementById('gesamtkosten-fehler') as HTMLParagraphElement).classList.add('hidden');
+    gesamtkostenInput.dataset.auto = gesamtkostenInput.value ? 'false' : 'true';
     aktualisiereRichtwert();
   });
 
@@ -95,14 +97,9 @@ export function initNeu(): void {
     const werte = [...slotsContainer.querySelectorAll<HTMLInputElement>('[name="ausgaben[]"]')]
       .map(el => parseGeld(el.value))
       .filter(v => !isNaN(v));
-    const gesamtkostenInput = form.querySelector('#gesamtkosten') as HTMLInputElement;
-    if (werte.length === 0) {
-      gesamtkostenInput.value = '';
-      aktualisiereRichtwert();
-      return;
+    if (gesamtkostenInput.dataset.auto !== 'false') {
+      gesamtkostenInput.value = werte.length > 0 ? formatBetrag(werte.reduce((a, b) => a + b, 0)) : '';
     }
-    const summe = werte.reduce((a, b) => a + b, 0);
-    gesamtkostenInput.value = formatBetrag(summe);
     aktualisiereRichtwert();
   }
 

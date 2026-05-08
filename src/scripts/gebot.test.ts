@@ -39,6 +39,11 @@ function setupDom() {
         <input type="number" id="betrag-mittel" />
         <input type="number" id="betrag-max" />
       </div>
+      <div id="weiterer-slot-warnung" class="hidden">
+        <p id="weiterer-slot-text"></p>
+        <button type="button" id="weiterer-slot-abbrechen"></button>
+        <button type="button" id="weiterer-slot-bestaetigen"></button>
+      </div>
       <div id="duplikat-warnung" class="hidden"></div>
       <div id="duplikat-schritt1"></div>
       <div id="duplikat-schritt2" class="hidden"></div>
@@ -69,7 +74,6 @@ function setupDom() {
     <div id="emoji-anzeige"></div>
     <p id="bestaetigung-titel"></p>
     <p id="bestaetigung-text"></p>
-    <div id="gebot-hinweis-banner" class="hidden"></div>
   `;
 }
 
@@ -369,25 +373,7 @@ describe('initGebot', () => {
     await vi.waitFor(() => expect(document.getElementById('korrektur-fehler')!.classList.contains('hidden')).toBe(false));
   });
 
-  it('zeigt Hinweis-Banner mit Slot-Namen wenn genau ein Slot geboten wurde', async () => {
-    const { partKeyB64, encTeilnehmerBlob } = await createEncryptedBlob();
-    mockLocation('/runde/abc12345', `#pk=${partKeyB64}`);
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ encTeilnehmerBlob, gebote: [] }),
-    }));
-
-    localStorage.setItem('fairshare-slot-abc12345-Erwachsen', '1');
-
-    await initGebot();
-
-    const banner = document.getElementById('gebot-hinweis-banner')!;
-    expect(banner.classList.contains('hidden')).toBe(false);
-    expect(banner.textContent).toContain('Erwachsen');
-    expect(banner.querySelector('strong')?.textContent).toBe('Erwachsen');
-  });
-
-  it('zeigt Hinweis-Banner ohne Slot-Namen wenn mehrere Slots geboten wurden', async () => {
+  it('zeigt Warnung mit Slot-Namen wenn anderer Slot bereits geboten wurde', async () => {
     const partKey = await generatePartKey();
     const { publicKey: adminPubKey } = await generateAdminKeyPair();
     const hmacKey = await generateHmacKey();
@@ -403,6 +389,47 @@ describe('initGebot', () => {
       ],
     };
     const encTeilnehmerBlob = await encrypt(partKey, JSON.stringify(blobData));
+
+    mockLocation('/runde/abc12345', `#pk=${partKeyB64}`);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ encTeilnehmerBlob, gebote: [] }),
+    }));
+
+    // Slot 0 (Erwachsen) bereits geboten
+    localStorage.setItem('fairshare-slot-abc12345-Erwachsen', '1');
+
+    await initGebot();
+
+    // Formular-Radio auf Slot 1 (Kind) umschreiben, damit der Submit-Handler Kind auswählt
+    (document.querySelector('form#gebot-form input[name="slot"]') as HTMLInputElement).value = '1';
+    (document.getElementById('betrag') as HTMLInputElement).value = '40';
+    document.getElementById('gebot-form')!.dispatchEvent(new Event('submit', { bubbles: true }));
+
+    await vi.waitFor(() => expect(document.getElementById('weiterer-slot-warnung')!.classList.contains('hidden')).toBe(false));
+    const text = document.getElementById('weiterer-slot-text')!;
+    expect(text.textContent).toContain('Erwachsen');
+    expect(text.querySelector('strong')?.textContent).toBe('Erwachsen');
+  });
+
+  it('zeigt generische Warnung wenn mehrere andere Slots bereits geboten wurden', async () => {
+    const partKey = await generatePartKey();
+    const { publicKey: adminPubKey } = await generateAdminKeyPair();
+    const hmacKey = await generateHmacKey();
+    const partKeyB64 = await exportKey(partKey);
+    const blobData = {
+      rundeName: 'Testrunde',
+      gesamtkosten: 900,
+      adminPubKey: await exportKey(adminPubKey),
+      hmacKey: await exportKey(hmacKey),
+      slots: [
+        { label: 'Erwachsen', gewichtung: 1.0, anzahl: 1 },
+        { label: 'Kind', gewichtung: 0.5, anzahl: 1 },
+        { label: 'Baby', gewichtung: 0.25, anzahl: 1 },
+      ],
+    };
+    const encTeilnehmerBlob = await encrypt(partKey, JSON.stringify(blobData));
+
     mockLocation('/runde/abc12345', `#pk=${partKeyB64}`);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
@@ -414,22 +441,28 @@ describe('initGebot', () => {
 
     await initGebot();
 
-    const banner = document.getElementById('gebot-hinweis-banner')!;
-    expect(banner.classList.contains('hidden')).toBe(false);
-    expect(banner.textContent).toBe('Du hast bereits Gebote abgegeben.');
-    expect(banner.querySelector('strong')).toBeNull();
+    // Formular-Radio auf Slot 2 (Baby) umschreiben
+    (document.querySelector('form#gebot-form input[name="slot"]') as HTMLInputElement).value = '2';
+    (document.getElementById('betrag') as HTMLInputElement).value = '20';
+    document.getElementById('gebot-form')!.dispatchEvent(new Event('submit', { bubbles: true }));
+
+    await vi.waitFor(() => expect(document.getElementById('weiterer-slot-warnung')!.classList.contains('hidden')).toBe(false));
+    expect(document.getElementById('weiterer-slot-text')!.querySelector('strong')).toBeNull();
   });
 
-  it('zeigt keinen Hinweis-Banner wenn kein Slot geboten wurde', async () => {
+  it('zeigt keine Warnung wenn noch kein Gebot vorliegt', async () => {
     const { partKeyB64, encTeilnehmerBlob } = await createEncryptedBlob();
     mockLocation('/runde/abc12345', `#pk=${partKeyB64}`);
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ encTeilnehmerBlob, gebote: [] }),
-    }));
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ encTeilnehmerBlob, gebote: [] }) })
+      .mockResolvedValue({ ok: true, status: 200, json: async () => ({}) }));
 
     await initGebot();
 
-    expect(document.getElementById('gebot-hinweis-banner')!.classList.contains('hidden')).toBe(true);
+    (document.getElementById('betrag') as HTMLInputElement).value = '80';
+    document.getElementById('gebot-form')!.dispatchEvent(new Event('submit', { bubbles: true }));
+
+    await vi.waitFor(() => expect(document.getElementById('zustand-bestaetigung')!.classList.contains('hidden')).toBe(false));
+    expect(document.getElementById('weiterer-slot-warnung')!.classList.contains('hidden')).toBe(true);
   });
 });

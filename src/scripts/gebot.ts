@@ -211,10 +211,17 @@ export async function initGebot(): Promise<void> {
   }
 
   // Hinweis-Banner anzeigen falls bereits geboten
-  const bereitsGebotenerSlot = blob.slots.find(s => slotBereitsGeboten(s.label));
-  if (bereitsGebotenerSlot) {
-    document.getElementById('gebot-hinweis-slot')!.textContent = bereitsGebotenerSlot.label;
-    document.getElementById('gebot-hinweis-banner')!.classList.remove('hidden');
+  const bereitsGeboteteSlots = blob.slots.filter(s => slotBereitsGeboten(s.label));
+  if (bereitsGeboteteSlots.length > 0) {
+    const banner = document.getElementById('gebot-hinweis-banner')!;
+    if (bereitsGeboteteSlots.length === 1) {
+      const strong = document.createElement('strong');
+      strong.textContent = bereitsGeboteteSlots[0].label;
+      banner.append('Du hast für ', strong, ' bereits ein Gebot abgegeben.');
+    } else {
+      banner.textContent = 'Du hast bereits Gebote abgegeben.';
+    }
+    banner.classList.remove('hidden');
   }
 
   // ── Tab 1: Gebot abgeben ──────────────────────────────────────────────────

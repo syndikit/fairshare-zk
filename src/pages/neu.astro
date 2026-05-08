@@ -105,12 +105,13 @@ import FeedbackBox from '../components/FeedbackBox.astro';
                 aria-label="Slot entfernen"
               >×</button>
             </div>
-            <span class="standardgebot-richtwert text-xs text-fg-faint"></span>
-
             <!-- Erweiterte Optionen (eingeklappt) -->
             <details class="slot-erweitert-details">
-              <summary class="text-xs text-fg-faint cursor-pointer hover:text-fg-secondary transition-colors select-none list-none flex items-center gap-1">
-                <span class="inline-block transition-transform details-arrow">›</span> Erweitert
+              <summary class="text-xs text-fg-faint cursor-pointer hover:text-fg-secondary transition-colors select-none list-none flex items-center justify-between">
+                <span class="standardgebot-richtwert text-xs text-fg-faint"></span>
+                <span class="flex items-center gap-1">
+                  <span class="inline-block transition-transform details-arrow">›</span> Erweitert
+                </span>
               </summary>
               <div class="pt-3 space-y-3">
                 <!-- Gewichtungs-Kategorien -->

@@ -81,6 +81,7 @@ async function createEncryptedBlob(overrides?: Partial<{
   rundeName: string;
   gesamtkosten: number;
   dreiGebotModus: boolean;
+  slots: { label: string; gewichtung: number; anzahl: number; standardgebot?: number }[];
 }>) {
   const partKey = await generatePartKey();
   const { publicKey: adminPubKey } = await generateAdminKeyPair();
@@ -95,7 +96,7 @@ async function createEncryptedBlob(overrides?: Partial<{
     gesamtkosten: overrides?.gesamtkosten ?? 600,
     adminPubKey: adminPubKeyB64,
     hmacKey: hmacKeyB64,
-    slots: [{ label: 'Erwachsen', gewichtung: 1.0, anzahl: 1 }],
+    slots: overrides?.slots ?? [{ label: 'Erwachsen', gewichtung: 1.0, anzahl: 1 }],
     dreiGebotModus: overrides?.dreiGebotModus,
   };
   const encTeilnehmerBlob = await encrypt(partKey, JSON.stringify(blobData));
@@ -524,6 +525,75 @@ describe('initGebot', () => {
 
     await vi.waitFor(() => expect(document.getElementById('weiterer-slot-warnung')!.classList.contains('hidden')).toBe(false));
     expect(document.getElementById('weiterer-slot-text')!.textContent).toContain('Erwachsen');
+  });
+
+  it('behält eingegebenen Betrag beim Slot-Wechsel', async () => {
+    const { partKeyB64, encTeilnehmerBlob } = await createEncryptedBlob({
+      slots: [
+        { label: 'Erwachsen', gewichtung: 1.0, anzahl: 1 },
+        { label: 'Kind', gewichtung: 0.5, anzahl: 1 },
+      ],
+    });
+    mockLocation('/runde/abc12345', `#pk=${partKeyB64}`);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ encTeilnehmerBlob, gebote: [] }),
+    }));
+
+    await initGebot();
+
+    (document.getElementById('betrag') as HTMLInputElement).value = '75';
+
+    const slot1Radio = document.querySelector<HTMLInputElement>('#slot-auswahl input[value="1"]')!;
+    slot1Radio.dispatchEvent(new Event('change', { bubbles: true }));
+
+    expect((document.getElementById('betrag') as HTMLInputElement).value).toBe('75');
+  });
+
+  it('leert Betrag beim Wechsel von Auto-Slot zu normalem Slot', async () => {
+    const { partKeyB64, encTeilnehmerBlob } = await createEncryptedBlob({
+      slots: [
+        { label: 'Erwachsen', gewichtung: 1.0, anzahl: 1, standardgebot: 50 },
+        { label: 'Kind', gewichtung: 0.5, anzahl: 1 },
+      ],
+    });
+    mockLocation('/runde/abc12345', `#pk=${partKeyB64}`);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ encTeilnehmerBlob, gebote: [] }),
+    }));
+
+    await initGebot();
+
+    expect((document.getElementById('betrag') as HTMLInputElement).value).toBe('50.00');
+
+    const slot1Radio = document.querySelector<HTMLInputElement>('#slot-auswahl input[value="1"]')!;
+    slot1Radio.dispatchEvent(new Event('change', { bubbles: true }));
+
+    expect((document.getElementById('betrag') as HTMLInputElement).value).toBe('');
+  });
+
+  it('behält eingegebenen Betrag beim Slot-Wechsel im Korrektur-Tab', async () => {
+    const { partKeyB64, encTeilnehmerBlob } = await createEncryptedBlob({
+      slots: [
+        { label: 'Erwachsen', gewichtung: 1.0, anzahl: 1 },
+        { label: 'Kind', gewichtung: 0.5, anzahl: 1 },
+      ],
+    });
+    mockLocation('/runde/abc12345', `#pk=${partKeyB64}`);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ encTeilnehmerBlob, gebote: [] }),
+    }));
+
+    await initGebot();
+
+    (document.getElementById('korrektur-betrag') as HTMLInputElement).value = '60';
+
+    const slot1Radio = document.querySelector<HTMLInputElement>('#slot-auswahl-korrektur input[value="1"]')!;
+    slot1Radio.dispatchEvent(new Event('change', { bubbles: true }));
+
+    expect((document.getElementById('korrektur-betrag') as HTMLInputElement).value).toBe('60');
   });
 
   it('zeigt keine Warnung wenn noch kein Gebot vorliegt', async () => {

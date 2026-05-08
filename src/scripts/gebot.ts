@@ -210,23 +210,13 @@ export async function initGebot(): Promise<void> {
     document.getElementById('tab-korrigieren')!.classList.remove('hidden');
   }
 
-  // Hinweis-Banner anzeigen falls bereits geboten
-  const bereitsGeboteteSlots = blob.slots.filter(s => slotBereitsGeboten(s.label));
-  if (bereitsGeboteteSlots.length > 0) {
-    const banner = document.getElementById('gebot-hinweis-banner')!;
-    if (bereitsGeboteteSlots.length === 1) {
-      const strong = document.createElement('strong');
-      strong.textContent = bereitsGeboteteSlots[0].label;
-      banner.append('Du hast für ', strong, ' bereits ein Gebot abgegeben.');
-    } else {
-      banner.textContent = 'Du hast bereits Gebote abgegeben.';
-    }
-    banner.classList.remove('hidden');
-  }
-
   // ── Tab 1: Gebot abgeben ──────────────────────────────────────────────────
   const gebotForm = document.getElementById('gebot-form') as HTMLFormElement;
   const gebotBtn = document.getElementById('gebot-btn') as HTMLButtonElement;
+  const weitererSlotWarnung = document.getElementById('weiterer-slot-warnung') as HTMLDivElement;
+  const weitererSlotText = document.getElementById('weiterer-slot-text') as HTMLParagraphElement;
+  const weitererSlotAbbrechen = document.getElementById('weiterer-slot-abbrechen') as HTMLButtonElement;
+  const weitererSlotBestaetigen = document.getElementById('weiterer-slot-bestaetigen') as HTMLButtonElement;
   const duplikatWarnung = document.getElementById('duplikat-warnung') as HTMLDivElement;
   const duplikatAbbrechen = document.getElementById('duplikat-abbrechen') as HTMLButtonElement;
   const duplikatWeiter = document.getElementById('duplikat-weiter') as HTMLButtonElement;
@@ -252,6 +242,7 @@ export async function initGebot(): Promise<void> {
   // Kernfunktion: Gebot tatsächlich einreichen (mit Auto-Retry bei Emoji-Kollision)
   async function gebot_einreichen() {
     versteckeFeedback('gebot-fehler');
+    weitererSlotWarnung.classList.add('hidden');
     duplikatWarnung.classList.add('hidden');
     gebotBtn.disabled = true;
     gebotBtn.textContent = 'Wird gesendet…';
@@ -338,6 +329,26 @@ export async function initGebot(): Promise<void> {
       return;
     }
 
+    const andereGeboteneSlots = blob.slots.filter(s => s.label !== selectedSlot.label && slotBereitsGeboten(s.label));
+    if (andereGeboteneSlots.length > 0) {
+      if (andereGeboteneSlots.length === 1) {
+        const strong = document.createElement('strong');
+        strong.textContent = andereGeboteneSlots[0].label;
+        weitererSlotText.replaceChildren('Du hast bereits ein Gebot für ', strong, ' abgegeben. Willst du wirklich für eine weitere Person bieten?');
+      } else {
+        weitererSlotText.textContent = 'Du hast bereits Gebote für andere Slots abgegeben. Willst du wirklich für eine weitere Person bieten?';
+      }
+      weitererSlotWarnung.classList.remove('hidden');
+      return;
+    }
+
+    await gebot_einreichen();
+  });
+
+  weitererSlotAbbrechen.addEventListener('click', () => {
+    weitererSlotWarnung.classList.add('hidden');
+  });
+  weitererSlotBestaetigen.addEventListener('click', async () => {
     await gebot_einreichen();
   });
 

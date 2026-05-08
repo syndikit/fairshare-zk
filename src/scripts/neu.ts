@@ -83,6 +83,16 @@ export function initNeu(): void {
 
   document.getElementById('gesamtkosten')!.addEventListener('input', aktualisiereRichtwert);
 
+  function aktualisiereGesamtkosten() {
+    const werte = [...slotsContainer.querySelectorAll<HTMLInputElement>('[name="ausgaben[]"]')]
+      .map(el => parseGeld(el.value))
+      .filter(v => !isNaN(v) && v > 0);
+    if (werte.length === 0) return;
+    const summe = werte.reduce((a, b) => a + b, 0);
+    (form.querySelector('#gesamtkosten') as HTMLInputElement).value = formatBetrag(summe);
+    aktualisiereRichtwert();
+  }
+
   form.addEventListener('blur', (e) => {
     const t = e.target as HTMLInputElement;
     if (!['gesamtkosten', 'ausgaben[]', 'standardgebot[]'].includes(t.name)) return;
@@ -104,6 +114,8 @@ export function initNeu(): void {
     const target = e.target as HTMLInputElement;
     if (target.name === 'standardgebot[]') {
       target.dataset.auto = 'false';
+    } else if (target.name === 'ausgaben[]') {
+      aktualisiereGesamtkosten();
     } else if (target.name === 'anzahl[]') {
       aktualisiereRichtwert();
     } else if (target.classList.contains('slot-gewichtung-manuell')) {
@@ -179,6 +191,7 @@ export function initNeu(): void {
     const eintrag = target.closest('.slot-eintrag') as HTMLDivElement;
     eintrag.remove();
     aktualisiereEntfernenButtons();
+    aktualisiereGesamtkosten();
   });
 
   // ---------------------------------------------------------------------------
@@ -470,6 +483,25 @@ export function initNeu(): void {
       if (!gesamtkosten || gesamtkosten <= 0 || !isFinite(gesamtkosten)) {
         zeigeFeedback('fehler', 'Bitte gib gültige Gesamtkosten ein.', 'rot');
         return;
+      }
+
+      const gesamtkostenFehlerEl = document.getElementById('gesamtkosten-fehler') as HTMLParagraphElement;
+      gesamtkostenFehlerEl.classList.add('hidden');
+      const ausgabenWerte = [...slotsContainer.querySelectorAll<HTMLInputElement>('[name="ausgaben[]"]')]
+        .map(el => parseGeld(el.value))
+        .filter(v => !isNaN(v) && v > 0);
+      if (ausgabenWerte.length > 0) {
+        const slotSumme = ausgabenWerte.reduce((a, b) => a + b, 0);
+        if (Math.abs(slotSumme - gesamtkosten) > 0.01) {
+          gesamtkostenFehlerEl.textContent = `Stimmt nicht mit der Summe der Slot-Ausgaben (${formatEur(slotSumme)}) überein.`;
+          gesamtkostenFehlerEl.classList.remove('hidden');
+          const gesamtkostenInput = form.querySelector('#gesamtkosten') as HTMLInputElement;
+          gesamtkostenInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          gesamtkostenInput.focus();
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Runde erstellen';
+          return;
+        }
       }
 
       const labels = [...slotsContainer.querySelectorAll<HTMLDivElement>('.slot-eintrag')].map((slotEl) => {

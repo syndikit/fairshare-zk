@@ -81,15 +81,23 @@ export function initNeu(): void {
     });
   }
 
-  document.getElementById('gesamtkosten')!.addEventListener('input', aktualisiereRichtwert);
+  document.getElementById('gesamtkosten')!.addEventListener('input', () => {
+    (document.getElementById('gesamtkosten-fehler') as HTMLParagraphElement).classList.add('hidden');
+    aktualisiereRichtwert();
+  });
 
   function aktualisiereGesamtkosten() {
     const werte = [...slotsContainer.querySelectorAll<HTMLInputElement>('[name="ausgaben[]"]')]
       .map(el => parseGeld(el.value))
-      .filter(v => !isNaN(v) && v > 0);
-    if (werte.length === 0) return;
+      .filter(v => !isNaN(v));
+    const gesamtkostenInput = form.querySelector('#gesamtkosten') as HTMLInputElement;
+    if (werte.length === 0) {
+      gesamtkostenInput.value = '';
+      aktualisiereRichtwert();
+      return;
+    }
     const summe = werte.reduce((a, b) => a + b, 0);
-    (form.querySelector('#gesamtkosten') as HTMLInputElement).value = formatBetrag(summe);
+    gesamtkostenInput.value = formatBetrag(summe);
     aktualisiereRichtwert();
   }
 
@@ -489,7 +497,7 @@ export function initNeu(): void {
       gesamtkostenFehlerEl.classList.add('hidden');
       const ausgabenWerte = [...slotsContainer.querySelectorAll<HTMLInputElement>('[name="ausgaben[]"]')]
         .map(el => parseGeld(el.value))
-        .filter(v => !isNaN(v) && v > 0);
+        .filter(v => !isNaN(v));
       if (ausgabenWerte.length > 0) {
         const slotSumme = ausgabenWerte.reduce((a, b) => a + b, 0);
         if (Math.abs(slotSumme - gesamtkosten) > 0.01) {

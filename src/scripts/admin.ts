@@ -236,10 +236,13 @@ export async function initAdmin(): Promise<void> {
     ? berechneAuswertung(blob.gesamtkosten, geboteFuerBerechnung, blob.slots)
     : null;
 
+  // Ziel erreicht = Gesamtkosten durch eingegangene Gebote gedeckt (unabhängig von Vollständigkeit)
+  const zielErreicht = auswertung !== null && auswertung.fehlbetrag <= 0.005;
+
   // Beiträge anzeigen wenn: Runde vollständig + kein Fehlbetrag (Normalmodus),
   // oder im (Teil-)Deckungsmodus grundsätzlich live — unabhängig von Vollständigkeit/Fehlbetrag
   const zeigeBeitraege = !hatDuplikate && auswertung !== null &&
-    (teildeckungModus || (allesDa && auswertung.fehlbetrag <= 0.005));
+    (teildeckungModus || (allesDa && zielErreicht));
 
   // Richtwert für Anzeige + "fehlt"-Zeilen
   const summeAlleGewichtungen = blob.slots.reduce((s, sl) => s + sl.gewichtung * sl.anzahl, 0);
@@ -457,8 +460,7 @@ export async function initAdmin(): Promise<void> {
 
   // Ausgleichszahlungen (nur wenn Ziel erreicht, keine Duplikate, Ausgaben vorhanden;
   // "Ziel erreicht" heißt im Normalmodus vollständig + kein Fehlbetrag, im (Teil-)Deckungsmodus reicht kein Fehlbetrag)
-  const berechnungVollstaendig = !hatDuplikate && auswertung !== null && auswertung.fehlbetrag <= 0.005 &&
-    (allesDa || teildeckungModus);
+  const berechnungVollstaendig = !hatDuplikate && zielErreicht && (allesDa || teildeckungModus);
   if (berechnungVollstaendig && ausgabenMap.size > 0) {
     const zahlungen = berechneAusgleich(auswertung.ergebnisse, ausgabenMap);
     if (zahlungen.length > 0) {
@@ -505,8 +507,6 @@ export async function initAdmin(): Promise<void> {
     .reduce((s, sl) => s + sl.anzahl, 0);
   const erledigt = autoAnzahlGesamt + geboteOhneStandard.length;
   const ausstehend = totalAlle - erledigt;
-
-  const zielErreicht = auswertung !== null && auswertung.fehlbetrag <= 0.005;
 
   if (hatDuplikate) {
     zeigeBanner('Auswertung pausiert — Doppelgebote bitte klären.', 'amber');

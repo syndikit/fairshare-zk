@@ -25,7 +25,9 @@ function setupDom() {
     <h1 id="runde-name"></h1>
     <span id="kz-gesamtkosten"></span>
     <span id="kz-richtwert"></span>
-    <span id="kz-summe-beitraege"></span>
+    <div class="vollstaendig-spalte hidden">
+      <span id="kz-summe-beitraege"></span>
+    </div>
     <div id="duplikat-box" class="hidden"></div>
     <ul id="duplikat-liste"></ul>
     <div id="status-banner" class="hidden"></div>
@@ -46,7 +48,13 @@ interface TestKeys {
   hmacKey: CryptoKey;
 }
 
-async function createTestKeys(slotOverrides?: Partial<{ anzahl: number; ausgaben: number }>): Promise<TestKeys> {
+async function createTestKeys(slotOverrides?: Partial<{
+  anzahl: number;
+  ausgaben: number;
+  slots: { label: string; gewichtung: number; anzahl: number; ausgaben?: number; standardgebot?: number }[];
+  teildeckungModus: boolean;
+  dreiGebotModus: boolean;
+}>): Promise<TestKeys> {
   const partKey = await generatePartKey();
   const { publicKey: adminPubKey, privateKey: adminPrivKey } = await generateAdminKeyPair();
   const hmacKey = await generateHmacKey();
@@ -61,24 +69,26 @@ async function createTestKeys(slotOverrides?: Partial<{ anzahl: number; ausgaben
     gesamtkosten: 600,
     adminPubKey: adminPubKeyB64,
     hmacKey: hmacKeyB64,
-    slots: [{
+    slots: slotOverrides?.slots ?? [{
       label: 'Erwachsen',
       gewichtung: 1.0,
       anzahl: slotOverrides?.anzahl ?? 1,
       ...(slotOverrides?.ausgaben !== undefined ? { ausgaben: slotOverrides.ausgaben } : {}),
     }],
+    ...(slotOverrides?.teildeckungModus !== undefined ? { teildeckungModus: slotOverrides.teildeckungModus } : {}),
+    ...(slotOverrides?.dreiGebotModus !== undefined ? { dreiGebotModus: slotOverrides.dreiGebotModus } : {}),
   };
   const encTeilnehmerBlob = await encrypt(partKey, JSON.stringify(blobData));
 
   return { partKeyB64, adminPrivKeyB64, encTeilnehmerBlob, adminPubKey, adminPrivKey, hmacKey };
 }
 
-async function createEncryptedGebot(adminPubKey: CryptoKey, hmacKey: CryptoKey, betrag = 80) {
+async function createEncryptedGebot(adminPubKey: CryptoKey, hmacKey: CryptoKey, betrag = 80, slotLabel = 'Erwachsen') {
   const emojiId = generiereEmojiId();
   const emojiHmac = await hmac(hmacKey, emojiId);
   const encGebot = await encryptGebot(adminPubKey, JSON.stringify({
     emojiId,
-    slotLabel: 'Erwachsen',
+    slotLabel,
     gewichtung: 1.0,
     betrag,
   }));
@@ -187,6 +197,74 @@ describe('initAdmin', () => {
 
     expect(document.getElementById('status-banner')!.textContent).toContain('vollständig');
     expect(document.getElementById('kz-richtwert')!.textContent).not.toBe('');
+  });
+
+  it('zeigt Beiträge im (Teil-)Deckungsmodus live an, trotz Fehlbetrag und Unvollständigkeit', async () => {
+    const keys = await createTestKeys({
+      slots: [
+        { label: 'Slot A', gewichtung: 1.0, anzahl: 1 },
+        { label: 'Slot B', gewichtung: 1.0, anzahl: 1 },
+      ],
+      teildeckungModus: true,
+    });
+    // Nur ein Gebot, deutlich unter dem Richtwert-Anteil (300) → Fehlbetrag, allesDa=false
+    const gebot = await createEncryptedGebot(keys.adminPubKey, keys.hmacKey, 100, 'Slot A');
+    mockLocation('/runde/abc12345/admin/tok123', `#pk=${keys.partKeyB64}&bk=${keys.adminPrivKeyB64}`);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ encTeilnehmerBlob: keys.encTeilnehmerBlob, gebote: [gebot] }),
+    }));
+
+    await initAdmin();
+
+    expect(document.getElementById('status-banner')!.textContent).toContain('Ziel noch nicht erreicht');
+    expect(document.getElementById('status-banner')!.textContent).toContain('anderweitig gedeckt');
+    expect(document.querySelector('.vollstaendig-spalte')!.classList.contains('hidden')).toBe(false);
+    expect(document.getElementById('kz-summe-beitraege')!.textContent).toContain('100');
+    expect(document.querySelector('[data-emoji-hmac]')!.textContent).toContain('100');
+  });
+
+  it('zeigt normale Auswertung wenn das Ziel im (Teil-)Deckungsmodus erreicht ist, auch ohne dass alle geboten haben', async () => {
+    const keys = await createTestKeys({
+      slots: [
+        { label: 'Slot A', gewichtung: 1.0, anzahl: 1 },
+        { label: 'Slot B', gewichtung: 1.0, anzahl: 1 },
+      ],
+      teildeckungModus: true,
+    });
+    // Nur ein Gebot, deckt aber allein schon die Gesamtkosten → Ziel erreicht trotz allesDa=false
+    const gebot = await createEncryptedGebot(keys.adminPubKey, keys.hmacKey, 600, 'Slot A');
+    mockLocation('/runde/abc12345/admin/tok123', `#pk=${keys.partKeyB64}&bk=${keys.adminPrivKeyB64}`);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ encTeilnehmerBlob: keys.encTeilnehmerBlob, gebote: [gebot] }),
+    }));
+
+    await initAdmin();
+
+    expect(document.getElementById('status-banner')!.textContent).toContain('Ziel erreicht');
+    expect(document.querySelector('.vollstaendig-spalte')!.classList.contains('hidden')).toBe(false);
+    expect(document.getElementById('kz-summe-beitraege')!.textContent).not.toBe('');
+  });
+
+  it('berechnet keine Ausgleichszahlungen im (Teil-)Deckungsmodus solange ein Fehlbetrag besteht', async () => {
+    const keys = await createTestKeys({
+      slots: [
+        { label: 'Slot A', gewichtung: 1.0, anzahl: 1, ausgaben: 50 },
+        { label: 'Slot B', gewichtung: 1.0, anzahl: 1, ausgaben: 250 },
+      ],
+      teildeckungModus: true,
+    });
+    const gebot = await createEncryptedGebot(keys.adminPubKey, keys.hmacKey, 100, 'Slot A');
+    mockLocation('/runde/abc12345/admin/tok123', `#pk=${keys.partKeyB64}&bk=${keys.adminPrivKeyB64}`);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ encTeilnehmerBlob: keys.encTeilnehmerBlob, gebote: [gebot] }),
+    }));
+
+    await initAdmin();
+
+    expect(document.getElementById('ausgleich-section')!.classList.contains('hidden')).toBe(true);
   });
 
   it('feuert DELETE-Request beim Klick auf Löschen-Button', async () => {

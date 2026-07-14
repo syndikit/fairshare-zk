@@ -23,6 +23,7 @@ interface TeilnehmerBlob {
   hmacKey: string;
   slots: { label: string; gewichtung: number; anzahl: number; ausgaben?: number; standardgebot?: number }[];
   dreiGebotModus?: boolean;
+  teildeckungModus?: boolean;
 }
 
 interface RawGebotPayload {
@@ -144,6 +145,7 @@ export async function initAdmin(): Promise<void> {
 
   // Gebote entschlüsseln
   const dreiGebotModus = blob.dreiGebotModus === true;
+  const teildeckungModus = blob.teildeckungModus === true;
   const geboteWithHmac: Array<{ emojiHmac: string; gebot: Gebot }> = [];
   const dreiGebotTriples: DreiGebotTriple[] = [];
 
@@ -234,14 +236,19 @@ export async function initAdmin(): Promise<void> {
     ? berechneAuswertung(blob.gesamtkosten, geboteFuerBerechnung, blob.slots)
     : null;
 
+  // Beiträge anzeigen wenn: Runde vollständig + kein Fehlbetrag (Normalmodus),
+  // oder im (Teil-)Deckungsmodus grundsätzlich live — unabhängig von Vollständigkeit/Fehlbetrag
+  const zeigeBeitraege = !hatDuplikate && auswertung !== null &&
+    (teildeckungModus || (allesDa && auswertung.fehlbetrag <= 0.005));
+
   // Richtwert für Anzeige + "fehlt"-Zeilen
   const summeAlleGewichtungen = blob.slots.reduce((s, sl) => s + sl.gewichtung * sl.anzahl, 0);
   const rawRichtwert = blob.gesamtkosten / summeAlleGewichtungen;
   document.getElementById('kz-richtwert')!.textContent = auswertung
     ? formatEur(auswertung.richtwert)
     : formatEur(Math.ceil(rawRichtwert * 100) / 100);
-  // Summe Beiträge nur zeigen wenn kein Fehlbetrag (sonst rekonstruierbar)
-  if (auswertung && auswertung.fehlbetrag <= 0.005) {
+  // Summe Beiträge nur zeigen wenn kein Fehlbetrag (sonst rekonstruierbar) — außer im (Teil-)Deckungsmodus
+  if (auswertung && (teildeckungModus || auswertung.fehlbetrag <= 0.005)) {
     document.getElementById('kz-summe-beitraege')!.textContent = formatEur(auswertung.summeBeitraege);
   }
 
@@ -263,9 +270,6 @@ export async function initAdmin(): Promise<void> {
 
   // Container befüllen — alle Slot-Positionen (geboten / auto / fehlt)
   const slotsContainer = document.getElementById('slots-container')!;
-
-  // Beiträge nur anzeigen wenn Runde vollständig, keine Duplikate, kein Fehlbetrag
-  const zeigeBeitraege = allesDa && !hatDuplikate && auswertung !== null && auswertung.fehlbetrag <= 0.005;
 
   for (const slot of blob.slots) {
     const slotErgebnisse = ergebnisseBySlot.get(slot.label) ?? [];
@@ -451,8 +455,11 @@ export async function initAdmin(): Promise<void> {
     }
   });
 
-  // Ausgleichszahlungen (nur wenn vollständig, kein Fehlbetrag, keine Duplikate, Ausgaben vorhanden)
-  if (allesDa && !hatDuplikate && auswertung && auswertung.fehlbetrag <= 0.005 && ausgabenMap.size > 0) {
+  // Ausgleichszahlungen (nur wenn Ziel erreicht, keine Duplikate, Ausgaben vorhanden;
+  // "Ziel erreicht" heißt im Normalmodus vollständig + kein Fehlbetrag, im (Teil-)Deckungsmodus reicht kein Fehlbetrag)
+  const berechnungVollstaendig = !hatDuplikate && auswertung !== null && auswertung.fehlbetrag <= 0.005 &&
+    (allesDa || teildeckungModus);
+  if (berechnungVollstaendig && ausgabenMap.size > 0) {
     const zahlungen = berechneAusgleich(auswertung.ergebnisse, ausgabenMap);
     if (zahlungen.length > 0) {
       // Hilfsmaps: emojiId → slotLabel (für Namensanzeige statt Emoji-ID)
@@ -479,8 +486,8 @@ export async function initAdmin(): Promise<void> {
     }
   }
 
-  // Beitrag-Spalten einblenden wenn vollständig, keine Duplikate, kein Fehlbetrag
-  if (allesDa && !hatDuplikate && auswertung && auswertung.fehlbetrag <= 0.005) {
+  // Beitrag-Spalten einblenden wenn Beiträge sichtbar sind (siehe zeigeBeitraege oben)
+  if (zeigeBeitraege) {
     document.querySelectorAll('.vollstaendig-spalte').forEach((el) => el.classList.remove('hidden'));
     if (!hatSplidDaten) {
       document.querySelectorAll('.splid-spalte').forEach((el) => el.classList.add('hidden'));
@@ -499,15 +506,14 @@ export async function initAdmin(): Promise<void> {
   const erledigt = autoAnzahlGesamt + geboteOhneStandard.length;
   const ausstehend = totalAlle - erledigt;
 
+  const zielErreicht = auswertung !== null && auswertung.fehlbetrag <= 0.005;
+
   if (hatDuplikate) {
     zeigeBanner('Auswertung pausiert — Doppelgebote bitte klären.', 'amber');
     document.getElementById('gebote-anzahl')!.textContent =
       `${geboteOhneStandard.length} von ${totalErwartet} Geboten eingegangen`;
-  } else if (allesDa) {
-    const fehlbetragVorhanden = auswertung && auswertung.fehlbetrag > 0.005;
-    if (fehlbetragVorhanden) {
-      zeigeBanner(`Fehlbetrag: ${formatEur(auswertung!.fehlbetrag)} — Runde muss wiederholt werden.`, 'red');
-    } else if (dreiGebotStatus) {
+  } else if (zielErreicht && (allesDa || teildeckungModus)) {
+    if (dreiGebotStatus) {
       const statusTexte: Record<string, string> = {
         gruen: '🟢 Grün — Minimalgebote decken die Kosten. Auswertung mit Minimalgeboten.',
         gelb:  '🟡 Gelb — Erst mittlere Gebote decken die Kosten. Auswertung mit mittleren Geboten.',
@@ -516,9 +522,18 @@ export async function initAdmin(): Promise<void> {
       };
       const bannerFarbe = dreiGebotStatus === 'gruen' ? 'green' : dreiGebotStatus === 'kritisch' ? 'red' : 'amber';
       zeigeBanner(statusTexte[dreiGebotStatus], bannerFarbe);
+    } else if (teildeckungModus && !allesDa) {
+      zeigeBanner('Ziel erreicht — nicht alle haben geboten, aber die Kosten sind gedeckt.', 'green');
     } else {
       zeigeBanner('Alle Beiträge vollständig. Auswertung abgeschlossen.', 'green');
     }
+    document.getElementById('gebote-anzahl')!.textContent = '';
+  } else if (teildeckungModus && auswertung) {
+    zeigeBanner(`Ziel noch nicht erreicht — ${formatEur(auswertung.fehlbetrag)} fehlen noch. Restbetrag wird anderweitig gedeckt.`, 'amber');
+    document.getElementById('gebote-anzahl')!.textContent =
+      `${geboteOhneStandard.length} von ${totalErwartet} Geboten eingegangen`;
+  } else if (allesDa) {
+    zeigeBanner(`Fehlbetrag: ${formatEur(auswertung!.fehlbetrag)} — Runde muss wiederholt werden.`, 'red');
     document.getElementById('gebote-anzahl')!.textContent = '';
   } else {
     zeigeBanner(`${ausstehend} von ${totalAlle} Beiträge ausstehend.`, 'amber');

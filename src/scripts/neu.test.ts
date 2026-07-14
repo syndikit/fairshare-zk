@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import * as cryptoLib from '../lib/crypto';
 import { initNeu } from './neu';
 
 // ---------------------------------------------------------------------------
@@ -11,7 +12,10 @@ function setupDom() {
     <div id="form-bereich"></div>
     <div id="ergebnis-bereich" class="hidden"></div>
     <button id="power-menu-btn" aria-expanded="false"></button>
-    <div id="power-menu" class="hidden"></div>
+    <div id="power-menu" class="hidden">
+      <input type="checkbox" id="drei-gebot-toggle" />
+      <input type="checkbox" id="teildeckung-toggle" />
+    </div>
     <button id="splid-import-btn"></button>
     <button id="import-info-btn"></button>
     <div id="import-info-popover" class="hidden"></div>
@@ -115,6 +119,43 @@ describe('initNeu', () => {
     const body = JSON.parse(options.body);
     // Blob ist verschlüsselt: Format <iv>.<ciphertext>
     expect(body.encTeilnehmerBlob).toMatch(/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/);
+  });
+
+  it('Drei-Gebot-Modus und (Teil-)Deckungsmodus schließen sich gegenseitig aus', () => {
+    initNeu();
+    const dreiGebotToggle = document.getElementById('drei-gebot-toggle') as HTMLInputElement;
+    const teildeckungToggle = document.getElementById('teildeckung-toggle') as HTMLInputElement;
+
+    dreiGebotToggle.checked = true;
+    dreiGebotToggle.dispatchEvent(new Event('change', { bubbles: true }));
+    teildeckungToggle.checked = true;
+    teildeckungToggle.dispatchEvent(new Event('change', { bubbles: true }));
+
+    expect(teildeckungToggle.checked).toBe(true);
+    expect(dreiGebotToggle.checked).toBe(false);
+
+    dreiGebotToggle.checked = true;
+    dreiGebotToggle.dispatchEvent(new Event('change', { bubbles: true }));
+
+    expect(dreiGebotToggle.checked).toBe(true);
+    expect(teildeckungToggle.checked).toBe(false);
+  });
+
+  it('setzt teildeckungModus im Blob wenn Toggle aktiv ist', async () => {
+    const encryptSpy = vi.spyOn(cryptoLib, 'encrypt');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 'abc12345', adminToken: 'tok1234567890abcd' }),
+    }));
+
+    initNeu();
+    (document.getElementById('teildeckung-toggle') as HTMLInputElement).checked = true;
+    document.getElementById('runde-form')!.dispatchEvent(new Event('submit', { bubbles: true }));
+    await vi.waitFor(() => expect(encryptSpy).toHaveBeenCalled());
+
+    const blob = JSON.parse(encryptSpy.mock.calls[0][1]);
+    expect(blob.teildeckungModus).toBe(true);
+    expect(blob.dreiGebotModus).toBe(false);
   });
 
   it('zeigt Ergebnis-Bereich nach erfolgreichem Erstellen', async () => {

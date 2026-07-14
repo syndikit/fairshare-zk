@@ -242,6 +242,17 @@ export function initNeu(): void {
     powerMenu.classList.contains('hidden') ? openPowerMenu() : closePowerMenu();
   });
 
+  // Drei-Gebot-Modus und (Teil-)Deckungsmodus schließen sich gegenseitig aus
+  const dreiGebotToggle = document.getElementById('drei-gebot-toggle') as HTMLInputElement | null;
+  const teildeckungToggle = document.getElementById('teildeckung-toggle') as HTMLInputElement | null;
+
+  dreiGebotToggle?.addEventListener('change', () => {
+    if (dreiGebotToggle.checked && teildeckungToggle) teildeckungToggle.checked = false;
+  });
+  teildeckungToggle?.addEventListener('change', () => {
+    if (teildeckungToggle.checked && dreiGebotToggle) dreiGebotToggle.checked = false;
+  });
+
   // ---------------------------------------------------------------------------
   // Datei-Import (Splid oder Basis-Format)
   // ---------------------------------------------------------------------------
@@ -592,6 +603,8 @@ export function initNeu(): void {
 
       const dreiGebotModus =
         (document.getElementById('drei-gebot-toggle') as HTMLInputElement)?.checked ?? false;
+      const teildeckungModus =
+        (document.getElementById('teildeckung-toggle') as HTMLInputElement)?.checked ?? false;
 
       // Blob zusammenstellen + verschlüsseln
       const blob = {
@@ -601,6 +614,7 @@ export function initNeu(): void {
         hmacKey: await exportKey(hmacKey),
         slots: finalSlots,
         dreiGebotModus,
+        teildeckungModus,
       };
       const encTeilnehmerBlob = await encrypt(partKey, JSON.stringify(blob));
 

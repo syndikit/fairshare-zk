@@ -62,10 +62,11 @@ Die Emoji-ID lässt sich per Tippen kopieren — gut aufheben.
 
 Über den Admin-Link siehst du:
 
-- den **Richtwert** pro Gewichtungseinheit,
-- pro Gebot: Gebot, Richtwert-Anteil, **Geld zurück** und den endgültigen **solidarischen Beitrag**,
-- **Ausgleichszahlungen** (wenn Ausgaben erfasst wurden): wer an wen wie viel überweist — mit möglichst wenigen Überweisungen,
-- einen Status, ob noch Gebote fehlen oder die Kosten gedeckt sind.
+- die **Gesamtkosten** und den **Richtwert** pro Gewichtungseinheit,
+- einen Status, ob noch Gebote fehlen oder die Kosten gedeckt sind,
+- pro Platz die eingegangenen Gebote mit Emoji-ID und dem endgültigen **Beitrag** — also dem Gebot abzüglich eines etwaigen Anteils am Überschuss (siehe [Wie gerechnet wird](#wie-gerechnet-wird)),
+- wenn Ausgaben erfasst wurden: pro Person die **Ausgaben** und was sie **noch zu zahlen** hat (bzw. zurückbekommt),
+- **Ausgleichszahlungen** (wenn Ausgaben erfasst wurden): wer an wen wie viel überweist — mit möglichst wenigen Überweisungen.
 
 Mit **„Als PDF drucken"** lässt sich das Ergebnis festhalten. **„Runde wiederholen"** legt eine neue Runde mit denselben Personen, Gewichtungen und Standardgeboten an — auf Wunsch auch mit den Ausgaben.
 
@@ -144,7 +145,7 @@ Jede Person gibt **drei Beträge** an: ein **Minimal-**, ein **mittleres** und e
 | 🟢 Grün | Schon die Minimalgebote decken die Kosten. |
 | 🟡 Gelb | Erst die mittleren Gebote reichen. |
 | 🔴 Rot | Erst die Maximalgebote reichen. |
-| ⚫ Kritisch | Selbst die Maximalgebote reichen nicht. Die Auswertung nutzt sie als Näherung. |
+| ⚫ Kritisch | Selbst die Maximalgebote reichen nicht. Die Runde muss wiederholt werden. |
 
 **Gut für:** Situationen, in denen unklar ist, ob das Geld reicht — z. B. ein neues Projekt, eine größere Anschaffung oder ein knappes Budget. Statt im Fehlerfall eine zweite Runde zu starten, sagt jede Person gleich, wie weit sie notfalls gehen kann. Niemand zahlt mehr als nötig.
 
@@ -181,7 +182,8 @@ Die Beiträge sind für den Admin **sofort sichtbar** — auch wenn noch nicht a
 - Alle Inhalte (Namen, Beträge, Personen) werden **im Browser verschlüsselt**, bevor sie den Server erreichen.
 - Die Schlüssel stecken im Link hinter dem `#` — dieser Teil wird nie an den Server geschickt.
 - Teilnehmende sehen keine Gebote anderer. Nur wer den Admin-Link hat, kann Gebote lesen.
-- Es gibt keine Konten, keine E-Mail-Adressen und keine Namen von Teilnehmenden. Runden werden nach 6 Monaten automatisch gelöscht.
+- Es gibt keine Konten und keine E-Mail-Adressen. Namen, die du beim Erstellen für Plätze vergibst (oder aus Splid importierst), werden nur verschlüsselt gespeichert.
+- Runden werden etwa 6 Monate nach der letzten Aktivität (z. B. dem letzten Gebot) automatisch gelöscht.
 
 Was der Server trotzdem sehen kann (z. B. Anzahl und Zeitpunkt der Gebote), steht auf der Startseite unter „Wie es funktioniert".
 
